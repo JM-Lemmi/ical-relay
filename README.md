@@ -3,7 +3,7 @@ ical-relay
 Relay ical event url and exclude events based on a regex.
 
 # Config
-```
+```toml
 url = "https://example.com/events.ical"
 
 [profiles]
