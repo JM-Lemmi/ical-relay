@@ -12,7 +12,7 @@ type regex struct {
 }
 
 type profile struct {
-	RegEx  []string
+	RegEx  []regex
 	Public bool
 }
 
@@ -28,7 +28,7 @@ type Config struct {
 	Server   serverConfig
 }
 
-func (r regex) UnmarshalText(text []byte) error {
+func (r *regex) UnmarshalText(text []byte) error {
 	tmpRe, err := regexp.Compile("(?i)" + string(text))
 	r.Regexp = *tmpRe
 	return err

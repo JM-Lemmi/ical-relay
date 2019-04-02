@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 
 	"github.com/arran4/golang-ical"
 	"github.com/google/uuid"
@@ -47,8 +46,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		// check if one of the profiles regex's matches summary
 		exclude := false
 		for _, excludeRe := range profile.RegEx {
-
-			if m, _ := regexp.MatchString("(?i)"+excludeRe, summary); m {
+			if excludeRe.MatchString(summary) {
 				exclude = true
 				break
 			}
