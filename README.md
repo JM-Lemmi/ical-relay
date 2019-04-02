@@ -10,6 +10,10 @@ Relay ical event url and exclude events based on a regex.
 ```toml
 url = "https://example.com/events.ical"
 
+[server]
+addr = ":8080"
+loglevel = "info"
+
 [profiles]
     [profiles.p1]
     regex = ["pattern1", "pattern2"]

@@ -18,7 +18,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(conf.Server.LogLevel)
 
 	// setup router
 	router := mux.NewRouter()
