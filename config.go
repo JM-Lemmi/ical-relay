@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/BurntSushi/toml"
+	log "github.com/sirupsen/logrus"
 )
 
 type regex struct {
@@ -16,7 +17,8 @@ type profile struct {
 }
 
 type serverConfig struct {
-	Addr string
+	Addr     string
+	LogLevel log.Level
 }
 
 // Config represents configuration for the application
@@ -38,6 +40,14 @@ func ParseConfig(path string) (Config, error) {
 
 	if _, err := toml.DecodeFile(path, &tmpConfig); err != nil {
 		return tmpConfig, err
+	}
+
+	// defaults
+	if tmpConfig.Server.Addr == "" {
+		tmpConfig.Server.Addr = ":8080"
+	}
+	if tmpConfig.Server.LogLevel == 0 {
+		tmpConfig.Server.LogLevel = log.InfoLevel
 	}
 
 	return tmpConfig, nil
