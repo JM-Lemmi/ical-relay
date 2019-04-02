@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -27,6 +26,6 @@ func main() {
 	router.HandleFunc("/profiles/{profile}", ProfileHandler)
 
 	// listen and serve
-	address := os.Args[1]
+	address := conf.Server.Addr
 	log.Fatal(http.ListenAndServe(address, router))
 }
