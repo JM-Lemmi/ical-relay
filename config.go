@@ -15,10 +15,15 @@ type profile struct {
 	Public bool
 }
 
+type serverConfig struct {
+	Addr string
+}
+
 // Config represents configuration for the application
 type Config struct {
 	URL      string
 	Profiles map[string]profile
+	Server   serverConfig
 }
 
 func (r regex) UnmarshalText(text []byte) error {
