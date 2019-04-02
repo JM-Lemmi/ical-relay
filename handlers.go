@@ -60,17 +60,17 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 			newEvent.Properties = event.Properties
 		} else {
 			excludedEvents++
-			requestLogger.Printf("Excluding event with summary '%s'\n", summary)
+			requestLogger.Debugf("Excluding event with summary '%s'\n", summary)
 		}
 	}
 	// make sure new calendar has all events but excluded
 	eventCountDiff := len(newCalendar.Events()) + excludedEvents - len(calendar.Events())
 	if eventCountDiff == 0 {
-		requestLogger.Printf("Output validation successfull; event counts match")
+		requestLogger.Debugf("Output validation successfull; event counts match")
 	} else {
 		requestLogger.Warnf("This shouldn't happen, event count diff: %d", eventCountDiff)
 	}
-	requestLogger.Printf("Excluded %d events", excludedEvents)
+	requestLogger.Debugf("Excluded %d events", excludedEvents)
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
