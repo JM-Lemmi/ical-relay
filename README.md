@@ -2,6 +2,10 @@ ical-relay
 ==========
 Relay ical event url and exclude events based on a regex.
 
+# Usage
+* Run from source: `go run .`
+* Build and run: `go build . && ./ical-relay`
+
 # Config
 ```toml
 url = "https://example.com/events.ical"
