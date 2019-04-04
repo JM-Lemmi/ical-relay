@@ -54,8 +54,12 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		if !exclude {
 			// add event to new calendar
 			newEvent := newCalendar.AddEvent(event.Id())
-			// copy properties from original event
-			newEvent.Properties = event.Properties
+			// exclude organizer property due to broken escaping
+			for _, property := range event.Properties {
+				if (property.IANAToken != string(ics.ComponentPropertyOrganizer)) && (property.IANAToken != string(ics.ComponentPropertyUniqueId)) {
+					newEvent.Properties = append(newEvent.Properties, property)
+				}
+			}
 		} else {
 			excludedEvents++
 			requestLogger.Debugf("Excluding event with summary '%s'\n", summary)
