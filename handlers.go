@@ -1,10 +1,11 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
 	"net/http"
 
-	"github.com/arran4/golang-ical"
+	ics "github.com/arran4/golang-ical"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -53,7 +54,12 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if !exclude {
 			// add event to new calendar
-			newEvent := newCalendar.AddEvent(event.Id())
+			// overwrite uid to prevent conflicts with original ical stream
+			h := md5.New()
+			h.Write([]byte(event.Id()))
+			h.Write([]byte(conf.URL))
+			id := fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
+			newEvent := newCalendar.AddEvent(id)
 			// exclude organizer property due to broken escaping
 			for _, property := range event.Properties {
 				if (property.IANAToken != string(ics.ComponentPropertyOrganizer)) && (property.IANAToken != string(ics.ComponentPropertyUniqueId)) {
