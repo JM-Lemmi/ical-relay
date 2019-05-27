@@ -12,6 +12,7 @@ import (
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "", http.StatusNoContent)
 }
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
