@@ -66,6 +66,8 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 					newEvent.Properties = append(newEvent.Properties, property)
 				}
 			}
+			sequenceProperty := ics.IANAProperty{BaseProperty: ics.BaseProperty{IANAToken: "SEQUENCE", Value: "0"}}
+			newEvent.Properties = append(newEvent.Properties, sequenceProperty)
 		} else {
 			excludedEvents++
 			requestLogger.Debugf("Excluding event with summary '%s'\n", summary)
