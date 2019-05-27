@@ -39,7 +39,11 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// create new calendar, excluding based on pattern
 	newCalendar := ics.NewCalendar()
-	newCalendar.CalendarProperties = calendar.CalendarProperties
+	newCalendar.CalendarProperties = []ics.CalendarProperty{
+		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "METHOD", Value: "PUBLISH"}},
+		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "VERSION", Value: "2.0"}},
+		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "PRODID", Value: "-//ical-relay//" + profileName}},
+	}
 	excludedEvents := 0
 	for _, event := range calendar.Events() {
 		// extract summary from original event
