@@ -11,10 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
+func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
-func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+func profileHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
 	// load profile
 	vars := mux.Vars(r)

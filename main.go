@@ -22,8 +22,8 @@ func main() {
 
 	// setup router
 	router := mux.NewRouter()
-	router.HandleFunc("/", IndexHandler)
-	router.HandleFunc("/profiles/{profile}", ProfileHandler)
+	router.HandleFunc("/", indexHandler)
+	router.HandleFunc("/profiles/{profile}", profileHandler)
 
 	// listen and serve
 	address := conf.Server.Addr
