@@ -45,6 +45,15 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "VERSION", Value: "2.0"}},
 		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "PRODID", Value: "-//ical-relay//" + profileName}},
 	}
+	for _, component := range calendar.Components {
+		if len(component.SubComponents()) > 1 {
+			if len(component.UnknownPropertiesIANAProperties()) > 1 {
+				if component.UnknownPropertiesIANAProperties()[0].IANAToken == "TZID" {
+					newCalendar.Components = append(newCalendar.Components, component)
+				}
+			}
+		}
+	}
 	excludedEvents := 0
 	for _, event := range calendar.Events() {
 		// extract summary from original event
