@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	ics "github.com/arran4/golang-ical"
@@ -10,6 +11,11 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
+
+type templateData struct {
+	Name string
+	URL  string
+}
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "", http.StatusNoContent)
@@ -99,4 +105,20 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
 	fmt.Fprint(w, newCalendar.Serialize())
+}
+
+func profileViewHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
+	// load profile
+	vars := mux.Vars(r)
+	profileName := vars["profile"]
+	viewTemplate, err := template.ParseFiles("templates/profile.html")
+	if err != nil {
+		requestLogger.Errorln(err)
+	}
+	profileURL, err := router.Get("profile").URL("profile", profileName)
+	if err != nil {
+		requestLogger.Errorln(err)
+	}
+	viewTemplate.Execute(w, templateData{Name: profileName, URL: profileURL.String()})
 }
