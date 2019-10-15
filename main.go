@@ -10,6 +10,8 @@ import (
 var configPath = "config.toml"
 var conf Config
 
+var router *mux.Router
+
 func main() {
 	// load config
 	var err error
@@ -21,9 +23,10 @@ func main() {
 	log.SetLevel(conf.Server.LogLevel)
 
 	// setup router
-	router := mux.NewRouter()
+	router = mux.NewRouter()
 	router.HandleFunc("/", indexHandler)
-	router.HandleFunc("/profiles/{profile}", profileHandler)
+	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
+	router.HandleFunc("/profiles/{profile}/view", profileViewHandler)
 
 	// listen and serve
 	address := conf.Server.Addr
