@@ -112,7 +112,13 @@ func profileViewHandler(w http.ResponseWriter, r *http.Request) {
 	// load profile
 	vars := mux.Vars(r)
 	profileName := vars["profile"]
-	viewTemplate, err := template.ParseFiles("templates/profile.html")
+	// load template file from box
+	templateString, err := templateBox.String("profile.html")
+	if err != nil {
+		requestLogger.Errorln(err)
+	}
+
+	viewTemplate, err := template.New("profile").Parse(templateString)
 	if err != nil {
 		requestLogger.Errorln(err)
 	}

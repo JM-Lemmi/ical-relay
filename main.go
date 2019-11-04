@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -11,6 +12,8 @@ var configPath = "config.toml"
 var conf Config
 
 var router *mux.Router
+
+var templateBox *rice.Box
 
 func main() {
 	// load config
@@ -21,6 +24,13 @@ func main() {
 	}
 
 	log.SetLevel(conf.Server.LogLevel)
+
+	// find template box
+	log.Infoln("Finding box templates")
+	templateBox, err = rice.FindBox("templates")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// setup router
 	router = mux.NewRouter()
