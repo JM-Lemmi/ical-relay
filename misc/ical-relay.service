@@ -1,0 +1,10 @@
+[Unit]
+Description=Relay an ical event url while excluding events based on regex patterns
+
+[Service]
+User=ical-relay
+Group=ical-relay
+ExecStart=/usr/bin/ical-relay /etc/ical-relay.toml
+
+[Install]
+WantedBy=multi-user.target
