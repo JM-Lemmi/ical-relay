@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/mux"
@@ -16,6 +17,10 @@ var router *mux.Router
 var templateBox *rice.Box
 
 func main() {
+	if len(os.Args) >= 2 {
+		configPath = os.Args[1]
+	}
+
 	// load config
 	var err error
 	conf, err = ParseConfig(configPath)
