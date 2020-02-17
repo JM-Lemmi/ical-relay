@@ -1,3 +1,7 @@
+before:
+  hooks:
+    - go mod tidy
+    - rice embed-go
 builds:
 - env:
   - CGO_ENABLED=0
