@@ -1,0 +1,10 @@
+url = ""
+
+[server]
+addr = ":8080"
+loglevel = "info"
+
+[profiles]
+    [profiles.relay]
+    regex = []
+    public = true
