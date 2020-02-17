@@ -30,7 +30,7 @@ nfpms:
     package_name: ical-relay
     homepage: https://github.com/Thor77/ical-relay
     maintainer: Thor77 <thor77 at thor77 dot org>
-    description: Test
+    description: Relay an ical event url while excluding events based on regex patterns 
     license: MIT
     formats:
       - deb
