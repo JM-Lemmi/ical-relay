@@ -1,13 +1,8 @@
 builds:
-  - goos:
-      - linux
-    goarch:
-      - amd64
-      - 386
-      - arm
-      - arm64
-archive:
-  replacements:
+- env:
+  - CGO_ENABLED=0
+archives:
+- replacements:
     darwin: Darwin
     linux: Linux
     windows: Windows
@@ -23,3 +18,20 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+nfpms:
+  -
+    id: deb
+    package_name: ical-relay
+    homepage: https://github.com/Thor77/ical-relay
+    maintainer: Thor77 <thor77 at thor77 dot org>
+    description: Test
+    license: MIT
+    formats:
+      - deb
+    bindir: /usr/bin
+    files:
+      'misc/ical-relay.service': '/lib/systemd/system/ical-relay.service'
+    config_files:
+      'config.toml': '/etc/ical-relay.toml'
+    scripts:
+      postinstall: 'misc/postinstall.sh'
