@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 
 	ics "github.com/arran4/golang-ical"
@@ -36,8 +37,19 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// request original ical
 	response, err := http.Get(conf.URL)
 	if err != nil {
-		// throw error
 		requestLogger.Errorln(err)
+		http.Error(w, fmt.Sprintf("Error requesting original URL: %s", err.Error()), 500)
+		return
+	}
+	if response.StatusCode != 200 {
+		requestLogger.Errorf("Unexpected status '%s' from original URL\n", response.Status)
+		resp, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			requestLogger.Errorln(err)
+		}
+		requestLogger.Debugf("Full response body: %s\n", resp)
+		http.Error(w, fmt.Sprintf("Error response from original URL: Status %s", response.Status), 500)
+		return
 	}
 	// parse original calendar
 	calendar, err := ics.ParseCalendar(response.Body)
