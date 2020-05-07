@@ -92,9 +92,9 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 			h.Write([]byte(conf.URL))
 			id := fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
 			newEvent := newCalendar.AddEvent(id)
-			// exclude organizer property due to broken escaping
+			// exclude organizer, uuid, attendee property due to broken escaping
 			for _, property := range event.Properties {
-				if (property.IANAToken != string(ics.ComponentPropertyOrganizer)) && (property.IANAToken != string(ics.ComponentPropertyUniqueId)) {
+				if (property.IANAToken != string(ics.ComponentPropertyOrganizer)) && (property.IANAToken != string(ics.ComponentPropertyUniqueId) && (property.IANAToken != string(ics.ComponentPropertyAttendee))) {
 					newEvent.Properties = append(newEvent.Properties, property)
 				}
 			}
