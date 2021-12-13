@@ -74,14 +74,19 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	excludedEvents := 0
 	for _, event := range calendar.Events() {
-		// extract summary from original event
+		// extract summary and time from original event
 		summary := event.GetProperty(ics.ComponentPropertySummary).Value
+		date, date_err := event.GetStartAt()
 		// check if one of the profiles regex's matches summary
 		exclude := false
 		for _, excludeRe := range profile.RegEx {
-			if excludeRe.MatchString(summary) {
-				exclude = true
-				break
+			requestLogger.Debugf("Calendarentry: Date is %s and error is %s", date, date_err)
+			if date.After(profile.From) && profile.Until.After(date) {
+				if excludeRe.MatchString(summary) {
+					exclude = true
+					requestLogger.Debugf("Excluding event %s", summary)
+					break
+				}
 			}
 		}
 		if !exclude {

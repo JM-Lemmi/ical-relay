@@ -1,10 +1,12 @@
-url = ""
+url = "https://cal.julian-lemmerich.de/profiles/dhbwtinf21cs1"
 
 [server]
 addr = ":8080"
-loglevel = "info"
+loglevel = "debug"
 
 [profiles]
     [profiles.relay]
-    regex = []
+    regex = ["Programmieren"]
     public = true
+    from = "2021-12-02T00:00:00Z"
+    until = "2021-12-31T00:00:00Z"
