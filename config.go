@@ -3,6 +3,7 @@ package main
 import (
 	"regexp"
 
+	"time"
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
 )
@@ -14,6 +15,8 @@ type regex struct {
 type profile struct {
 	RegEx  []regex
 	Public bool
+	From   time.Time
+	Until  time.Time
 }
 
 type serverConfig struct {
