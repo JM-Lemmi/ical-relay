@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"time"
+
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,6 +18,7 @@ type profile struct {
 	Public bool
 	From   time.Time
 	Until  time.Time
+	PassID bool
 }
 
 type serverConfig struct {
