@@ -77,14 +77,14 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		// extract summary and time from original event
 		summary := event.GetProperty(ics.ComponentPropertySummary).Value
 		date, date_err := event.GetStartAt()
+		id := event.Id()
 		// check if one of the profiles regex's matches summary
 		exclude := false
 		for _, excludeRe := range profile.RegEx {
 			requestLogger.Debugf("Calendarentry: Date is %s and error is %s", date, date_err)
 			if date.After(profile.From) && profile.Until.After(date) {
-				if excludeRe.MatchString(summary) {
+				if excludeRe.MatchString(summary) || excludeRe.MatchString(id) {
 					exclude = true
-					requestLogger.Debugf("Excluding event %s", summary)
 					break
 				}
 			}
@@ -107,7 +107,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 			newEvent.Properties = append(newEvent.Properties, sequenceProperty)
 		} else {
 			excludedEvents++
-			requestLogger.Debugf("Excluding event with summary '%s'\n", summary)
+			requestLogger.Debugf("Excluding event '%s' with id %s\n", summary, id)
 		}
 	}
 	// make sure new calendar has all events but excluded
