@@ -8,6 +8,10 @@ Relay ical event url and exclude events based on a regex.
 
 Access filtered ical file on `server:8080/profiles/profilename`
 
+Add `config.toml` to executing directory for configuration options.
+
+All events in `addical.ics` will be added to the filtered ical.
+
 # Config
 ```toml
 url = "https://example.com/events.ical"

@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/google/uuid"
@@ -112,14 +113,35 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 			requestLogger.Debugf("Excluding event '%s' with id %s\n", summary, id)
 		}
 	}
-	// make sure new calendar has all events but excluded
-	eventCountDiff := len(newCalendar.Events()) + excludedEvents - len(calendar.Events())
+
+	// read additional ical files
+	addedEvents := 0
+	if _, err := os.Stat("addical.ics"); err == nil {
+		addicsfile, _ := os.Open("addical.ics")
+		addics, _ := ics.ParseCalendar(addicsfile)
+		for _, event := range addics.Events() {
+			id := event.Id()
+			newEvent := newCalendar.AddEvent(id)
+			// exclude organizer, uuid, attendee property due to broken escaping
+			for _, property := range event.Properties {
+				if (property.IANAToken != string(ics.ComponentPropertyOrganizer)) && (property.IANAToken != string(ics.ComponentPropertyUniqueId) && (property.IANAToken != string(ics.ComponentPropertyAttendee))) {
+					newEvent.Properties = append(newEvent.Properties, property)
+				}
+			}
+			sequenceProperty := ics.IANAProperty{BaseProperty: ics.BaseProperty{IANAToken: "SEQUENCE", Value: "0"}}
+			newEvent.Properties = append(newEvent.Properties, sequenceProperty)
+			addedEvents++
+		}
+	}
+
+	// make sure new calendar has all events but excluded and added
+	eventCountDiff := len(newCalendar.Events()) + excludedEvents - addedEvents - len(calendar.Events())
 	if eventCountDiff == 0 {
 		requestLogger.Debugf("Output validation successfull; event counts match")
 	} else {
 		requestLogger.Warnf("This shouldn't happen, event count diff: %d", eventCountDiff)
 	}
-	requestLogger.Debugf("Excluded %d events", excludedEvents)
+	requestLogger.Debugf("Excluded %d events and added %d events", excludedEvents, addedEvents)
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
