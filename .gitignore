@@ -2,3 +2,4 @@ ical-relay
 /dist
 rice-box.go
 .devcontainer
+addical.ics
