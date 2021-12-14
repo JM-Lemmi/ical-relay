@@ -14,6 +14,7 @@ type regex struct {
 }
 
 type profile struct {
+	URL    string
 	RegEx  []regex
 	Public bool
 	From   time.Time
@@ -28,7 +29,6 @@ type serverConfig struct {
 
 // Config represents configuration for the application
 type Config struct {
-	URL      string
 	Profiles map[string]profile
 	Server   serverConfig
 }

@@ -36,7 +36,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// request original ical
-	response, err := http.Get(conf.URL)
+	response, err := http.Get(profile.URL)
 	if err != nil {
 		requestLogger.Errorln(err)
 		http.Error(w, fmt.Sprintf("Error requesting original URL: %s", err.Error()), 500)
@@ -96,7 +96,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 				// overwrite uid to prevent conflicts with original ical stream
 				h := md5.New()
 				h.Write([]byte(event.Id()))
-				h.Write([]byte(conf.URL))
+				h.Write([]byte(profile.URL))
 				id = fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
 			}
 			newEvent := newCalendar.AddEvent(id)

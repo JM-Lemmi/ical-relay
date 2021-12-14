@@ -14,20 +14,25 @@ All events in `addical.ics` will be added to the filtered ical.
 
 # Config
 ```toml
-url = "https://example.com/events.ical"
-
 [server]
 addr = ":8080"
 loglevel = "info"
 
 [profiles]
     [profiles.profilename]
+    url = "https://example.com/events.ical"
     regex = ["pattern1", "pattern2"]
     public = true
     from = "1970-01-01T00:00:00Z"
     until = "2100-01-01T00:00:00Z"
     passid = true
 ```
+
+### URL
+
+The URL of the original ical.
+
+If pointed to localhost:8080/profiles/otherprofile it can be used to combine multiple profiles.
 
 ### Regex
 
@@ -36,6 +41,7 @@ The Regex Patterns are matched against both the Summary as well as the ID. This 
 ### From & Until
 
 The From and Until value allow for excluding the Pattern only in the selected Timeframe.
+
 Time has to be provided in compliance with RFC3339.
 
 ### PassID
