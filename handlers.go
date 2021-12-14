@@ -25,6 +25,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
+	requestLogger.Infoln("Client-addr:", r.RemoteAddr)
 	// load profile
 	vars := mux.Vars(r)
 	profileName := vars["profile"]
@@ -77,12 +78,11 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	for _, event := range calendar.Events() {
 		// extract summary and time from original event
 		summary := event.GetProperty(ics.ComponentPropertySummary).Value
-		date, date_err := event.GetStartAt()
+		date, _ := event.GetStartAt()
 		id := event.Id()
 		// check if one of the profiles regex's matches summary
 		exclude := false
 		for _, excludeRe := range profile.RegEx {
-			requestLogger.Debugf("Calendarentry: Date is %s and error is %s", date, date_err)
 			if date.After(profile.From) && profile.Until.After(date) {
 				if excludeRe.MatchString(summary) || excludeRe.MatchString(id) {
 					exclude = true
