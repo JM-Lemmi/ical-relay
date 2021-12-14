@@ -91,11 +91,13 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if !exclude {
 			// add event to new calendar
-			// overwrite uid to prevent conflicts with original ical stream
-			h := md5.New()
-			h.Write([]byte(event.Id()))
-			h.Write([]byte(conf.URL))
-			id := fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
+			if !profile.PassID {
+				// overwrite uid to prevent conflicts with original ical stream
+				h := md5.New()
+				h.Write([]byte(event.Id()))
+				h.Write([]byte(conf.URL))
+				id = fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
+			}
 			newEvent := newCalendar.AddEvent(id)
 			// exclude organizer, uuid, attendee property due to broken escaping
 			for _, property := range event.Properties {
