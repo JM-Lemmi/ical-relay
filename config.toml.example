@@ -1,0 +1,13 @@
+[server]
+addr = ":8080"
+loglevel = "debug"
+
+[profiles]
+    [profiles.relay]
+    url = "https://example.com/calendar.ics"
+    regex = ["testentry"]
+    public = true
+    from = "2021-12-02T00:00:00Z"
+    until = "2021-12-31T00:00:00Z"
+    passid = true
+    addurl = "https://othersource.com/othercalendar.ics"
