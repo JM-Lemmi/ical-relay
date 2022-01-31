@@ -98,16 +98,9 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 				h.Write([]byte(event.Id()))
 				h.Write([]byte(profile.URL))
 				id = fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
+				event.SetProperty(ics.ComponentPropertyUniqueId, id)
 			}
-			newEvent := newCalendar.AddEvent(id)
-			// exclude organizer, uuid, attendee property due to broken escaping
-			for _, property := range event.Properties {
-				if (property.IANAToken != string(ics.ComponentPropertyOrganizer)) && (property.IANAToken != string(ics.ComponentPropertyUniqueId) && (property.IANAToken != string(ics.ComponentPropertyAttendee))) {
-					newEvent.Properties = append(newEvent.Properties, property)
-				}
-			}
-			sequenceProperty := ics.IANAProperty{BaseProperty: ics.BaseProperty{IANAToken: "SEQUENCE", Value: "0"}}
-			newEvent.Properties = append(newEvent.Properties, sequenceProperty)
+			newCalendar.AddVEvent(event)
 		} else {
 			excludedEvents++
 			requestLogger.Debugf("Excluding event '%s' with id %s\n", summary, id)
