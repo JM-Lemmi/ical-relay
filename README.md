@@ -47,3 +47,7 @@ Time has to be provided in compliance with RFC3339.
 ### PassID
 
 Bool Value to allow passing the original EventIDs to the new calendar.
+
+### AddURL
+
+A URL pointed to another ical, whose entries should be added to the final calendar.
