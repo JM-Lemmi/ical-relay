@@ -20,7 +20,7 @@ type profile struct {
 	From   time.Time
 	Until  time.Time
 	PassID bool
-	AddURL string
+	AddURL []string
 }
 
 type serverConfig struct {

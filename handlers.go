@@ -119,32 +119,34 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read additional ical url
-	if profile.AddURL != "" {
-		response, err := http.Get(profile.AddURL)
-		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, fmt.Sprintf("Error requesting additional URL: %s", err.Error()), 500)
-			return
-		}
-		if response.StatusCode != 200 {
-			requestLogger.Errorf("Unexpected status '%s' from additional URL\n", response.Status)
-			resp, err := ioutil.ReadAll(response.Body)
+	if len(profile.AddURL) != 0 {
+		for _, url := range profile.AddURL {
+			response, err := http.Get(url)
+			if err != nil {
+				requestLogger.Errorln(err)
+				http.Error(w, fmt.Sprintf("Error requesting additional URL: %s", err.Error()), 500)
+				return
+			}
+			if response.StatusCode != 200 {
+				requestLogger.Errorf("Unexpected status '%s' from additional URL\n", response.Status)
+				resp, err := ioutil.ReadAll(response.Body)
+				if err != nil {
+					requestLogger.Errorln(err)
+				}
+				requestLogger.Debugf("Full response body: %s\n", resp)
+				http.Error(w, fmt.Sprintf("Error response from additional URL: Status %s", response.Status), 500)
+				return
+			}
+			// parse aditional calendar
+			addcal, err := ics.ParseCalendar(response.Body)
 			if err != nil {
 				requestLogger.Errorln(err)
 			}
-			requestLogger.Debugf("Full response body: %s\n", resp)
-			http.Error(w, fmt.Sprintf("Error response from additional URL: Status %s", response.Status), 500)
-			return
-		}
-		// parse aditional calendar
-		addcal, err := ics.ParseCalendar(response.Body)
-		if err != nil {
-			requestLogger.Errorln(err)
-		}
-		// add to new calendar
-		for _, event := range addcal.Events() {
-			newCalendar.AddVEvent(event)
-			addedEvents++
+			// add to new calendar
+			for _, event := range addcal.Events() {
+				newCalendar.AddVEvent(event)
+				addedEvents++
+			}
 		}
 	}
 
