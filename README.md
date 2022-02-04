@@ -50,4 +50,4 @@ Bool Value to allow passing the original EventIDs to the new calendar.
 
 ### AddURL
 
-A URL pointed to another ical, whose entries should be added to the final calendar.
+A list of URLs pointing to other icals, whose entries should be added to the final calendar.
