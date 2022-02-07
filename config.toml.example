@@ -10,4 +10,4 @@ loglevel = "debug"
     from = "2021-12-02T00:00:00Z"
     until = "2021-12-31T00:00:00Z"
     passid = true
-    addurl = "https://othersource.com/othercalendar.ics"
+    addurl = ["https://othersource.com/othercalendar.ics"]
