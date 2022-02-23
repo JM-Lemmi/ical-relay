@@ -10,5 +10,3 @@ require (
 	github.com/gorilla/mux v1.7.0
 	github.com/sirupsen/logrus v1.4.0
 )
-
-replace github.com/arran4/golang-ical => ../golang-ical
