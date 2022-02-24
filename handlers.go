@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/google/uuid"
@@ -24,6 +25,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
+	requestLogger.Infoln("Client-addr:", r.RemoteAddr)
 	// load profile
 	vars := mux.Vars(r)
 	profileName := vars["profile"]
@@ -35,7 +37,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// request original ical
-	response, err := http.Get(conf.URL)
+	response, err := http.Get(profile.URL)
 	if err != nil {
 		requestLogger.Errorln(err)
 		http.Error(w, fmt.Sprintf("Error requesting original URL: %s", err.Error()), 500)
@@ -74,45 +76,88 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	excludedEvents := 0
 	for _, event := range calendar.Events() {
-		// extract summary from original event
+		// extract summary and time from original event
 		summary := event.GetProperty(ics.ComponentPropertySummary).Value
+		date, _ := event.GetStartAt()
+		id := event.Id()
 		// check if one of the profiles regex's matches summary
 		exclude := false
 		for _, excludeRe := range profile.RegEx {
-			if excludeRe.MatchString(summary) {
-				exclude = true
-				break
+			if date.After(profile.From) && profile.Until.After(date) {
+				if excludeRe.MatchString(summary) || excludeRe.MatchString(id) {
+					exclude = true
+					break
+				}
 			}
 		}
 		if !exclude {
 			// add event to new calendar
-			// overwrite uid to prevent conflicts with original ical stream
-			h := md5.New()
-			h.Write([]byte(event.Id()))
-			h.Write([]byte(conf.URL))
-			id := fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
-			newEvent := newCalendar.AddEvent(id)
-			// exclude organizer, uuid, attendee property due to broken escaping
-			for _, property := range event.Properties {
-				if (property.IANAToken != string(ics.ComponentPropertyOrganizer)) && (property.IANAToken != string(ics.ComponentPropertyUniqueId) && (property.IANAToken != string(ics.ComponentPropertyAttendee))) {
-					newEvent.Properties = append(newEvent.Properties, property)
-				}
+			if !profile.PassID {
+				// overwrite uid to prevent conflicts with original ical stream
+				h := md5.New()
+				h.Write([]byte(event.Id()))
+				h.Write([]byte(profile.URL))
+				id = fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
+				event.SetProperty(ics.ComponentPropertyUniqueId, id)
 			}
-			sequenceProperty := ics.IANAProperty{BaseProperty: ics.BaseProperty{IANAToken: "SEQUENCE", Value: "0"}}
-			newEvent.Properties = append(newEvent.Properties, sequenceProperty)
+			newCalendar.AddVEvent(event)
 		} else {
 			excludedEvents++
-			requestLogger.Debugf("Excluding event with summary '%s'\n", summary)
+			requestLogger.Debugf("Excluding event '%s' with id %s\n", summary, id)
 		}
 	}
-	// make sure new calendar has all events but excluded
-	eventCountDiff := len(newCalendar.Events()) + excludedEvents - len(calendar.Events())
+
+	// read additional ical files
+	addedEvents := 0
+	if _, err := os.Stat("addical.ics"); err == nil {
+		addicsfile, _ := os.Open("addical.ics")
+		addics, _ := ics.ParseCalendar(addicsfile)
+		for _, event := range addics.Events() {
+			newCalendar.AddVEvent(event)
+			addedEvents++
+		}
+	}
+
+	// read additional ical url
+	if len(profile.AddURL) != 0 {
+		for _, url := range profile.AddURL {
+			response, err := http.Get(url)
+			if err != nil {
+				requestLogger.Errorln(err)
+				http.Error(w, fmt.Sprintf("Error requesting additional URL: %s", err.Error()), 500)
+				return
+			}
+			if response.StatusCode != 200 {
+				requestLogger.Errorf("Unexpected status '%s' from additional URL\n", response.Status)
+				resp, err := ioutil.ReadAll(response.Body)
+				if err != nil {
+					requestLogger.Errorln(err)
+				}
+				requestLogger.Debugf("Full response body: %s\n", resp)
+				http.Error(w, fmt.Sprintf("Error response from additional URL: Status %s", response.Status), 500)
+				return
+			}
+			// parse aditional calendar
+			addcal, err := ics.ParseCalendar(response.Body)
+			if err != nil {
+				requestLogger.Errorln(err)
+			}
+			// add to new calendar
+			for _, event := range addcal.Events() {
+				newCalendar.AddVEvent(event)
+				addedEvents++
+			}
+		}
+	}
+
+	// make sure new calendar has all events but excluded and added
+	eventCountDiff := len(newCalendar.Events()) + excludedEvents - addedEvents - len(calendar.Events())
 	if eventCountDiff == 0 {
 		requestLogger.Debugf("Output validation successfull; event counts match")
 	} else {
 		requestLogger.Warnf("This shouldn't happen, event count diff: %d", eventCountDiff)
 	}
-	requestLogger.Debugf("Excluded %d events", excludedEvents)
+	requestLogger.Debugf("Excluded %d events and added %d events", excludedEvents, addedEvents)
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))

@@ -3,6 +3,8 @@ package main
 import (
 	"regexp"
 
+	"time"
+
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
 )
@@ -12,8 +14,13 @@ type regex struct {
 }
 
 type profile struct {
+	URL    string
 	RegEx  []regex
 	Public bool
+	From   time.Time
+	Until  time.Time
+	PassID bool
+	AddURL []string
 }
 
 type serverConfig struct {
@@ -23,7 +30,6 @@ type serverConfig struct {
 
 // Config represents configuration for the application
 type Config struct {
-	URL      string
 	Profiles map[string]profile
 	Server   serverConfig
 }

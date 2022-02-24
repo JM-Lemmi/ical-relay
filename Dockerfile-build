@@ -1,0 +1,10 @@
+FROM golang
+
+RUN apt-get update && apt-get install golang-rice git -y
+
+WORKDIR /app
+COPY . /app
+
+RUN rice embed-go && go build .
+
+CMD ./ical-relay
