@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install golang-rice git -y
 WORKDIR /app
 COPY . /app
 
-RUN go mod download github.com/arran4/golang-ical
 RUN rice embed-go && go build .
 
 CMD ./ical-relay
