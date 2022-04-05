@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/md5"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -58,53 +57,38 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		requestLogger.Errorln(err)
 	}
-	// create new calendar, excluding based on pattern
-	newCalendar := ics.NewCalendar()
-	newCalendar.CalendarProperties = []ics.CalendarProperty{
-		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "METHOD", Value: "PUBLISH"}},
-		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "VERSION", Value: "2.0"}},
-		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "PRODID", Value: "-//ical-relay//" + profileName}},
-	}
-	for _, component := range calendar.Components {
-		if len(component.SubComponents()) > 1 {
-			if len(component.UnknownPropertiesIANAProperties()) > 1 {
-				if component.UnknownPropertiesIANAProperties()[0].IANAToken == "TZID" {
-					newCalendar.Components = append(newCalendar.Components, component)
-				}
-			}
-		}
-	}
+	origlen := len(calendar.Events())
 	excludedEvents := 0
-	for _, event := range calendar.Events() {
-		// extract summary and time from original event
-		summary := event.GetProperty(ics.ComponentPropertySummary).Value
-		date, _ := event.GetStartAt()
-		id := event.Id()
-		// check if one of the profiles regex's matches summary
-		exclude := false
-		for _, excludeRe := range profile.RegEx {
+	for i, component := range calendar.Components {
+		// this is a hack to get around the fact that the ical library doesn't provide a way to remove an event
+		switch component.(type) {
+		case *ics.VEvent:
+			event := component.(*ics.VEvent)
+			// extract summary and time from original event
+			summary := event.GetProperty(ics.ComponentPropertySummary).Value
+			date, _ := event.GetStartAt()
+			id := event.Id()
+			// check if one of the profiles regex's matches summary
 			if date.After(profile.From) && profile.Until.After(date) {
-				if excludeRe.MatchString(summary) || excludeRe.MatchString(id) {
-					exclude = true
-					break
+				for _, excludeRe := range profile.RegEx {
+					if excludeRe.MatchString(summary) || excludeRe.MatchString(id) {
+						// remove event from calendar
+						remove(calendar.Components, i)
+						excludedEvents++
+						requestLogger.Debugf("Excluding event '%s' with id %s\n", summary, id)
+						continue
+					}
 				}
 			}
+		default:
+			continue
 		}
-		if !exclude {
-			// add event to new calendar
-			if !profile.PassID {
-				// overwrite uid to prevent conflicts with original ical stream
-				h := md5.New()
-				h.Write([]byte(event.Id()))
-				h.Write([]byte(profile.URL))
-				id = fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
-				event.SetProperty(ics.ComponentPropertyUniqueId, id)
-			}
-			newCalendar.AddVEvent(event)
-		} else {
-			excludedEvents++
-			requestLogger.Debugf("Excluding event '%s' with id %s\n", summary, id)
-		}
+	}
+
+	// overwrite uid to prevent conflicts with original ical stream
+	if !profile.PassID {
+		// deprecated in v0.4.1
+		log.Error("PassID is deprecated")
 	}
 
 	// read additional ical files
@@ -113,7 +97,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		addicsfile, _ := os.Open("addical.ics")
 		addics, _ := ics.ParseCalendar(addicsfile)
 		for _, event := range addics.Events() {
-			newCalendar.AddVEvent(event)
+			calendar.AddVEvent(event)
 			addedEvents++
 		}
 	}
@@ -144,14 +128,14 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			// add to new calendar
 			for _, event := range addcal.Events() {
-				newCalendar.AddVEvent(event)
+				calendar.AddVEvent(event)
 				addedEvents++
 			}
 		}
 	}
 
 	// make sure new calendar has all events but excluded and added
-	eventCountDiff := len(newCalendar.Events()) + excludedEvents - addedEvents - len(calendar.Events())
+	eventCountDiff := origlen + excludedEvents - addedEvents - len(calendar.Events())
 	if eventCountDiff == 0 {
 		requestLogger.Debugf("Output validation successfull; event counts match")
 	} else {
@@ -161,7 +145,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
-	fmt.Fprint(w, newCalendar.Serialize())
+	fmt.Fprint(w, calendar.Serialize())
 }
 
 func profileViewHandler(w http.ResponseWriter, r *http.Request) {
@@ -184,4 +168,8 @@ func profileViewHandler(w http.ResponseWriter, r *http.Request) {
 		requestLogger.Errorln(err)
 	}
 	viewTemplate.Execute(w, templateData{Name: profileName, URL: profileURL.String()})
+}
+
+func remove(slice []ics.Component, s int) []ics.Component {
+	return append(slice[:s], slice[s+1:]...)
 }
