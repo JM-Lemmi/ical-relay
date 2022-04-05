@@ -31,6 +31,8 @@ func removeByRegexSummaryAndTime(cal *ics.Calendar, regex regex, start time.Time
 	return count
 }
 
+// This function removes the events with an id matching the string.
+// It returns the number of events removed.
 func removeById(cal *ics.Calendar, id string) int {
 	var count int
 	for i, event := range cal.Events() { // iterate over events
@@ -39,6 +41,17 @@ func removeById(cal *ics.Calendar, id string) int {
 			count++
 			log.Debug("Excluding event with id " + id + "\n")
 		}
+	}
+	return count
+}
+
+// This function adds all events from cal2 to cal1.
+// All other properties, such as TZ are retained from cal1.
+func addEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
+	var count int
+	for _, event := range cal2.Events() {
+		cal1.AddVEvent(event)
+		count++
 	}
 	return count
 }

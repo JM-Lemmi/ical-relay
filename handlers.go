@@ -90,10 +90,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := os.Stat("addical.ics"); err == nil {
 		addicsfile, _ := os.Open("addical.ics")
 		addics, _ := ics.ParseCalendar(addicsfile)
-		for _, event := range addics.Events() {
-			newCalendar.AddVEvent(event)
-			addedEvents++
-		}
+		addedEvents = addEvents(newCalendar, addics)
 	}
 
 	// read additional ical url
@@ -121,10 +118,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 				requestLogger.Errorln(err)
 			}
 			// add to new calendar
-			for _, event := range addcal.Events() {
-				newCalendar.AddVEvent(event)
-				addedEvents++
-			}
+			addedEvents = addedEvents + addEvents(newCalendar, addcal)
 		}
 	}
 
