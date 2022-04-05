@@ -58,9 +58,10 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		requestLogger.Errorln(err)
 	}
 	origlen := len(calendar.Events())
+	var addedEvents int
+	var excludedEvents int
 
 	//exclude regex
-	var excludedEvents int
 	for _, excludeRe := range profile.RegEx {
 		excludedEvents = removeByRegexSummaryAndTime(calendar, excludeRe, profile.From, profile.Until)
 	}
@@ -71,39 +72,22 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read additional ical files
-	addedEvents := 0
-	if _, err := os.Stat("addical.ics"); err == nil {
-		addicsfile, _ := os.Open("addical.ics")
-		addics, _ := ics.ParseCalendar(addicsfile)
-		addedEvents = addEvents(calendar, addics)
+	if _, err := os.Stat("addical.ics"); err == nil { //this if is legacy until #20 is resolved, keep only content
+		count, err := addEventsFile(calendar, "addical.ics")
+		if err != nil {
+			requestLogger.Errorln(err)
+		}
+		addedEvents = addedEvents + count
 	}
 
-	// read additional ical url
-	if len(profile.AddURL) != 0 {
+	// read additional ical urls
+	if len(profile.AddURL) != 0 { // this if is legacy until #20 is resolved, keep only content
 		for _, url := range profile.AddURL {
-			response, err := http.Get(url)
+			count, err := addEventsURL(calendar, url)
 			if err != nil {
-				requestLogger.Errorln(err)
-				http.Error(w, fmt.Sprintf("Error requesting additional URL: %s", err.Error()), 500)
-				return
+				http.Error(w, fmt.Sprint(err), 500)
 			}
-			if response.StatusCode != 200 {
-				requestLogger.Errorf("Unexpected status '%s' from additional URL\n", response.Status)
-				resp, err := ioutil.ReadAll(response.Body)
-				if err != nil {
-					requestLogger.Errorln(err)
-				}
-				requestLogger.Debugf("Full response body: %s\n", resp)
-				http.Error(w, fmt.Sprintf("Error response from additional URL: Status %s", response.Status), 500)
-				return
-			}
-			// parse aditional calendar
-			addcal, err := ics.ParseCalendar(response.Body)
-			if err != nil {
-				requestLogger.Errorln(err)
-			}
-			// add to new calendar
-			addedEvents = addedEvents + addEvents(calendar, addcal)
+			addedEvents += count
 		}
 	}
 

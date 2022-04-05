@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"time"
 
 	ics "github.com/arran4/golang-ical"
@@ -79,6 +83,39 @@ func addEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 		count++
 	}
 	return count
+}
+
+func addEventsURL(cal *ics.Calendar, url string) (int, error) {
+	response, err := http.Get(url)
+	if err != nil {
+		log.Errorln(err)
+		return 0, fmt.Errorf("Error requesting additional URL: %s", err.Error())
+	}
+	if response.StatusCode != 200 {
+		log.Errorf("Unexpected status '%s' from additional URL\n", response.Status)
+		resp, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Errorln(err)
+		}
+		log.Debugf("Full response body: %s\n", resp)
+		return 0, fmt.Errorf("Error response from additional URL: Status %s", response.Status)
+	}
+	// parse aditional calendar
+	addcal, err := ics.ParseCalendar(response.Body)
+	if err != nil {
+		log.Errorln(err)
+	}
+	// add to new calendar
+	return addEvents(cal, addcal), nil
+}
+
+func addEventsFile(cal *ics.Calendar, filename string) (int, error) {
+	if _, err := os.Stat(filename); err != nil {
+		return 0, fmt.Errorf("File %s not found", filename)
+	}
+	addicsfile, _ := os.Open(filename)
+	addics, _ := ics.ParseCalendar(addicsfile)
+	return addEvents(cal, addics), nil
 }
 
 func remove(slice []ics.Component, s int) []ics.Component {
