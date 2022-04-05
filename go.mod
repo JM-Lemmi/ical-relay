@@ -1,4 +1,4 @@
-module github.com/thor77/ical-relay
+module github.com/jm-lemmi/ical-relay
 
 go 1.12
 
