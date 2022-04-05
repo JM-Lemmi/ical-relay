@@ -57,22 +57,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		requestLogger.Errorln(err)
 	}
-	// create new calendar, excluding based on pattern
-	newCalendar := ics.NewCalendar()
-	newCalendar.CalendarProperties = []ics.CalendarProperty{
-		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "METHOD", Value: "PUBLISH"}},
-		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "VERSION", Value: "2.0"}},
-		ics.CalendarProperty{BaseProperty: ics.BaseProperty{IANAToken: "PRODID", Value: "-//ical-relay//" + profileName}},
-	}
-	for _, component := range calendar.Components {
-		if len(component.SubComponents()) > 1 {
-			if len(component.UnknownPropertiesIANAProperties()) > 1 {
-				if component.UnknownPropertiesIANAProperties()[0].IANAToken == "TZID" {
-					newCalendar.Components = append(newCalendar.Components, component)
-				}
-			}
-		}
-	}
+	origlen := len(calendar.Events())
 
 	//exclude regex
 	var excludedEvents int
@@ -82,7 +67,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 	// legacy loop until #23 is resolved
 	for _, event := range calendar.Events() {
-		newCalendar.AddVEvent(event)
+		calendar.AddVEvent(event)
 	}
 
 	// read additional ical files
@@ -90,7 +75,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := os.Stat("addical.ics"); err == nil {
 		addicsfile, _ := os.Open("addical.ics")
 		addics, _ := ics.ParseCalendar(addicsfile)
-		addedEvents = addEvents(newCalendar, addics)
+		addedEvents = addEvents(calendar, addics)
 	}
 
 	// read additional ical url
@@ -118,12 +103,12 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 				requestLogger.Errorln(err)
 			}
 			// add to new calendar
-			addedEvents = addedEvents + addEvents(newCalendar, addcal)
+			addedEvents = addedEvents + addEvents(calendar, addcal)
 		}
 	}
 
 	// make sure new calendar has all events but excluded and added
-	eventCountDiff := len(newCalendar.Events()) + excludedEvents - addedEvents - len(calendar.Events())
+	eventCountDiff := origlen + excludedEvents - addedEvents - len(calendar.Events())
 	if eventCountDiff == 0 {
 		requestLogger.Debugf("Output validation successfull; event counts match")
 	} else {
@@ -133,7 +118,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
-	fmt.Fprint(w, newCalendar.Serialize())
+	fmt.Fprint(w, calendar.Serialize())
 }
 
 func profileViewHandler(w http.ResponseWriter, r *http.Request) {
