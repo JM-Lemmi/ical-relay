@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/md5"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -74,37 +73,16 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	excludedEvents := 0
+
+	//exclude regex
+	var excludedEvents int
+	for _, excludeRe := range profile.RegEx {
+		excludedEvents = removeByRegexSummaryAndTime(calendar, excludeRe, profile.From, profile.Until)
+	}
+
+	// legacy loop until #23 is resolved
 	for _, event := range calendar.Events() {
-		// extract summary and time from original event
-		summary := event.GetProperty(ics.ComponentPropertySummary).Value
-		date, _ := event.GetStartAt()
-		id := event.Id()
-		// check if one of the profiles regex's matches summary
-		exclude := false
-		for _, excludeRe := range profile.RegEx {
-			if date.After(profile.From) && profile.Until.After(date) {
-				if excludeRe.MatchString(summary) || excludeRe.MatchString(id) {
-					exclude = true
-					break
-				}
-			}
-		}
-		if !exclude {
-			// add event to new calendar
-			if !profile.PassID {
-				// overwrite uid to prevent conflicts with original ical stream
-				h := md5.New()
-				h.Write([]byte(event.Id()))
-				h.Write([]byte(profile.URL))
-				id = fmt.Sprintf("%x@%s", h.Sum(nil), "ical-relay")
-				event.SetProperty(ics.ComponentPropertyUniqueId, id)
-			}
-			newCalendar.AddVEvent(event)
-		} else {
-			excludedEvents++
-			requestLogger.Debugf("Excluding event '%s' with id %s\n", summary, id)
-		}
+		newCalendar.AddVEvent(event)
 	}
 
 	// read additional ical files
