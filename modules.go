@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -71,11 +72,16 @@ func removeByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, start t
 				// event is in time range
 				if regex.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
 					// event matches regex
-					remove(cal.Components, i)
+					cal.Components = remove(cal.Components, i)
 					log.Debug("Excluding event '" + event.GetProperty(ics.ComponentPropertySummary).Value + "' with id " + event.Id() + "\n")
 					count--
+				} else {
+					log.Debug("Event '" + event.GetProperty(ics.ComponentPropertySummary).Value + "' with id " + event.Id() + " does not match regex" + regex.String() + "\n")
 				}
 			}
+		default:
+			// print type of component
+			log.Debug("Component type: " + reflect.TypeOf(cal.Components[i]).String() + "\n")
 		}
 	}
 	return count
@@ -94,7 +100,7 @@ func moduleDeleteId(cal *ics.Calendar, params map[string]string) (int, error) {
 		case *ics.VEvent:
 			event := component.(*ics.VEvent)
 			if event.Id() == params["id"] {
-				remove(cal.Components, i)
+				cal.Components = remove(cal.Components, i)
 				count--
 				log.Debug("Excluding event with id " + params["id"] + "\n")
 				break
@@ -116,12 +122,10 @@ func addEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 }
 
 func moduleAddURL(cal *ics.Calendar, params map[string]string) (int, error) {
-	var count int
 	if params["url"] == "" {
-		return 0, fmt.Errorf("Missing mandatory Parameter 'urls'")
+		return 0, fmt.Errorf("Missing mandatory Parameter 'url'")
 	}
-	addEventsURL(cal, params["urls"])
-	return count, nil
+	return addEventsURL(cal, params["url"])
 }
 
 func addEventsURL(cal *ics.Calendar, url string) (int, error) {
@@ -161,12 +165,10 @@ func addMultiURL(cal *ics.Calendar, urls []string) (int, error) {
 }
 
 func moduleAddFile(cal *ics.Calendar, params map[string]string) (int, error) {
-	var count int
 	if params["filename"] == "" {
 		return 0, fmt.Errorf("Missing mandatory Parameter 'file'")
 	}
-	addEventsFile(cal, params["filename"])
-	return count, nil
+	return addEventsFile(cal, params["filename"])
 }
 
 func addEventsFile(cal *ics.Calendar, filename string) (int, error) {
@@ -226,7 +228,7 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 			event := cal.Components[i].(*ics.VEvent)
 			date, _ := event.GetStartAt()
 			if date.After(after) && before.After(date) {
-				remove(cal.Components, i)
+				cal.Components = remove(cal.Components, i)
 				count++
 				log.Debug("Excluding event with id " + event.Id() + "\n")
 			}
