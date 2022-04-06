@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"regexp"
 
-	"time"
-
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -15,13 +13,9 @@ type regex struct {
 }
 
 type profile struct {
-	URL    string    `yaml:"url"`
-	RegEx  []regex   `yaml:"regex"`
-	Public bool      `yaml:"public"`
-	From   time.Time `yaml:"from"`
-	Until  time.Time `yaml:"until"`
-	PassID bool      `yaml:"passid"`
-	AddURL []string  `yaml:"addurl"`
+	Source  string              `yaml:"source"`
+	Public  bool                `yaml:"public"`
+	Modules []map[string]string `yaml:"modules,omitempty"`
 }
 
 type serverConfig struct {
