@@ -82,13 +82,11 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 	// read additional ical urls
 	if len(profile.AddURL) != 0 { // this if is legacy until #20 is resolved, keep only content
-		for _, url := range profile.AddURL {
-			count, err := addEventsURL(calendar, url)
-			if err != nil {
-				http.Error(w, fmt.Sprint(err), 500)
-			}
-			addedEvents += count
+		count, err := addMultiFile(calendar, profile.AddURL)
+		if err != nil {
+			http.Error(w, fmt.Sprint(err), 500)
 		}
+		addedEvents += count
 	}
 
 	// make sure new calendar has all events but excluded and added
