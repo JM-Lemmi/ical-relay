@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/google/uuid"
@@ -36,7 +35,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// request original ical
-	response, err := http.Get(profile.URL)
+	response, err := http.Get(profile.Source)
 	if err != nil {
 		requestLogger.Errorln(err)
 		http.Error(w, fmt.Sprintf("Error requesting original URL: %s", err.Error()), 500)
@@ -59,44 +58,26 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	origlen := len(calendar.Events())
 	var addedEvents int
-	var excludedEvents int
 
-	//exclude regex
-	for _, excludeRe := range profile.RegEx {
-		excludedEvents = removeByRegexSummaryAndTime(calendar, excludeRe, profile.From, profile.Until)
-	}
-
-	// legacy loop until #23 is resolved
-	for _, event := range calendar.Events() {
-		calendar.AddVEvent(event)
-	}
-
-	// read additional ical files
-	if _, err := os.Stat("addical.ics"); err == nil { //this if is legacy until #20 is resolved, keep only content
-		count, err := addEventsFile(calendar, "addical.ics")
+	for i := range profile.Modules {
+		log.Debug("Requested Module: " + profile.Modules[i]["name"])
+		count, err := callModule(modules[profile.Modules[i]["name"]], profile.Modules[i], calendar)
 		if err != nil {
 			requestLogger.Errorln(err)
-		}
-		addedEvents = addedEvents + count
-	}
-
-	// read additional ical urls
-	if len(profile.AddURL) != 0 { // this if is legacy until #20 is resolved, keep only content
-		count, err := addMultiFile(calendar, profile.AddURL)
-		if err != nil {
-			http.Error(w, fmt.Sprint(err), 500)
+			http.Error(w, fmt.Sprintf("Error executing module: %s", err.Error()), 500)
+			return
 		}
 		addedEvents += count
 	}
 
 	// make sure new calendar has all events but excluded and added
-	eventCountDiff := origlen + excludedEvents - addedEvents - len(calendar.Events())
+	eventCountDiff := origlen + addedEvents - len(calendar.Events())
 	if eventCountDiff == 0 {
 		requestLogger.Debugf("Output validation successfull; event counts match")
 	} else {
 		requestLogger.Warnf("This shouldn't happen, event count diff: %d", eventCountDiff)
 	}
-	requestLogger.Debugf("Excluded %d events and added %d events", excludedEvents, addedEvents)
+	requestLogger.Debugf("Added %d events", addedEvents)
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
