@@ -109,6 +109,18 @@ func addEventsURL(cal *ics.Calendar, url string) (int, error) {
 	return addEvents(cal, addcal), nil
 }
 
+func addMultiURL(cal *ics.Calendar, urls []string) (int, error) {
+	var count int
+	for _, url := range urls {
+		c, err := addEventsURL(cal, url)
+		if err != nil {
+			return count, err
+		}
+		count += c
+	}
+	return count, nil
+}
+
 func addEventsFile(cal *ics.Calendar, filename string) (int, error) {
 	if _, err := os.Stat(filename); err != nil {
 		return 0, fmt.Errorf("File %s not found", filename)
@@ -116,6 +128,18 @@ func addEventsFile(cal *ics.Calendar, filename string) (int, error) {
 	addicsfile, _ := os.Open(filename)
 	addics, _ := ics.ParseCalendar(addicsfile)
 	return addEvents(cal, addics), nil
+}
+
+func addMultiFile(cal *ics.Calendar, filenames []string) (int, error) {
+	var count int
+	for _, filename := range filenames {
+		c, err := addEventsFile(cal, filename)
+		if err != nil {
+			return count, err
+		}
+		count += c
+	}
+	return count, nil
 }
 
 func remove(slice []ics.Component, s int) []ics.Component {
