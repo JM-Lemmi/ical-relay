@@ -58,13 +58,14 @@ func removeByRegexSummary(cal *ics.Calendar, regex regexp.Regexp) int {
 	// this is the maximum time that can be represented in the time.Time struct
 }
 
-// This function is a helper for removeByRegexSummaryAndTime. It removes the first element from the calendar matching the regex
-// It returns true, if it removed an element and false, if it didnt
-func removeSingleByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, start time.Time, end time.Time) bool {
-	for i, component := range cal.Components { // iterate over events
-		switch component.(type) {
+// This function is used to remove the events that are in the time range and match the regex string.
+// It returns the number of events removed. (always negative)
+func removeByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, start time.Time, end time.Time) int {
+	var count int
+	for i := len(cal.Components) - 1; i >= 0; i-- { // iterate over events
+		switch cal.Components[i].(type) {
 		case *ics.VEvent:
-			event := component.(*ics.VEvent)
+			event := cal.Components[i].(*ics.VEvent)
 			date, _ := event.GetStartAt()
 			if date.After(start) && end.After(date) {
 				// event is in time range
@@ -72,25 +73,9 @@ func removeSingleByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, s
 					// event matches regex
 					remove(cal.Components, i)
 					log.Debug("Excluding event '" + event.GetProperty(ics.ComponentPropertySummary).Value + "' with id " + event.Id() + "\n")
-					return true
+					count--
 				}
 			}
-		}
-	}
-	return false
-}
-
-// This function is used to remove the events that are in the time range and match the regex string.
-// It returns the number of events removed.
-func removeByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, start time.Time, end time.Time) int {
-	var count int
-	loop := true
-	for {
-		loop = removeSingleByRegexSummaryAndTime(cal, regex, start, end)
-		if loop {
-			count--
-		} else {
-			break
 		}
 	}
 	return count
@@ -104,27 +89,19 @@ func moduleDeleteId(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["id"] == "" {
 		return 0, fmt.Errorf("Missing mandatory Parameter 'id'")
 	}
-	removeById(cal, params["id"])
-	return count, nil
-}
-
-// This function removes the event with an id matching the string.
-// Only removes one event
-// It returns the number of events removed.
-func removeById(cal *ics.Calendar, id string) int {
-	var count int
 	for i, component := range cal.Components { // iterate over events
 		switch component.(type) {
 		case *ics.VEvent:
 			event := component.(*ics.VEvent)
-			if event.Id() == id {
+			if event.Id() == params["id"] {
 				remove(cal.Components, i)
 				count--
-				log.Debug("Excluding event with id " + id + "\n")
+				log.Debug("Excluding event with id " + params["id"] + "\n")
+				break
 			}
 		}
 	}
-	return count
+	return count, nil
 }
 
 // This function adds all events from cal2 to cal1.
@@ -243,11 +220,10 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 	}
 
 	// remove events
-	// TODO fix #23
-	for i, component := range cal.Components { // iterate over events
-		switch component.(type) {
+	for i := len(cal.Components) - 1; i >= 0; i-- { // iterate over events
+		switch cal.Components[i].(type) {
 		case *ics.VEvent:
-			event := component.(*ics.VEvent)
+			event := cal.Components[i].(*ics.VEvent)
 			date, _ := event.GetStartAt()
 			if date.After(after) && before.After(date) {
 				remove(cal.Components, i)
