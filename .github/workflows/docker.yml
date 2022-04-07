@@ -6,7 +6,7 @@ on:
     tags:        
       - v*
     branches:
-      - develop
+      - dev
 
 jobs:
   Deploy:
