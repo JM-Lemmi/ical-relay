@@ -1,53 +1,86 @@
 ical-relay
 ==========
-Relay ical event url and exclude events based on a regex.
+Relay ical urls and edit them on the fly with different modules.
 
 # Usage
-* Run from source: `go run .`
-* Build and run: `rice embed-go && go build . && ./ical-relay`
 
-Access filtered ical file on `server:8080/profiles/profilename`
+You can download an example configuration file from [here](https://raw.githubusercontent.com/JM-Lemmi/ical-relay/master/config.yml.example).
 
-Add `config.toml` to executing directory for configuration options.
+The edited ical can be accessed on `http://server/profiles/profilename`
 
-All events in `addical.ics` will be added to the filtered ical.
+## Docker Container
 
-# Config
-```toml
-[server]
-addr = ":8080"
-loglevel = "info"
-
-[profiles]
-    [profiles.profilename]
-    url = "https://example.com/events.ical"
-    regex = ["pattern1", "pattern2"]
-    public = true
-    from = "1970-01-01T00:00:00Z"
-    until = "2100-01-01T00:00:00Z"
-    passid = true
+```
+docker run -d -p 8080:80 -v ~/ical-relay/config.yml:/app/config.yml ghcr.io/jm-lemmi/ical-relay
 ```
 
-### URL
+## Standalone
 
-The URL of the original ical.
+Download the binary from the newest release.
+The configuration file has to be in your current directory, when starting ical-relay.
 
-If pointed to localhost:8080/profiles/otherprofile it can be used to combine multiple profiles.
+```
+./ical-relay
+```
 
-### Regex
+## Build
+* Run from source: `go run .`
+* Build and run: `go build . && ./ical-relay`
 
-The Regex Patterns are matched against both the Summary as well as the ID. This can be used to exclude one specific entry.
+# Config
 
-### From & Until
+```yaml
+server:
+    addr: ":80"
+    loglevel: "info"
 
-The From and Until value allow for excluding the Pattern only in the selected Timeframe.
+profiles:
+    <profilename>:
+        source: "https://example.com/calendar.ics"
+        public: true
+        modules:
+        - name: "delete-bysummary-regex"
+          regex: "testentry"
+          from: "2021-12-02T00:00:00Z"
+          until: "2021-12-31T00:00:00Z"
+        - name: "add-url"
+          url: "https://othersource.com/othercalendar.ics"
+          header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+```
 
-Time has to be provided in compliance with RFC3339.
+The `server` section contains the configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
+You can list as many profiles as you want. Each profile has to have a source.
+You can then add as many modules as you want. They are identified by the `name:`. All other fields are dependent on the module.
+The modules are executed in the order they are listed and you can call a module multiple times.
 
-### PassID
+# Modules
 
-Bool Value to allow passing the original EventIDs to the new calendar.
+Feel free do open a PR with modules of your own.
 
-### AddURL
+## delete-bysummary-regex
 
-A list of URLs pointing to other icals, whose entries should be added to the final calendar.
+Delete all entries with a summary matching the regex.
+The module can be called with a from and/or until date in RFC3339 format.
+
+## delete-byid
+
+Deletes an entry by its id.
+
+## add-url
+
+Adds all events from the specified url.
+The module can be called with a header-<headername> option to pass Authentication cookies or X-Forwarded-Host headers.
+
+## add-file
+
+Adds all events from the specified local file.
+
+## delete-timeframe
+
+Deletes all events in the specified timeframe. The timeframe is specified with a after and/or before date in RFC3339 format.
+If only after is specified, all events after the date are deleted.
+If only before is specified, all events before the date are deleted.
+
+## delete-duplicates
+
+Deletes events, if there already is an event with the same start, end and summary.
