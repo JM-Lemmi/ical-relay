@@ -1,5 +1,5 @@
 server:
-    addr: ":8080"
+    addr: ":80"
     loglevel: "debug"
 
 profiles:
