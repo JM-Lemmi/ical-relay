@@ -1,6 +1,6 @@
 server:
     addr: ":80"
-    loglevel: "debug"
+    loglevel: "info"
 
 profiles:
     relay:
