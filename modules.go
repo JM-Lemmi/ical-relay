@@ -77,13 +77,11 @@ func removeByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, start t
 					cal.Components = remove(cal.Components, i)
 					log.Debug("Excluding event '" + event.GetProperty(ics.ComponentPropertySummary).Value + "' with id " + event.Id() + "\n")
 					count--
-				} else {
-					log.Debug("Event '" + event.GetProperty(ics.ComponentPropertySummary).Value + "' with id " + event.Id() + " does not match regex" + regex.String() + "\n")
 				}
 			}
 		default:
 			// print type of component
-			log.Debug("Component type: " + reflect.TypeOf(cal.Components[i]).String() + "\n")
+			log.Debug("Unknown component type ignored: " + reflect.TypeOf(cal.Components[i]).String() + "\n")
 		}
 	}
 	return count
@@ -212,8 +210,8 @@ func addMultiFile(cal *ics.Calendar, filenames []string) (int, error) {
 }
 
 // Removes all Events in a passed Timeframe.
-// Parameters: either "start" or "end" mandatory
-// Format is RFC3339: "2006-01-02T15:04:05-07:00"
+// Parameters: either "after" or "before" mandatory
+// Format is RFC3339: "2006-01-02T15:04:05Z"
 // Returns the number of events removed. (always negative)
 func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, error) {
 	var count int
@@ -224,6 +222,7 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 		return 0, fmt.Errorf("Missing both Parameters 'start' or 'end'. One has to be present")
 	}
 	if params["after"] == "" {
+		log.Debug("No after time given. Using time 0.\n")
 		after = time.Time{}
 	} else {
 		after, err = time.Parse(time.RFC3339, params["start"])
@@ -231,15 +230,17 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 			return 0, fmt.Errorf("Invalid start time: %s", err.Error())
 		}
 	}
-	if params["end"] == "" {
+	if params["before"] == "" {
+		log.Debug("No end time given. Using max time\n")
 		before = time.Unix(1<<63-1-int64((1969*365+1969/4-1969/100+1969/400)*24*60*60), 999999999)
 	} else {
-		before, err = time.Parse(time.RFC3339, params["end"])
+		before, err = time.Parse(time.RFC3339, params["before"])
 		if err != nil {
 			return 0, fmt.Errorf("Invalid end time: %s", err.Error())
 		}
 	}
 
+	log.Debugf("Deleting events between %s and %s\n", after.Format(time.RFC3339), before.Format(time.RFC3339))
 	// remove events
 	for i := len(cal.Components) - 1; i >= 0; i-- { // iterate over events
 		switch cal.Components[i].(type) {
@@ -248,7 +249,7 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 			date, _ := event.GetStartAt()
 			if date.After(after) && before.After(date) {
 				cal.Components = remove(cal.Components, i)
-				count++
+				count--
 				log.Debug("Excluding event with id " + event.Id() + "\n")
 			}
 		}
