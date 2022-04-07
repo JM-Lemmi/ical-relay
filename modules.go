@@ -122,24 +122,6 @@ func addEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 	return count
 }
 
-func GetWithXForwardedHeaders(url string, r *http.Request) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	if r.Header.Get("X-Forwarded-Host") != "" {
-		req.Header.Set("X-Forwarded-Host", r.Header.Get("X-Forwarded-Host"))
-	} else {
-		req.Header.Set("X-Forwarded-Host", r.Host)
-	}
-	if r.Header.Get("X-Forwarded-Proto") != "" {
-		req.Header.Set("X-Forwarded-Proto", r.Header.Get("X-Forwarded-Proto"))
-	} else {
-		req.Header.Set("X-Forwarded-Proto", "http") // <- this package has no HTTPS support, so we just assume HTTP
-	}
-	return http.DefaultClient.Do(req)
-}
-
 func moduleAddURL(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["url"] == "" {
 		return 0, fmt.Errorf("Missing mandatory Parameter 'url'")
