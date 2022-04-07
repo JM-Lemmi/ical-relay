@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strings"
 	"time"
 
 	ics "github.com/arran4/golang-ical"
@@ -125,11 +126,28 @@ func moduleAddURL(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["url"] == "" {
 		return 0, fmt.Errorf("Missing mandatory Parameter 'url'")
 	}
-	return addEventsURL(cal, params["url"])
+	// put all params starting with header- into header map
+	header := make(map[string]string)
+	for k, v := range params {
+		if strings.HasPrefix(k, "header-") {
+			header[strings.TrimPrefix(k, "header-")] = v
+		}
+	}
+
+	return addEventsURL(cal, params["url"], header)
 }
 
-func addEventsURL(cal *ics.Calendar, url string) (int, error) {
-	response, err := http.Get(url)
+func addEventsURL(cal *ics.Calendar, url string, headers map[string]string) (int, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	response, err := http.DefaultClient.Do(req)
+
 	if err != nil {
 		log.Errorln(err)
 		return 0, fmt.Errorf("Error requesting additional URL: %s", err.Error())
@@ -152,10 +170,10 @@ func addEventsURL(cal *ics.Calendar, url string) (int, error) {
 	return addEvents(cal, addcal), nil
 }
 
-func addMultiURL(cal *ics.Calendar, urls []string) (int, error) {
+func addMultiURL(cal *ics.Calendar, urls []string, header map[string]string) (int, error) {
 	var count int
 	for _, url := range urls {
-		c, err := addEventsURL(cal, url)
+		c, err := addEventsURL(cal, url, header)
 		if err != nil {
 			return count, err
 		}
