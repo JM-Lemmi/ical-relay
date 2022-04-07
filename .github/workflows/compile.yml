@@ -1,0 +1,26 @@
+name: Deploy Docker
+
+# Run workflow on tags starting with v (eg. v2, v1.2.0)
+on:
+  push:
+    tags:        
+      - v*
+
+jobs:
+  Deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          tags: type=semver,pattern={{raw}}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18.0' # The Go version to download (if necessary) and use.
+      - run: go build .
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ical-relay_${{ steps.meta.outputs.tags }}_amd64
+          path: ./ical-relay
