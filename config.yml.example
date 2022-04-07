@@ -13,3 +13,4 @@ profiles:
           until: "2021-12-31T00:00:00Z"
         - name: "add-url"
           url: "https://othersource.com/othercalendar.ics"
+          header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
