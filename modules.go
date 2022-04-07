@@ -20,6 +20,7 @@ var modules = map[string]func(*ics.Calendar, map[string]string) (int, error){
 	"add-url":                moduleAddURL,
 	"add-file":               moduleAddFile,
 	"delete-timeframe":       moduleDeleteTimeframe,
+	"delete-duplicates":      moduleDeleteDuplicates,
 }
 
 // This wrappter gets a function from the above modules map and calls it with the parameters and the passed calendar.
@@ -256,6 +257,45 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 	return count, nil
 }
 
+// This Module deletes duplicate Events.
+// No Parameters
+// Returns the number of events removed. (always negative)
+// Duplicates are defined by the same Summary and the same start and end time. Only the event that is latest in the file will be kept.
+// TODO smarter: if the description or other components differ, it should combine them
+func moduleDeleteDuplicates(cal *ics.Calendar, params map[string]string) (int, error) {
+	var count int
+	var uniques []string
+	for i := len(cal.Components) - 1; i >= 0; i-- { // iterate over events backwards
+		switch cal.Components[i].(type) {
+		case *ics.VEvent:
+			event := cal.Components[i].(*ics.VEvent)
+			start, _ := event.GetStartAt()
+			end, _ := event.GetEndAt()
+			identifier := start.String() + end.String() + event.GetProperty(ics.ComponentPropertySummary).Value
+			if stringInSlice(identifier, uniques) {
+				cal.Components = remove(cal.Components, i)
+				count--
+				log.Debug("Excluding event with id " + event.Id() + "\n")
+			} else {
+				uniques = append(uniques, identifier)
+			}
+		}
+	}
+	return count, nil
+}
+
+// removes the element at index i from ics.Component slice
+// warning: if you iterate over []ics.Component forward, this remove will lead to mistakes. Iterate backwards instead!
 func remove(slice []ics.Component, s int) []ics.Component {
 	return append(slice[:s], slice[s+1:]...)
+}
+
+// returns true, if a is in list b
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
