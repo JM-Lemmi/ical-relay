@@ -1,12 +1,11 @@
 package main
 
 import (
+	"io/ioutil"
 	"regexp"
 
-	"time"
-
-	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 type regex struct {
@@ -14,24 +13,20 @@ type regex struct {
 }
 
 type profile struct {
-	URL    string
-	RegEx  []regex
-	Public bool
-	From   time.Time
-	Until  time.Time
-	PassID bool
-	AddURL []string
+	Source  string              `yaml:"source"`
+	Public  bool                `yaml:"public"`
+	Modules []map[string]string `yaml:"modules,omitempty"`
 }
 
 type serverConfig struct {
-	Addr     string
-	LogLevel log.Level
+	Addr     string    `yaml:"addr"`
+	LogLevel log.Level `yaml:"loglevel"`
 }
 
 // Config represents configuration for the application
 type Config struct {
-	Profiles map[string]profile
-	Server   serverConfig
+	Profiles map[string]profile `yaml:"profiles"`
+	Server   serverConfig       `yaml:"server"`
 }
 
 func (r *regex) UnmarshalText(text []byte) error {
@@ -44,8 +39,14 @@ func (r *regex) UnmarshalText(text []byte) error {
 func ParseConfig(path string) (Config, error) {
 	var tmpConfig Config
 
-	if _, err := toml.DecodeFile(path, &tmpConfig); err != nil {
-		return tmpConfig, err
+	yamlFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+	}
+
+	err = yaml.Unmarshal(yamlFile, &tmpConfig)
+	if err != nil {
+		log.Fatalf("Unmarshal: %v", err)
 	}
 
 	// defaults
