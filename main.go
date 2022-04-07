@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var configPath = "config.toml"
+var configPath = "config.yml"
 var conf Config
 
 var router *mux.Router
