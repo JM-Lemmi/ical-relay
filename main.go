@@ -9,6 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var version = "1.0.0-rc2"
+
 var configPath = "config.yml"
 var conf Config
 
@@ -20,6 +22,8 @@ func main() {
 	if len(os.Args) >= 2 {
 		configPath = os.Args[1]
 	}
+
+	log.Info("Welcome to ical-relay, version " + version)
 
 	// load config
 	var err error
