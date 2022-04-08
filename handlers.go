@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"encoding/json"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/google/uuid"
@@ -26,7 +27,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 func profileHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
 	requestLogger.Infoln("Client-addr:", r.RemoteAddr)
-	// load profile
+	// load profile & conf
+	conf, err := ParseConfig(configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 	vars := mux.Vars(r)
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
@@ -184,4 +189,26 @@ func profileViewHandler(w http.ResponseWriter, r *http.Request) {
 		requestLogger.Errorln(err)
 	}
 	viewTemplate.Execute(w, templateData{Name: profileName, URL: profileURL.String()})
+}
+
+func apiaddurloverwriteHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
+	requestLogger.Infoln("Client-addr:", r.RemoteAddr)
+
+	// load profile
+	vars := mux.Vars(r)
+	profileName := vars["profile"]
+
+	var itemContent []string
+
+	// get new setting value
+	body, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(body, &itemContent) // wenn nicht in bytes, dann zu bytes casten
+
+	WriteAddurlConfig(profileName, itemContent)
+
+	//if !err {
+		 // TODO write 200ok
+	//}
+	// TODO reutrn error
 }

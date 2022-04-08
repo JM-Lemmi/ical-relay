@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"time"
+	"os"
 
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
@@ -57,4 +58,17 @@ func ParseConfig(path string) (Config, error) {
 	}
 
 	return tmpConfig, nil
+}
+
+
+func WriteAddurlConfig(profileName string, itemContent []string) {
+	profile := conf.Profiles[profileName]
+	profile.AddURL = itemContent
+	conf.Profiles[profileName] = profile
+	// TODO marshal regex back to how it hsould be
+
+	f, _ := os.Create(configPath)
+	defer f.Close()
+	
+	toml.NewEncoder(f).Encode(conf)
 }

@@ -11,4 +11,4 @@ require (
 	github.com/sirupsen/logrus v1.4.0
 )
 
-replace github.com/arran4/golang-ical => /home/julian/Github/golang-ical
+replace github.com/arran4/golang-ical => ../golang-ical

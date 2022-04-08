@@ -42,6 +42,7 @@ func main() {
 	router.HandleFunc("/", indexHandler)
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/profiles/{profile}/view", profileViewHandler)
+	router.HandleFunc("/api/overwrite/{profile}/addurl", apiaddurloverwriteHandler)
 
 	// listen and serve
 	address := conf.Server.Addr
