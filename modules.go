@@ -21,6 +21,8 @@ var modules = map[string]func(*ics.Calendar, map[string]string) (int, error){
 	"add-file":               moduleAddFile,
 	"delete-timeframe":       moduleDeleteTimeframe,
 	"delete-duplicates":      moduleDeleteDuplicates,
+	"edit-byid":              moduleEditId,
+	"edit-bysummary-regex":   moduleEditSummaryRegex,
 }
 
 // This wrappter gets a function from the above modules map and calls it with the parameters and the passed calendar.
@@ -283,6 +285,151 @@ func moduleDeleteDuplicates(cal *ics.Calendar, params map[string]string) (int, e
 		}
 	}
 	return count, nil
+}
+
+// Edits an Event with the passed id.
+// Parameters:
+// - 'id', mandatory: the id of the event to edit
+// - 'new-summary', optional: the new summary
+// - 'new-description', optional: the new description
+// - 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
+// - 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
+// - 'new-location', optional: the new location
+// The return value is the number of events removed or added (should always be 0)
+func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
+	if params["id"] == "" {
+		return 0, fmt.Errorf("Missing mandatory Parameter 'id'")
+	}
+	for i := len(cal.Components) - 1; i >= 0; i-- { // iterate over events backwards
+		switch cal.Components[i].(type) {
+		case *ics.VEvent:
+			event := cal.Components[i].(*ics.VEvent)
+			if event.Id() == params["id"] {
+				log.Debug("Changing event with id " + event.Id())
+				if params["new-summary"] != "" {
+					event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
+					log.Debug("Changed summary to " + params["new-summary"])
+				}
+				if params["new-description"] != "" {
+					event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
+					log.Debug("Changed description to " + params["new-description"])
+				}
+				if params["new-location"] != "" {
+					event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
+					log.Debug("Changed location to " + params["new-location"])
+				}
+				if params["new-start"] != "" {
+					start, err := time.Parse(time.RFC3339, params["new-start"])
+					if err != nil {
+						return 0, fmt.Errorf("Invalid start time: %s", err.Error())
+					}
+					event.SetStartAt(start)
+					log.Debug("Changed start to " + params["new-start"])
+				}
+				if params["new-end"] != "" {
+					end, err := time.Parse(time.RFC3339, params["new-end"])
+					if err != nil {
+						return 0, fmt.Errorf("Invalid end time: %s", err.Error())
+					}
+					event.SetEndAt(end)
+					log.Debug("Changed end to " + params["new-end"])
+				}
+				// adding edited event back to calendar
+				cal.Components[i] = event
+				return 0, nil
+			}
+		}
+	}
+	log.Debug("No Event with id " + params["id"] + " found")
+	return 0, nil
+}
+
+// Edits all Events with the matching regex title.
+// Parameters:
+// - 'id', mandatory: the id of the event to edit
+// - 'after', optional: beginning of search timeframe
+// - 'before', optional: end of search timeframe
+// - 'new-summary', optional: the new summary
+// - 'new-description', optional: the new description
+// - 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
+// - 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
+// - 'new-location', optional: the new location
+// The return value is the number of events removed or added (should always be 0)
+func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, error) {
+	// parse regex
+	if params["regex"] == "" {
+		return 0, fmt.Errorf("Missing mandatory Parameter 'regex'")
+	}
+	re, err := regexp.Compile(params["regex"])
+	if err != nil {
+		return 0, fmt.Errorf("Invalid regex: %s", err.Error())
+	}
+	// parse timespan
+	var after time.Time
+	var before time.Time
+	if params["after"] == "" {
+		log.Debug("No after time given. Using time 0.\n")
+		after = time.Time{}
+	} else {
+		after, err = time.Parse(time.RFC3339, params["start"])
+		if err != nil {
+			return 0, fmt.Errorf("Invalid after time: %s", err.Error())
+		}
+	}
+	if params["before"] == "" {
+		log.Debug("No before time given. Using max time\n")
+		before = time.Unix(1<<63-1-int64((1969*365+1969/4-1969/100+1969/400)*24*60*60), 999999999)
+	} else {
+		before, err = time.Parse(time.RFC3339, params["before"])
+		if err != nil {
+			return 0, fmt.Errorf("Invalid before time: %s", err.Error())
+		}
+	}
+
+	// iterate over events backwards
+	for i := len(cal.Components) - 1; i >= 0; i-- {
+		switch cal.Components[i].(type) {
+		case *ics.VEvent:
+			event := cal.Components[i].(*ics.VEvent)
+			date, _ := event.GetStartAt()
+			if date.After(after) && before.After(date) {
+				if re.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
+					log.Debug("Changing event with id " + event.Id())
+					if params["new-summary"] != "" {
+						event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
+						log.Debug("Changed summary to " + params["new-summary"])
+					}
+					if params["new-description"] != "" {
+						event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
+						log.Debug("Changed description to " + params["new-description"])
+					}
+					if params["new-location"] != "" {
+						event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
+						log.Debug("Changed location to " + params["new-location"])
+					}
+					if params["new-start"] != "" {
+						start, err := time.Parse(time.RFC3339, params["new-start"])
+						if err != nil {
+							return 0, fmt.Errorf("Invalid start time: %s", err.Error())
+						}
+						event.SetStartAt(start)
+						log.Debug("Changed start to " + params["new-start"])
+					}
+					if params["new-end"] != "" {
+						end, err := time.Parse(time.RFC3339, params["new-end"])
+						if err != nil {
+							return 0, fmt.Errorf("Invalid end time: %s", err.Error())
+						}
+						event.SetEndAt(end)
+						log.Debug("Changed end to " + params["new-end"])
+					}
+					// adding edited event back to calendar
+					cal.Components[i] = event
+				}
+			}
+		}
+	}
+	return 0, nil
 }
 
 // removes the element at index i from ics.Component slice
