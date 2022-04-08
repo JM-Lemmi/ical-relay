@@ -214,6 +214,7 @@ func addMultiFile(cal *ics.Calendar, filenames []string) (int, error) {
 // Removes all Events in a passed Timeframe.
 // Parameters: either "after" or "before" mandatory
 // Format is RFC3339: "2006-01-02T15:04:05Z"
+// or "now" for current time
 // Returns the number of events removed. (always negative)
 func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, error) {
 	var count int
@@ -226,6 +227,8 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 	if params["after"] == "" {
 		log.Debug("No after time given. Using time 0.\n")
 		after = time.Time{}
+	} else if params["after"] == "now" {
+		after = time.Now()
 	} else {
 		after, err = time.Parse(time.RFC3339, params["start"])
 		if err != nil {
@@ -235,6 +238,8 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 	if params["before"] == "" {
 		log.Debug("No end time given. Using max time\n")
 		before = time.Unix(1<<63-1-int64((1969*365+1969/4-1969/100+1969/400)*24*60*60), 999999999)
+	} else if params["before"] == "now" {
+		before = time.Now()
 	} else {
 		before, err = time.Parse(time.RFC3339, params["before"])
 		if err != nil {
