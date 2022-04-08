@@ -174,16 +174,12 @@ func addEventsURL(cal *ics.Calendar, url string, headers map[string]string) (int
 
 func moduleSaveToFile(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["file"] == "" {
-		return 0, fmt.Errorf("Missing mandatory Parameter 'file'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'file'")
 	}
-	return saveToFile(cal, params["file"])
-}
-
-func saveToFile(cal *ics.Calendar, filename string) (int, error) {
-	err := ioutil.WriteFile(filename, []byte(cal.Serialize()), 0644)
+	err := ioutil.WriteFile(params["file"], []byte(cal.Serialize()), 0644)
 	if err != nil {
 		log.Errorln(err)
-		return 0, fmt.Errorf("Error writing to file: %s", err.Error())
+		return 0, fmt.Errorf("error writing to file: %s", err.Error())
 	}
 	return 0, nil
 }
