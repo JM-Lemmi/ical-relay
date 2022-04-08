@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "1.0.0-rc2"
+var version = "1.0.0"
 
 var configPath = "config.yml"
 var conf Config

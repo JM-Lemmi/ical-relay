@@ -4,7 +4,7 @@ server:
 
 profiles:
     relay:
-        url: "https://example.com/calendar.ics"
+        source: "https://example.com/calendar.ics"
         public: true
         modules:
         - name: "delete-bysummary-regex"
