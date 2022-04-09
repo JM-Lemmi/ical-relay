@@ -23,6 +23,7 @@ var modules = map[string]func(*ics.Calendar, map[string]string) (int, error){
 	"delete-duplicates":      moduleDeleteDuplicates,
 	"edit-byid":              moduleEditId,
 	"edit-bysummary-regex":   moduleEditSummaryRegex,
+	"save-to-file":           moduleSaveToFile,
 }
 
 // This wrappter gets a function from the above modules map and calls it with the parameters and the passed calendar.
@@ -169,6 +170,18 @@ func addEventsURL(cal *ics.Calendar, url string, headers map[string]string) (int
 	}
 	// add to new calendar
 	return addEvents(cal, addcal), nil
+}
+
+func moduleSaveToFile(cal *ics.Calendar, params map[string]string) (int, error) {
+	if params["file"] == "" {
+		return 0, fmt.Errorf("missing mandatory Parameter 'file'")
+	}
+	err := ioutil.WriteFile(params["file"], []byte(cal.Serialize()), 0644)
+	if err != nil {
+		log.Errorln(err)
+		return 0, fmt.Errorf("error writing to file: %s", err.Error())
+	}
+	return 0, nil
 }
 
 func addMultiURL(cal *ics.Calendar, urls []string, header map[string]string) (int, error) {
