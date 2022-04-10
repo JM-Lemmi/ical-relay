@@ -35,27 +35,33 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// request original ical
-	response, err := http.Get(profile.Source)
-	if err != nil {
-		requestLogger.Errorln(err)
-		http.Error(w, fmt.Sprintf("Error requesting original URL: %s", err.Error()), 500)
-		return
-	}
-	if response.StatusCode != 200 {
-		requestLogger.Errorf("Unexpected status '%s' from original URL\n", response.Status)
-		resp, err := ioutil.ReadAll(response.Body)
+	var calendar *ics.Calendar
+	if profile.Source == "" {
+		calendar = ics.NewCalendar()
+	} else {
+		response, err := http.Get(profile.Source)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, fmt.Sprintf("Error requesting original URL: %s", err.Error()), 500)
+			return
+		}
+		if response.StatusCode != 200 {
+			requestLogger.Errorf("Unexpected status '%s' from original URL\n", response.Status)
+			resp, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				requestLogger.Errorln(err)
+			}
+			requestLogger.Debugf("Full response body: %s\n", resp)
+			http.Error(w, fmt.Sprintf("Error response from original URL: Status %s", response.Status), 500)
+			return
+		}
+		// parse original calendar
+		calendar, err = ics.ParseCalendar(response.Body)
 		if err != nil {
 			requestLogger.Errorln(err)
 		}
-		requestLogger.Debugf("Full response body: %s\n", resp)
-		http.Error(w, fmt.Sprintf("Error response from original URL: Status %s", response.Status), 500)
-		return
 	}
-	// parse original calendar
-	calendar, err := ics.ParseCalendar(response.Body)
-	if err != nil {
-		requestLogger.Errorln(err)
-	}
+
 	origlen := len(calendar.Events())
 	var addedEvents int
 
