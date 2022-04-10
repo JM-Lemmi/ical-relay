@@ -172,6 +172,8 @@ func addEventsURL(cal *ics.Calendar, url string, headers map[string]string) (int
 	return addEvents(cal, addcal), nil
 }
 
+// This module saves the current calendar to a file.
+// Parameters: "file" mandatory: full path of file to save
 func moduleSaveToFile(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["file"] == "" {
 		return 0, fmt.Errorf("missing mandatory Parameter 'file'")
