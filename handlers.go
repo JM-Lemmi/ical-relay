@@ -67,7 +67,12 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 	for i := range profile.Modules {
 		log.Debug("Requested Module: " + profile.Modules[i]["name"])
-		count, err := callModule(modules[profile.Modules[i]["name"]], profile.Modules[i], calendar)
+		module, ok := modules[profile.Modules[i]["name"]]
+		if !ok {
+			requestLogger.Warnf(fmt.Sprintf("Module '%s' doesn't exist", profile.Modules[i]["name"]))
+			continue
+		}
+		count, err := callModule(module, profile.Modules[i], calendar)
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, fmt.Sprintf("Error executing module: %s", err.Error()), 500)
