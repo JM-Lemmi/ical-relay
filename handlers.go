@@ -25,7 +25,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": r.RemoteAddr, "profile": vars["profile"]})
 	log.Infoln("")
-	
+
 	// load profile
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
@@ -85,7 +85,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// make sure new calendar has all events but excluded and added
 	eventCountDiff := origlen + addedEvents - len(calendar.Events())
 	if eventCountDiff == 0 {
-		requestLogger.Debugf("Output validation successfull; event counts match")
+		requestLogger.Infoln("Output validation successfull; event counts match")
 	} else {
 		requestLogger.Warnf("This shouldn't happen, event count diff: %d", eventCountDiff)
 	}
