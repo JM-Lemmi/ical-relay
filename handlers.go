@@ -23,8 +23,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	requestLogger := log.WithFields(log.Fields{"client": r.RemoteAddr, "profile": vars["profile"]})
-	log.Infoln("")
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("New Request!")
 
 	// load profile
 	profileName := vars["profile"]
@@ -116,4 +116,12 @@ func profileViewHandler(w http.ResponseWriter, r *http.Request) {
 		requestLogger.Errorln(err)
 	}
 	viewTemplate.Execute(w, templateData{Name: profileName, URL: profileURL.String()})
+}
+
+func GetIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		return forwarded
+	}
+	return r.RemoteAddr
 }
