@@ -84,3 +84,32 @@ If only before is specified, all events before the date are deleted.
 ## delete-duplicates
 
 Deletes events, if there already is an event with the same start, end and summary.
+
+## edit-byid
+
+Edits an Event with the passed id.
+Parameters:
+- 'id', mandatory: the id of the event to edit
+- 'new-summary', optional: the new summary
+- 'new-description', optional: the new description
+- 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-location', optional: the new location
+
+## edit-bysummary-regex
+
+Edits all Events with the matching regex title.
+Parameters:
+- 'id', mandatory: the id of the event to edit
+- 'after', optional: beginning of search timeframe
+- 'before', optional: end of search timeframe
+- 'new-summary', optional: the new summary
+- 'new-description', optional: the new description
+- 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-location', optional: the new location
+
+## save-to-file
+
+This module saves the current calendar to a file.
+Parameters: "file" mandatory: full path of file to save
