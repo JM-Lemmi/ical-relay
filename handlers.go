@@ -22,10 +22,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
-	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
-	requestLogger.Infoln("Client-addr:", r.RemoteAddr)
-	// load profile
 	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": r.RemoteAddr, "profile": vars["profile"]})
+	log.Infoln("")
+	
+	// load profile
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
 	if !ok {
