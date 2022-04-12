@@ -80,7 +80,62 @@ Adds all events from the specified local file.
 Deletes all events in the specified timeframe. The timeframe is specified with a after and/or before date in RFC3339 format.
 If only after is specified, all events after the date are deleted.
 If only before is specified, all events before the date are deleted.
+Other possible value is "now" to use current time as value.
 
 ## delete-duplicates
 
 Deletes events, if there already is an event with the same start, end and summary.
+
+## edit-byid
+
+Edits an Event with the passed id.
+Parameters:
+- 'id', mandatory: the id of the event to edit
+- 'new-summary', optional: the new summary
+- 'new-description', optional: the new description
+- 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-location', optional: the new location
+
+## edit-bysummary-regex
+
+Edits all Events with the matching regex title.
+Parameters:
+- 'id', mandatory: the id of the event to edit
+- 'after', optional: beginning of search timeframe
+- 'before', optional: end of search timeframe
+- 'new-summary', optional: the new summary
+- 'new-description', optional: the new description
+- 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-location', optional: the new location
+
+## save-to-file
+
+This module saves the current calendar to a file.
+Parameters: "file" mandatory: full path of file to save
+
+# Special Combinations
+
+Using the save-to-file Module and the delete-timeframe module with "now" you can create a calendar with immutable past. This stops the calendar events in the past from being updated.
+
+```yaml
+profiles:
+  abc:
+    source: "http://example.com/calendar.ics"
+    modules:
+    - name: "delete-timeframe"
+      before: "now"
+    - name: "add-url"
+      url: "http://localhost/profiles/abc-past"
+    - name: "save-to-file"
+      file: "/app/calstore/abc-archive.ics"
+
+  abc-past:
+    source: ""
+    modules:
+    - name: "add-file"
+      filename: "/app/calstore/abc-archive.ics"
+    - name: "delete-timeframe"
+      after: "now"
+```
