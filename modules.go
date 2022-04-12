@@ -327,16 +327,28 @@ func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 			if event.Id() == params["id"] {
 				log.Debug("Changing event with id " + event.Id())
 				if params["new-summary"] != "" {
-					event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
-					log.Debug("Changed summary to " + params["new-summary"])
+					if params["overwrite"] == "false" {
+						event.SetProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertySummary).Value+"; "+params["new-summary"])
+					} else {
+						event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
+					}
+					log.Debug("Changed summary to " + event.GetProperty(ics.ComponentPropertySummary).Value)
 				}
 				if params["new-description"] != "" {
-					event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
-					log.Debug("Changed description to " + params["new-description"])
+					if params["overwrite"] == "false" {
+						event.SetProperty(ics.ComponentPropertyDescription, event.GetProperty(ics.ComponentPropertyDescription).Value+"; "+params["new-description"])
+					} else {
+						event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
+					}
+					log.Debug("Changed description to " + event.GetProperty(ics.ComponentPropertyDescription).Value)
 				}
 				if params["new-location"] != "" {
-					event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
-					log.Debug("Changed location to " + params["new-location"])
+					if params["overwrite"] == "false" {
+						event.SetProperty(ics.ComponentPropertyLocation, event.GetProperty(ics.ComponentPropertyLocation).Value+"; "+params["new-location"])
+					} else {
+						event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
+					}
+					log.Debug("Changed location to " + event.GetProperty(ics.ComponentPropertyLocation).Value)
 				}
 				if params["new-start"] != "" {
 					start, err := time.Parse(time.RFC3339, params["new-start"])
@@ -369,6 +381,7 @@ func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 // - 'id', mandatory: the id of the event to edit
 // - 'after', optional: beginning of search timeframe
 // - 'before', optional: end of search timeframe
+// - 'overwrite', default true: overwrite existing event properties with the new ones. If false, it will be appended to the existing property. Does not apply to 'new-start' and 'new-end'
 // - 'new-summary', optional: the new summary
 // - 'new-description', optional: the new description
 // - 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
@@ -416,16 +429,28 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 				if re.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
 					log.Debug("Changing event with id " + event.Id())
 					if params["new-summary"] != "" {
-						event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
-						log.Debug("Changed summary to " + params["new-summary"])
+						if params["overwrite"] == "false" {
+							event.SetProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertySummary).Value+"; "+params["new-summary"])
+						} else {
+							event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
+						}
+						log.Debug("Changed summary to " + event.GetProperty(ics.ComponentPropertySummary).Value)
 					}
 					if params["new-description"] != "" {
-						event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
-						log.Debug("Changed description to " + params["new-description"])
+						if params["overwrite"] == "false" {
+							event.SetProperty(ics.ComponentPropertyDescription, event.GetProperty(ics.ComponentPropertyDescription).Value+"; "+params["new-description"])
+						} else {
+							event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
+						}
+						log.Debug("Changed description to " + event.GetProperty(ics.ComponentPropertyDescription).Value)
 					}
 					if params["new-location"] != "" {
-						event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
-						log.Debug("Changed location to " + params["new-location"])
+						if params["overwrite"] == "false" {
+							event.SetProperty(ics.ComponentPropertyLocation, event.GetProperty(ics.ComponentPropertyLocation).Value+"; "+params["new-location"])
+						} else {
+							event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
+						}
+						log.Debug("Changed location to " + event.GetProperty(ics.ComponentPropertyLocation).Value)
 					}
 					if params["new-start"] != "" {
 						start, err := time.Parse(time.RFC3339, params["new-start"])
