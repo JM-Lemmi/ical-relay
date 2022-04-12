@@ -80,6 +80,7 @@ Adds all events from the specified local file.
 Deletes all events in the specified timeframe. The timeframe is specified with a after and/or before date in RFC3339 format.
 If only after is specified, all events after the date are deleted.
 If only before is specified, all events before the date are deleted.
+Other possible value is "now" to use current time as value.
 
 ## delete-duplicates
 
@@ -113,3 +114,28 @@ Parameters:
 
 This module saves the current calendar to a file.
 Parameters: "file" mandatory: full path of file to save
+
+# Special Combinations
+
+Using the save-to-file Module and the delete-timeframe module with "now" you can create a calendar with immutable past. This stops the calendar events in the past from being updated.
+
+```yaml
+profiles:
+  abc:
+    source: "http://example.com/calendar.ics"
+    modules:
+    - name: "delete-timeframe"
+      before: "now"
+    - name: "add-url"
+      url: "http://localhost/profiles/abc-past"
+    - name: "save-to-file"
+      file: "/app/calstore/abc-archive.ics"
+
+  abc-past:
+    source: ""
+    modules:
+    - name: "add-file"
+      filename: "/app/calstore/abc-archive.ics"
+    - name: "delete-timeframe"
+      after: "now"
+```
