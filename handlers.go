@@ -22,10 +22,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
-	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
-	requestLogger.Infoln("Client-addr:", r.RemoteAddr)
-	// load profile
 	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("New Request!")
+
+	// load profile
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
 	if !ok {
@@ -84,7 +85,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// make sure new calendar has all events but excluded and added
 	eventCountDiff := origlen + addedEvents - len(calendar.Events())
 	if eventCountDiff == 0 {
-		requestLogger.Debugf("Output validation successfull; event counts match")
+		requestLogger.Infoln("Output validation successfull; event counts match")
 	} else {
 		requestLogger.Warnf("This shouldn't happen, event count diff: %d", eventCountDiff)
 	}
@@ -115,4 +116,12 @@ func profileViewHandler(w http.ResponseWriter, r *http.Request) {
 		requestLogger.Errorln(err)
 	}
 	viewTemplate.Execute(w, templateData{Name: profileName, URL: profileURL.String()})
+}
+
+func GetIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		return forwarded
+	}
+	return r.RemoteAddr
 }

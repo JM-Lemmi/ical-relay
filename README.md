@@ -91,6 +91,7 @@ Deletes events, if there already is an event with the same start, end and summar
 Edits an Event with the passed id.
 Parameters:
 - 'id', mandatory: the id of the event to edit
+- 'overwrite', default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
 - 'new-summary', optional: the new summary
 - 'new-description', optional: the new description
 - 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
@@ -102,6 +103,7 @@ Parameters:
 Edits all Events with the matching regex title.
 Parameters:
 - 'id', mandatory: the id of the event to edit
+- 'overwrite', default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
 - 'after', optional: beginning of search timeframe
 - 'before', optional: end of search timeframe
 - 'new-summary', optional: the new summary
