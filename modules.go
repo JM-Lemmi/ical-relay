@@ -460,6 +460,10 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 				if re.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
 					log.Debug("Changing event with id " + event.Id())
 					if params["new-summary"] != "" {
+						if event.GetProperty(ics.ComponentPropertySummary) == nil{
+							params["overwrite"] = "true"
+							// if the summary is not set, we need to create it
+						}
 						switch params["overwrite"]{
 						case "false":
 							event.SetProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertySummary).Value+"; "+params["new-summary"])
@@ -473,6 +477,10 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 						log.Debug("Changed summary to " + event.GetProperty(ics.ComponentPropertySummary).Value)
 					}
 					if params["new-description"] != "" {
+						if event.GetProperty(ics.ComponentPropertyDescription) == nil{
+							params["overwrite"] = "true"
+							// if the description is not set, we need to create it
+						}
 						switch params["overwrite"]{
 						case "false":
 							event.SetProperty(ics.ComponentPropertyDescription, event.GetProperty(ics.ComponentPropertyDescription).Value+"; "+params["new-description"])
@@ -486,6 +494,10 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 						log.Debug("Changed description to " + event.GetProperty(ics.ComponentPropertyDescription).Value)
 					}
 					if params["new-location"] != "" {
+						if event.GetProperty(ics.ComponentPropertyLocation) == nil{
+							params["overwrite"] = "true"
+							// if the description is not set, we need to create it
+						}
 						switch params["overwrite"]{
 						case "false":
 							event.SetProperty(ics.ComponentPropertyLocation, event.GetProperty(ics.ComponentPropertyLocation).Value+"; "+params["new-location"])
