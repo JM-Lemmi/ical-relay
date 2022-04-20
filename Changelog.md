@@ -1,3 +1,8 @@
+# v1.1.2
+
+- Module edit-byid and edit-byregex:
+  - Hotfix for [#39](https://www.github.com/JM-Lemmi/ical-relay/issues/39): Empty property will no be filled in "overwrite" mode.
+
 # v1.1.1
 
 - `edit-byid` & `edit-bysummary-regex` now have an `overwrite` parameter.
