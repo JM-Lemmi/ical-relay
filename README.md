@@ -141,3 +141,38 @@ profiles:
     - name: "delete-timeframe"
       after: "now"
 ```
+
+# WebUI
+
+You can use the [frereit/react-calendar](https://github.com/frereit/react-calendar/) webui to view a calendar.
+
+1. Download the react-calendar release and unpack into an nginx static directory.
+2. Configure nginx to serve the react-calendar webui at `/` and the ical-relay at `/profiles`<br>Example:
+
+```conf
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+
+    server_name cal.julian-lemmerich.de;
+
+    ssl_certificate /etc/nginx/ssl/live/cal.julian-lemmerich.de/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/live/cal.julian-lemmerich.de/privkey.pem;
+    
+    location /profiles/ {
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP         $remote_addr;
+	    proxy_buffering                    off;
+    	proxy_pass http://ical/profiles/;
+    }
+
+    location / {
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP         $remote_addr;
+	    proxy_buffering                    off;
+    	proxy_pass http://static/reactcal/;
+    }
+}
+```
+
+3. Edit the config.js file with the ical file you want to view in the WebUI.
