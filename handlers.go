@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 
 	ics "github.com/arran4/golang-ical"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -94,28 +92,6 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
 	fmt.Fprint(w, calendar.Serialize())
-}
-
-func profileViewHandler(w http.ResponseWriter, r *http.Request) {
-	requestLogger := log.WithFields(log.Fields{"request": uuid.New().String()})
-	// load profile
-	vars := mux.Vars(r)
-	profileName := vars["profile"]
-	// load template file from box
-	templateString, err := templateBox.String("profile.html")
-	if err != nil {
-		requestLogger.Errorln(err)
-	}
-
-	viewTemplate, err := template.New("profile").Parse(templateString)
-	if err != nil {
-		requestLogger.Errorln(err)
-	}
-	profileURL, err := router.Get("profile").URL("profile", profileName)
-	if err != nil {
-		requestLogger.Errorln(err)
-	}
-	viewTemplate.Execute(w, templateData{Name: profileName, URL: profileURL.String()})
 }
 
 func GetIP(r *http.Request) string {
