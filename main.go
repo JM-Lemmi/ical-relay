@@ -21,6 +21,7 @@ func main() {
 	}
 
 	log.Info("Welcome to ical-relay, version " + version)
+	log.Debug("Debug log is enabled") // only shows if Debug is actually enabled
 
 	// load config
 	var err error
