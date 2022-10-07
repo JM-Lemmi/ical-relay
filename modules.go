@@ -155,13 +155,13 @@ func addEventsURL(cal *ics.Calendar, url string, headers map[string]string) (int
 		return 0, fmt.Errorf("Error requesting additional URL: %s", err.Error())
 	}
 	if response.StatusCode != 200 {
-		log.Errorf("Unexpected status '%s' from additional URL\n", response.Status)
+		log.Errorf("Unexpected status '%s' from additional URL '%s'", response.Status, url)
 		resp, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			log.Errorln(err)
 		}
 		log.Debugf("Full response body: %s\n", resp)
-		return 0, fmt.Errorf("Error response from additional URL: Status %s", response.Status)
+		return 0, fmt.Errorf("Unexpected status '%s' from additional URL '%s'", response.Status, url)
 	}
 	// parse aditional calendar
 	addcal, err := ics.ParseCalendar(response.Body)
