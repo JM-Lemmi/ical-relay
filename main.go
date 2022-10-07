@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "1.1.4"
+var version = "1.1.5"
 
 var configPath = "config.yml"
 var conf Config
@@ -21,6 +21,7 @@ func main() {
 	}
 
 	log.Info("Welcome to ical-relay, version " + version)
+	log.Debug("Debug log is enabled") // only shows if Debug is actually enabled
 
 	// load config
 	var err error
