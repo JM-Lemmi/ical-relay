@@ -108,9 +108,14 @@ Parameters:
 - 'before', optional: end of search timeframe
 - 'new-summary', optional: the new summary
 - 'new-description', optional: the new description
-- 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
-- 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
+- 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
+- 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
 - 'new-location', optional: the new location
+- 'move-time', optional, not together with 'new-start' or 'new-end': add time to the whole entry, to move entry. uses Go ParseDuration: most useful units are "m", "h"
+
+#### known issues:
+
+'move-time', when the original time does not have a timezone, sets the timezone to UTC, so it needs to be adjusted for that.
 
 ## save-to-file
 
