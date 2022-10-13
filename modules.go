@@ -434,20 +434,29 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 	if params["after"] == "" {
 		log.Debug("No after time given. Using time 0.\n")
 		after = time.Time{}
+	} else if params["after"] == "now" {
+		after = time.Now()
 	} else {
 		after, err = time.Parse(time.RFC3339, params["start"])
 		if err != nil {
-			return 0, fmt.Errorf("Invalid after time: %s", err.Error())
+			return 0, fmt.Errorf("Invalid start time: %s", err.Error())
 		}
 	}
 	if params["before"] == "" {
-		log.Debug("No before time given. Using max time\n")
+		log.Debug("No end time given. Using max time\n")
 		before = time.Unix(1<<63-1-int64((1969*365+1969/4-1969/100+1969/400)*24*60*60), 999999999)
+	} else if params["before"] == "now" {
+		before = time.Now()
 	} else {
 		before, err = time.Parse(time.RFC3339, params["before"])
 		if err != nil {
-			return 0, fmt.Errorf("Invalid before time: %s", err.Error())
+			return 0, fmt.Errorf("Invalid end time: %s", err.Error())
 		}
+	}
+
+	// parse move-time
+	if params["move-time"] != "" && (params["new-start"] != "" || params["new-end"] != "") {
+		return 0, fmt.Errorf("Two exclusive params were given: 'move-time' and 'new-start'/'new-end'")
 	}
 
 	// iterate over events backwards
@@ -525,6 +534,19 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 						}
 						event.SetEndAt(end)
 						log.Debug("Changed end to " + params["new-end"])
+					}
+					if params["move-time"] != "" {
+						dur, err := time.ParseDuration(params["move-time"])
+						if err != nil {
+							return 0, fmt.Errorf("Invalid duration: %s", err.Error())
+						}
+						start, _ := event.GetStartAt()
+						log.Debug("Starttime is " + start.String())
+						end, _ := event.GetEndAt()
+						event.SetStartAt(start.Add(dur))
+						log.Debug("Changed start to " + start.Add(dur).String())
+						event.SetEndAt(end.Add(dur))
+						log.Debug("Changed start and end by " + dur.String())
 					}
 					// adding edited event back to calendar
 					cal.Components[i] = event
