@@ -59,3 +59,13 @@ func ParseConfig(path string) (Config, error) {
 
 	return tmpConfig, nil
 }
+
+func (c Config) getPublicCalendars() []string {
+	var cal []string
+	for p := range c.Profiles {
+		if c.Profiles[p].Public {
+			cal = append(cal, p)
+		}
+	}
+	return cal
+}

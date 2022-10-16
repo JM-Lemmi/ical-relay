@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "1.1.6"
+var version = "1.2.0-beta.1"
 
 var configPath = "config.yml"
 var conf Config
@@ -32,10 +32,11 @@ func main() {
 
 	log.SetLevel(conf.Server.LogLevel)
 
-	// setup router
+	// setup routes
 	router = mux.NewRouter()
 	router.HandleFunc("/", indexHandler)
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
+	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 
 	// listen and serve
 	address := conf.Server.Addr
