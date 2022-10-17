@@ -37,17 +37,17 @@ func notifyChanges(id string, n *notifier) error {
 
 	if len(added) > 0 {
 		for _, event := range added {
-			body += "Added: " + event.GetProperty("Summary").Value + ", " + event.GetProperty("DStart").Value + "\n"
+			body += "Added:\n\n" + event.Serialize() + "\n\n"
 		}
 	}
 	if len(deleted) > 0 {
 		for _, event := range deleted {
-			body += "Deleted: " + event.GetProperty("Summary").Value + ", " + event.GetProperty("DStart").Value + "\n"
+			body += "Deleted:\n\n" + event.Serialize() + "\n\n"
 		}
 	}
 	if len(changed) > 0 {
 		for _, event := range changed {
-			body += "Changed: " + event.GetProperty("Summary").Value + ", " + event.GetProperty("DStart").Value + "\n"
+			body += "Changed:\n\n" + event.Serialize() + "\n\n"
 		}
 	}
 
