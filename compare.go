@@ -31,8 +31,6 @@ func compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent
 			if event1.GetProperty("Summary") != event2.GetProperty("Summary") { //TODO find a better way to compare events
 				log.Debug("Event changed: ", event1.Id())
 				changed = append(changed, *event1)
-			} else {
-				log.Debug("Event unchanged: ", event1.Id())
 			}
 		} else {
 			// Event only exists in cal1
