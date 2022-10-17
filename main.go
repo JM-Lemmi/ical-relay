@@ -37,6 +37,9 @@ func main() {
 	router.HandleFunc("/", indexHandler)
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 
+	log.Debug("Starting notifiers")
+	NotifierStartup(&conf)
+
 	// listen and serve
 	address := conf.Server.Addr
 	log.Fatal(http.ListenAndServe(address, router))

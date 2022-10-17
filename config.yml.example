@@ -1,16 +1,26 @@
 server:
-    addr: ":80"
-    loglevel: "info"
+  addr: ":80"
+  loglevel: "info"
 
 profiles:
-    relay:
-        source: "https://example.com/calendar.ics"
-        public: true
-        modules:
-        - name: "delete-bysummary-regex"
-          regex: "testentry"
-          from: "2021-12-02T00:00:00Z"
-          until: "2021-12-31T00:00:00Z"
-        - name: "add-url"
-          url: "https://othersource.com/othercalendar.ics"
-          header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+  relay:
+    source: "https://example.com/calendar.ics"
+    public: true
+    modules:
+    - name: "delete-bysummary-regex"
+      regex: "testentry"
+      from: "2021-12-02T00:00:00Z"
+      until: "2021-12-31T00:00:00Z"
+    - name: "add-url"
+      url: "https://othersource.com/othercalendar.ics"
+      header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+
+notifiers:
+  relay:
+    source: "http://localhost/relay"
+    interval: "15m"
+    smtp_server: "mailout.julian-lemmerich.de"
+    smtp_port: "25"
+    sender: "calnotification@julian-lemmerich.de"
+    recipients:
+    - email: "jm.lemmerich@gmail.com"
