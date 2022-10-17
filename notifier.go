@@ -71,9 +71,15 @@ func notifyChanges(id string, n *notifier) error {
 			}
 			log.Info("Sending Mail Notification to " + recipient)
 
-			return d.DialAndSend(m)
+			err := d.DialAndSend(m)
+			if err != nil {
+				requestLogger.Errorln(err)
+				return err
+			}
 		}
 
+		// save updated calendar
+		writeCalFile(calendar2, "/app/notifystore/"+id+".ics")
 		return nil
 	}
 	return fmt.Errorf("Impossible return location. If you get this error, something is wrong.")
