@@ -25,13 +25,13 @@ type serverConfig struct {
 
 type notifier struct {
 	Source     string   `yaml:"source"`
-	Interval   string   `yaml:"time"`
+	Interval   string   `yaml:"interval"`
 	SMTPServer string   `yaml:"smtp_server"`
 	SMTPPort   int      `yaml:"smtp_port"`
 	Sender     string   `yaml:"sender"`
 	SMTPUser   string   `yaml:"smtp_user"`
 	SMTPPass   string   `yaml:"smtp_pass"`
-	Recipients []string `yaml:"receivers"`
+	Recipients []string `yaml:"recipients"`
 }
 
 // Config represents configuration for the application
