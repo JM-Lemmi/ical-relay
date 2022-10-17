@@ -16,6 +16,7 @@ func notifyChanges(id string, n *notifier) error {
 
 	// check if file exists, if not download for the first time
 	if _, err := os.Stat("/app/notifystore/" + id + ".ics"); os.IsNotExist(err) {
+		log.Info("File does not exist, downloading for the first time")
 		calendar, err := readCalURL(n.Source)
 		if err != nil {
 			requestLogger.Errorln(err)
@@ -62,7 +63,7 @@ func notifyChanges(id string, n *notifier) error {
 		if n.SMTPUser != "" && n.SMTPPass != "" {
 			d = gomail.Dialer{Host: n.SMTPServer, Port: n.SMTPPort, Username: n.SMTPUser, Password: n.SMTPPass}
 		}
-		log.Debug("Mail Notification sent to " + recipient)
+		log.Info("Sending Mail Notification to " + recipient)
 
 		return d.DialAndSend(m)
 	}

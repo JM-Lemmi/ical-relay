@@ -12,6 +12,7 @@ FROM alpine AS run
 COPY --from=build /app/ical-relay /app/ical-relay
 COPY ./templates/ /app/templates/
 RUN mkdir /app/calstore/
+RUN mkdir /app/notifystore/
 
 WORKDIR /app
 VOLUME /app/calstore/
