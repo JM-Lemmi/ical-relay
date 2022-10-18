@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"regexp"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -11,6 +12,13 @@ import (
 type regex struct {
 	regexp.Regexp
 }
+func (r *regex) UnmarshalText(text []byte) error {
+	tmpRe, err := regexp.Compile("(?i)" + string(text))
+	r.Regexp = *tmpRe
+	return err
+}
+
+// STRUCTS
 
 type profile struct {
 	Source  string              `yaml:"source"`
@@ -41,11 +49,7 @@ type Config struct {
 	Notifiers map[string]notifier `yaml:"notifiers"`
 }
 
-func (r *regex) UnmarshalText(text []byte) error {
-	tmpRe, err := regexp.Compile("(?i)" + string(text))
-	r.Regexp = *tmpRe
-	return err
-}
+// CONFIG MANAGEMENT FUNCTIONS
 
 // ParseConfig reads config from path and returns a Config struct
 func ParseConfig(path string) (Config, error) {
@@ -92,6 +96,8 @@ func (c Config) saveConfig(path string) error {
 	return ioutil.WriteFile(path, d, 0644)
 }
 
+// CONFIG EDITING FUNCTIONS
+
 func (c Config) getPublicCalendars() []string {
 	var cal []string
 	for p := range c.Profiles {
@@ -100,4 +106,15 @@ func (c Config) getPublicCalendars() []string {
 		}
 	}
 	return cal
+}
+
+func (c Config) addNotifyRecipient(notifier string, recipient string) error {
+	if _, ok := c.Notifiers[notifier]; ok {
+		n := c.Notifiers[notifier]
+		n.Recipients = append(n.Recipients, recipient)
+		c.Notifiers[notifier] = n
+		return c.saveConfig(configPath)
+	} else {
+		return fmt.Errorf("Notifier does not exist")
+	}
 }
