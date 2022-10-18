@@ -84,6 +84,14 @@ func reloadConfig() error {
 	}
 }
 
+func (c Config) saveConfig(path string) error {
+	d, err := yaml.Marshal(&c)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(path, d, 0644)
+}
+
 func (c Config) getPublicCalendars() []string {
 	var cal []string
 	for p := range c.Profiles {
