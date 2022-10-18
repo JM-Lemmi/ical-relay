@@ -19,3 +19,18 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(caljson)+"\n")
 }
 
+func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": "/api/reloadconfig"})
+	requestLogger.Infoln("New API-Request!")
+
+	err := reloadConfig()
+	if err != nil {
+		requestLogger.Errorln(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "Error: "+err.Error()+"\n")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "Config reloaded!\n")
+}
