@@ -39,7 +39,7 @@ func main() {
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 
 	log.Debug("Starting notifiers")
-	NotifierStartup(&conf)
+	NotifierStartup()
 
 	// listen and serve
 	address := conf.Server.Addr

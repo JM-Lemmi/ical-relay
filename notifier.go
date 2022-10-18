@@ -100,7 +100,7 @@ func NotifierTiming(id string, n *notifier) {
 }
 
 // starts a heartbeat notifier in a sub-routine
-func NotifierStartup(conf *Config) {
+func NotifierStartup() {
 	for id, n := range conf.Notifiers {
 		go NotifierTiming(id, &n)
 	}
