@@ -72,6 +72,18 @@ func ParseConfig(path string) (Config, error) {
 	return tmpConfig, nil
 }
 
+func reloadConfig() error {
+	// load config
+	var err error
+	conf, err = ParseConfig(configPath)
+	if err != nil {
+		return err
+	} else {
+		log.Info("Config reloaded")
+		return nil
+	}
+}
+
 func (c Config) getPublicCalendars() []string {
 	var cal []string
 	for p := range c.Profiles {

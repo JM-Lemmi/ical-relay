@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "1.2.0-beta.1"
+var version = "1.2.0-beta.2"
 
 var configPath = "config.yml"
 var conf Config
@@ -37,6 +37,7 @@ func main() {
 	router.HandleFunc("/", indexHandler)
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
+	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 
 	log.Debug("Starting notifiers")
 	NotifierStartup()
