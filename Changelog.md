@@ -1,3 +1,19 @@
+# v1.1.6
+
+- add move-time to `edit-bysummary-regex`-module
+
+# v1.1.5
+
+- ignore unavailible URLs
+
+# v1.1.4
+
+- add remote calendar URL to Debug log
+
+# v1.1.3
+
+- remove view handle and replace with frereit/reacht-calendar
+
 # v1.1.2
 
 - Module edit-byid and edit-byregex:
