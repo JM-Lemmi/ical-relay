@@ -38,6 +38,9 @@ func main() {
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 
+	log.Debug("Starting notifiers")
+	NotifierStartup(&conf)
+
 	// listen and serve
 	address := conf.Server.Addr
 	log.Fatal(http.ListenAndServe(address, router))
