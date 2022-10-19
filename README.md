@@ -17,10 +17,15 @@ docker run -d -p 8080:80 -v ~/ical-relay/config.yml:/app/config.yml ghcr.io/jm-l
 ## Standalone
 
 Download the binary from the newest release.
-The configuration file has to be in your current directory, when starting ical-relay.
 
 ```
-./ical-relay
+./ical-relay --config config.yml
+```
+
+Run a notifier manually:
+
+```
+./ical-relay --notifier <name> --config config.yml
 ```
 
 ## Build
@@ -31,21 +36,31 @@ The configuration file has to be in your current directory, when starting ical-r
 
 ```yaml
 server:
-    addr: ":80"
-    loglevel: "info"
+  addr: ":80"
+  loglevel: "info"
 
 profiles:
-    <profilename>:
-        source: "https://example.com/calendar.ics"
-        public: true
-        modules:
-        - name: "delete-bysummary-regex"
-          regex: "testentry"
-          from: "2021-12-02T00:00:00Z"
-          until: "2021-12-31T00:00:00Z"
-        - name: "add-url"
-          url: "https://othersource.com/othercalendar.ics"
-          header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+  relay:
+    source: "https://example.com/calendar.ics"
+    public: true
+    modules:
+    - name: "delete-bysummary-regex"
+      regex: "testentry"
+      from: "2021-12-02T00:00:00Z"
+      until: "2021-12-31T00:00:00Z"
+    - name: "add-url"
+      url: "https://othersource.com/othercalendar.ics"
+      header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+
+notifiers:
+  relay:
+    source: "http://localhost/relay"
+    interval: "15m"
+    smtp_server: "mailout.julian-lemmerich.de"
+    smtp_port: "25"
+    sender: "calnotification@julian-lemmerich.de"
+    recipients:
+    - email: "jm.lemmerich@gmail.com"
 ```
 
 The `server` section contains the configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
@@ -146,6 +161,18 @@ profiles:
     - name: "delete-timeframe"
       after: "now"
 ```
+
+# API
+
+- `/api/calendars`: Returns all Public Calendars as json-array.
+- `/api/reloadconfig`: Reloads the config from disk.
+- `/api/notifier/<notifier>/addrecipient`: with an E-Mail Address as body adds the recipient to the notifier.
+
+# Notifier
+
+The notifiers do not have to reference a local ical, you can also use this to only call external icals.
+
+You can configure SMTP with authentication or without to use an external mailserver, or something local like boky/postfix.
 
 # WebUI
 
