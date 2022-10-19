@@ -8,7 +8,6 @@ import (
 func compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent, []ics.VEvent) {
 	// Compare the two calendars
 	// Returns array of arrays. Added, Deleted, Changed Events
-	log.Info("Comparing calendars")
 
 	var added []ics.VEvent
 	var deleted []ics.VEvent
