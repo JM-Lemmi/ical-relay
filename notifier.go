@@ -93,6 +93,7 @@ func NotifierTiming(id string, n *notifier) {
 		interval = 1 * time.Second
 	}
 	log.Debug("interval: " + interval.String())
+	// endless loop
 	for {
 		time.Sleep(interval)
 		notifyChanges(id, n)
@@ -104,4 +105,12 @@ func NotifierStartup() {
 	for id, n := range conf.Notifiers {
 		go NotifierTiming(id, &n)
 	}
+}
+
+func RunNotifier(id string) error {
+	n, ok := conf.Notifiers[id]
+	if !ok {
+		return fmt.Errorf("Notifier not found")
+	}
+	return notifyChanges(id, &n)
 }
