@@ -208,3 +208,9 @@ server {
 ```
 
 3. Edit the config.js file with the ical file you want to view in the WebUI.
+
+# Support
+
+This Project was developed for my own use, and I do not offer support for this at all.
+
+If you do want to use it and need help I will try my best to help, but I can't promise anyting. You can contact me here: help@julian-lemmerich.de
