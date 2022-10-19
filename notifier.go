@@ -13,7 +13,7 @@ import (
 
 func notifyChanges(id string, n *notifier) error {
 	requestLogger := log.WithFields(log.Fields{"notifier": id})
-	requestLogger.Infoln("New Notifier run!")
+	requestLogger.Infoln("Running Notifier!")
 
 	// check if file exists, if not download for the first time
 	if _, err := os.Stat("/app/notifystore/" + id + ".ics"); os.IsNotExist(err) {
@@ -39,6 +39,7 @@ func notifyChanges(id string, n *notifier) error {
 		log.Info("No changes detected.")
 		return nil
 	} else {
+		log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed)) + " changed")
 
 		var body string
 
@@ -54,7 +55,7 @@ func notifyChanges(id string, n *notifier) error {
 		}
 		if len(changed) > 0 {
 			for _, event := range changed {
-				body += "Changed:\n\n" + event.Serialize() + "\n\n"
+				body += "Changed (displaying new version):\n\n" + event.Serialize() + "\n\n"
 			}
 		}
 
@@ -92,7 +93,7 @@ func NotifierTiming(id string, n *notifier) {
 		// failsave for 0s interval, to make machine still responsive
 		interval = 1 * time.Second
 	}
-	log.Debug("interval: " + interval.String())
+	log.Debug("Notifier " + id + ", Interval: " + interval.String())
 	// endless loop
 	for {
 		time.Sleep(interval)
@@ -102,6 +103,7 @@ func NotifierTiming(id string, n *notifier) {
 
 // starts a heartbeat notifier in a sub-routine
 func NotifierStartup() {
+	log.Info("Starting Notifiers")
 	for id, n := range conf.Notifiers {
 		go NotifierTiming(id, &n)
 	}
