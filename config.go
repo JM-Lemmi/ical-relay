@@ -36,6 +36,7 @@ type mailConfig struct {
 
 type serverConfig struct {
 	Addr     string     `yaml:"addr"`
+	URL      string     `yaml:"url"`
 	LogLevel log.Level  `yaml:"loglevel"`
 	Mail     mailConfig `yaml:"mail,omitempty"`
 }
