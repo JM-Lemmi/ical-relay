@@ -29,9 +29,17 @@ func notifyChanges(id string, n *notifier) error {
 
 	// read files
 	file1, _ := os.Open("/app/notifystore/" + id + ".ics")
-	calendar1, _ := ics.ParseCalendar(file1)
+	calendar1, err := ics.ParseCalendar(file1)
+	if err != nil {
+		requestLogger.Errorln(err)
+		return err
+	}
 
-	calendar2, _ := readCalURL(n.Source)
+	calendar2, err := readCalURL(n.Source)
+	if err != nil {
+		requestLogger.Errorln(err)
+		return err
+	}
 
 	added, deleted, changed := compare(calendar1, calendar2)
 
