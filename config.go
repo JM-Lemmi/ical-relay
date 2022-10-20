@@ -122,3 +122,19 @@ func (c Config) addNotifyRecipient(notifier string, recipient string) error {
 		return fmt.Errorf("Notifier does not exist")
 	}
 }
+
+func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
+	if _, ok := c.Notifiers[notifier]; ok {
+		n := c.Notifiers[notifier]
+		for i, r := range n.Recipients {
+			if r == recipient {
+				n.Recipients = append(n.Recipients[:i], n.Recipients[i+1:]...)
+				c.Notifiers[notifier] = n
+				return c.saveConfig(configPath)
+			}
+		}
+		return fmt.Errorf("Recipient not found")
+	} else {
+		return fmt.Errorf("Notifier does not exist")
+	}
+}
