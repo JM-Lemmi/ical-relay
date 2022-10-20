@@ -72,7 +72,11 @@ func notifyChanges(id string, n *notifier) error {
 			m.SetHeader("From", conf.Server.Mail.Sender)
 			m.SetHeader("To", recipient)
 			m.SetHeader("Subject", "Calendar Notification for "+id)
-			m.SetBody("text/plain", string(body))
+
+			unsubscribeURL := conf.Server.URL + "/api/notifier/" + id + "/removerecipient?email=" + recipient
+			m.SetHeader("List-Unsubscribe", unsubscribeURL)
+			bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
+			m.SetBody("text/plain", string(bodyunsubscribe))
 
 			d := gomail.Dialer{Host: conf.Server.Mail.SMTPServer, Port: conf.Server.Mail.SMTPPort}
 			if conf.Server.Mail.SMTPUser != "" && conf.Server.Mail.SMTPPass != "" {
