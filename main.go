@@ -54,6 +54,7 @@ func main() {
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/notifier/{notifier}/addrecipient", addNotifyRecipientApiHandler).Name("notifier")
+	router.HandleFunc("/api/notifier/{notifier}/removerecipient", removeNotifyRecipientApiHandler).Name("notifier")
 
 	// start notifiers
 	NotifierStartup()
