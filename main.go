@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "1.2.0-beta.4"
+var version = "1.2.0-beta.5"
 
 var configPath string
 var conf Config
@@ -55,10 +55,10 @@ func main() {
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/notifier/{notifier}/addrecipient", addNotifyRecipientApiHandler).Name("notifier")
 
-	log.Debug("Starting notifiers")
+	// start notifiers
 	NotifierStartup()
 
-	// listen and serve
+	// start server
 	address := conf.Server.Addr
 	log.Fatal(http.ListenAndServe(address, router))
 }

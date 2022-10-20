@@ -26,27 +26,31 @@ type profile struct {
 	Modules []map[string]string `yaml:"modules,omitempty"`
 }
 
+type mailConfig struct {
+	SMTPServer string   `yaml:"smtp_server"`
+	SMTPPort   int      `yaml:"smtp_port"`
+	Sender     string   `yaml:"sender"`
+	SMTPUser   string   `yaml:"smtp_user,omitempty"`
+	SMTPPass   string   `yaml:"smtp_pass,omitempty"`
+}
+
 type serverConfig struct {
-	Addr     string    `yaml:"addr"`
-	LogLevel log.Level `yaml:"loglevel"`
+	Addr     string     `yaml:"addr"`
+	LogLevel log.Level  `yaml:"loglevel"`
+	Mail     mailConfig `yaml:"mail,omitempty"`
 }
 
 type notifier struct {
 	Source     string   `yaml:"source"`
 	Interval   string   `yaml:"interval"`
-	SMTPServer string   `yaml:"smtp_server"`
-	SMTPPort   int      `yaml:"smtp_port"`
-	Sender     string   `yaml:"sender"`
-	SMTPUser   string   `yaml:"smtp_user"`
-	SMTPPass   string   `yaml:"smtp_pass"`
 	Recipients []string `yaml:"recipients"`
 }
 
 // Config represents configuration for the application
 type Config struct {
-	Profiles  map[string]profile  `yaml:"profiles"`
 	Server    serverConfig        `yaml:"server"`
-	Notifiers map[string]notifier `yaml:"notifiers"`
+	Profiles  map[string]profile  `yaml:"profiles,omitempty"`
+	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
 }
 
 // CONFIG MANAGEMENT FUNCTIONS

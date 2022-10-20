@@ -61,14 +61,14 @@ func notifyChanges(id string, n *notifier) error {
 
 		for _, recipient := range n.Recipients {
 			m := gomail.NewMessage()
-			m.SetHeader("From", n.Sender)
+			m.SetHeader("From", conf.Server.Mail.Sender)
 			m.SetHeader("To", recipient)
 			m.SetHeader("Subject", "Calendar Notification for "+id)
 			m.SetBody("text/plain", string(body))
 
-			d := gomail.Dialer{Host: n.SMTPServer, Port: n.SMTPPort}
-			if n.SMTPUser != "" && n.SMTPPass != "" {
-				d = gomail.Dialer{Host: n.SMTPServer, Port: n.SMTPPort, Username: n.SMTPUser, Password: n.SMTPPass}
+			d := gomail.Dialer{Host: conf.Server.Mail.SMTPServer, Port: conf.Server.Mail.SMTPPort}
+			if conf.Server.Mail.SMTPUser != "" && conf.Server.Mail.SMTPPass != "" {
+				d = gomail.Dialer{Host: conf.Server.Mail.SMTPServer, Port: conf.Server.Mail.SMTPPort, Username: conf.Server.Mail.SMTPUser, Password: conf.Server.Mail.SMTPPass}
 			}
 			log.Info("Sending Mail Notification to " + recipient)
 

@@ -1,6 +1,10 @@
 server:
   addr: ":80"
   loglevel: "info"
+  mail:
+    smtp_server: "mailout.julian-lemmerich.de"
+    smtp_port: "25"
+    sender: "calnotification@julian-lemmerich.de"
 
 profiles:
   relay:
@@ -19,8 +23,5 @@ notifiers:
   relay:
     source: "http://localhost/relay"
     interval: "15m"
-    smtp_server: "mailout.julian-lemmerich.de"
-    smtp_port: "25"
-    sender: "calnotification@julian-lemmerich.de"
     recipients:
     - email: "jm.lemmerich@gmail.com"
