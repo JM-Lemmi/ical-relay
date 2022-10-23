@@ -1,0 +1,81 @@
+openapi: 3.0.3
+info:
+  title: ical-relay
+  description: |-
+    ...
+  contact:
+    email: mail@julian-lemmerich.de
+  license:
+    name:  GNU GENERAL PUBLIC LICENSE
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+  version: 1.2.0
+externalDocs:
+  description: Find out more about ical-relay
+  url: https://www.github.com/jm-lemmi/ical-relay
+#servers:
+#  - url: https://petstore3.swagger.io/api/v3
+tags:
+  - name: public
+    description: Everything availible publicly
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+  - name: admin
+    description: Access to Edit Relay-Profiles
+    externalDocs:
+      description: Find out more about our store
+      url: http://swagger.io
+paths:
+  /calendars:
+    get:
+      tags:
+        - public
+      summary: Get all public calendars
+      description: List all public calendars with their URL.
+      operationId: listCalendars
+      responses:
+        '200':
+          description: Successful operation
+          #content:
+          #  application/json:
+          #    schema:
+          #      $ref: '#/components/schemas/Pet'
+        '500':
+          description: Either Error, or calendar not found
+  /api/reloadconfig:
+    get:
+      tags:
+        - public
+      summary: Reloads the config
+      description: Reloads the config of the relay stored on the server.
+      operationId: reloadConfig
+      responses:
+        '200':
+          description: successful operation
+        '500':
+          description: Server Error
+  /api/notifier/{notifier}/addrecipient:
+    post:
+      tags:
+        - public
+      summary: Adds an E-Mail-Recipient to a Notifier
+      description: ''
+      operationId: addRecipient
+      parameters:
+        - name: notifier
+          in: path
+          description: Name of Notifier to add to
+          required: true
+          schema:
+            type: string
+        - name: mail
+          in: query
+          description: E-Mail Address that will be added
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+        '500':
+          description: Server Error, or Notifier not found
