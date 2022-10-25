@@ -36,7 +36,9 @@ jobs:
           cp misc/postinstall.sh .debpkg/DEBIAN/postinst
           chmod +x .debpkg/DEBIAN/postinst
           cp misc/ical-relay.service .debpkg/DEBIAN/ical-relay.service
-      - uses: actions/download-artifact@v3
+      - name: Download binary
+        uses: actions/download-artifact@v3
+        id: download
         with:
           name: ical-relay
       - run: |
