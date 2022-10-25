@@ -13,20 +13,14 @@ externalDocs:
   description: Find out more about ical-relay
   url: https://www.github.com/jm-lemmi/ical-relay
 #servers:
-#  - url: https://petstore3.swagger.io/api/v3
+#  - url: https://cal.julian-lemmerich.de/
 tags:
   - name: public
     description: Everything availible publicly
-    externalDocs:
-      description: Find out more
-      url: http://swagger.io
   - name: admin
     description: Access to Edit Relay-Profiles
-    externalDocs:
-      description: Find out more about our store
-      url: http://swagger.io
 paths:
-  /calendars:
+  /api/calendars:
     get:
       tags:
         - public
