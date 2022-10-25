@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 	"os"
-	"flag"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -50,6 +50,8 @@ func main() {
 	// setup routes
 	router = mux.NewRouter()
 	router.HandleFunc("/", indexHandler)
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("templates/static/"))))
+	router.HandleFunc("/view/{profile}", viewHandler).Name("view")
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
