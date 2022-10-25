@@ -73,3 +73,24 @@ paths:
           description: successful operation
         '500':
           description: Server Error, or Notifier not found
+  /api/profiles/{profile}/checkAuth:
+    get:
+      tags:
+        - admin
+      summary: Checks Token Autorization
+      description: Checks if token is authorized to access the profile.
+      operationId: checkAuth
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to check Auth for.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authentication successful
+        '401':
+          description: Authentication unsuccessful
+        '404':
+          description: Profile not found

@@ -21,3 +21,13 @@ func writeCalFile(cal *ics.Calendar, filename string) error {
 	// write file
 	return ioutil.WriteFile(filename, []byte(cal.Serialize()), 0644)
 }
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}

@@ -10,6 +10,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func checkAuthoriziation(token string, profileName string) bool {
+	if contains(conf.Profiles[profileName].Tokens, token) {
+		return true
+	} else {
+		return false
+	}
+}
+
 func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": "/api/calendars"})
 	requestLogger.Infoln("New API-Request!")
@@ -72,5 +80,32 @@ func removeNotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 		requestLogger.Infoln("Removed " + mail + " from " + mux.Vars(r)["notifier"])
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Removed " + mail + " from " + mux.Vars(r)["notifier"] + "\n")
+	}
+}
+
+func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	token := r.Header.Get("Authorization")
+	profileName := vars["profile"]
+
+	_, ok := conf.Profiles[profileName]
+	if !ok {
+		requestLogger.Infoln("Profile " + profileName + " not found!")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Profile " + profileName + " not found!\n")
+		return
+	}
+
+	if checkAuthoriziation(token, profileName) {
+		requestLogger.Infoln("Authorization successful!")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Authorized!\n")
+	} else {
+		requestLogger.Infoln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
 	}
 }
