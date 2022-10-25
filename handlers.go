@@ -2,21 +2,89 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
+	"sort"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
-type templateData struct {
+type profileTemplateData struct {
 	Name string
 	URL  string
 }
 
+var htmlTemplates = template.Must(template.ParseGlob("templates/*.html"))
+
+func tryRenderErrorOrFallback(w http.ResponseWriter, r *http.Request, statusCode int, err error, fallback string) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Errorln(err)
+	w.WriteHeader(statusCode)
+	err = htmlTemplates.ExecuteTemplate(w, "error.html", map[string]interface{}{
+		"Error":    err.Error(),
+		"Profiles": getProfilesTemplateData(),
+	})
+	if err != nil {
+		requestLogger.Errorln(err)
+		http.Error(w, fallback, statusCode)
+	}
+}
+
+func getProfilesTemplateData() []profileTemplateData {
+	profiles := make([]profileTemplateData, 0)
+	for name, this_profile := range conf.Profiles {
+		if this_profile.Public {
+			// FIXME: any name with "/" will break the URL
+			url, err := router.Get("view").URL("profile", name)
+			if err != nil {
+				log.Errorln(err)
+				continue
+			}
+			profiles = append(profiles, profileTemplateData{
+				Name: name,
+				URL:  url.String(),
+			})
+		}
+	}
+	// sort profiles by name
+	sort.SliceStable(profiles, func(i, j int) bool {
+		return profiles[i].Name < profiles[j].Name
+	})
+
+	return profiles
+}
+
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "", http.StatusNoContent)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Infoln("index request")
+
+	err := htmlTemplates.ExecuteTemplate(w, "index.html", map[string]interface{}{
+		"Profiles": getProfilesTemplateData(),
+	})
+	if err != nil {
+		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
+		return
+	}
+}
+
+func viewHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("New Request!")
+	profileName := vars["profile"]
+	_, ok := conf.Profiles[profileName]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
+		return
+	}
+	htmlTemplates.ExecuteTemplate(w, "view.html", map[string]interface{}{
+		"ProfileName": profileName,
+		"Profiles":    getProfilesTemplateData(),
+	})
 }
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
