@@ -45,6 +45,7 @@ jobs:
           cp ${{steps.download.outputs.download-path}}/ical-relay .debpkg/usr/bin/
           chmod +x .debpkg/usr/bin/ical-relay
       - uses: jiro4989/build-deb-action@v2
+        id: package
         with:
           package: ical-relay
           package_root: .debpkg
@@ -52,3 +53,7 @@ jobs:
           version: ${{ github.ref }} # refs/tags/v*.*.*
           arch: 'amd64'
           desc: 'Relay ical urls and edit them on the fly with different modules.'
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ical-relay.deb
+          path: ./${{steps.package.outputs.file_name}}
