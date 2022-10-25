@@ -52,6 +52,7 @@ func main() {
 	router.HandleFunc("/", indexHandler)
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
+	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler)
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/notifier/{notifier}/addrecipient", addNotifyRecipientApiHandler).Name("notifier")
 	router.HandleFunc("/api/notifier/{notifier}/removerecipient", removeNotifyRecipientApiHandler).Name("notifier")

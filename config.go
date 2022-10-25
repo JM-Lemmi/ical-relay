@@ -23,6 +23,7 @@ func (r *regex) UnmarshalText(text []byte) error {
 type profile struct {
 	Source  string              `yaml:"source"`
 	Public  bool                `yaml:"public"`
+	Tokens  []string            `yaml:"admin-tokens"`
 	Modules []map[string]string `yaml:"modules,omitempty"`
 }
 
