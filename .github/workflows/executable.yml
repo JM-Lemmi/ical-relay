@@ -1,0 +1,52 @@
+name: Compile Binary
+
+# Run workflow on tags starting with v (eg. v2, v1.2.0)
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  Compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18.0' # The Go version to download (if necessary) and use.
+      - run: go build .
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ical-relay
+          path: ./ical-relay
+
+  Package:
+    needs: Compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v1
+      - name: Create debpkg structure
+        run: |
+          mkdir -p .debpkg/usr/bin
+          mkdir -p .debpkg/etc/ical-relay
+          cp config.yml.example .debpkg/etc/ical-relay/
+
+          mkdir -p .debpkg/DEBIAN
+          cp misc/postinstall.sh .debpkg/DEBIAN/postinst
+          chmod +x .debpkg/DEBIAN/postinst
+          cp misc/ical-relay.service .debpkg/DEBIAN/ical-relay.service
+      - uses: actions/download-artifact@v3
+        with:
+          name: ical-relay
+      - run: |
+          cp ${{steps.download.outputs.download-path}} .debpkg/usr/bin/
+          chmod +x .debpkg/usr/bin/ical-relay
+      - uses: jiro4989/build-deb-action@v2
+        with:
+          package: ical-relay
+          package_root: .debpkg
+          maintainer: Julian Lemmerich <mail@julian-lemmerich.de>
+          version: ${{ github.ref }} # refs/tags/v*.*.*
+          arch: 'amd64'
+          desc: 'Relay ical urls and edit them on the fly with different modules.'
