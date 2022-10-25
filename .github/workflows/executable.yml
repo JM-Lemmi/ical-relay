@@ -36,6 +36,7 @@ jobs:
           cp misc/postinstall.sh .debpkg/DEBIAN/postinst
           chmod +x .debpkg/DEBIAN/postinst
           cp misc/ical-relay.service .debpkg/DEBIAN/ical-relay.service
+          echo -e '#!/usr/bin/make -f\n\n%:\n\tdh $@' > .debpkg/DEBIAN/rules
       - name: Download binary
         uses: actions/download-artifact@v3
         id: download
