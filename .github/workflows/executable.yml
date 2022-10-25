@@ -42,7 +42,7 @@ jobs:
         with:
           name: ical-relay
       - run: |
-          cp ${{steps.download.outputs.download-path}} .debpkg/usr/bin/
+          cp ${{steps.download.outputs.download-path}}/ical-relay .debpkg/usr/bin/
           chmod +x .debpkg/usr/bin/ical-relay
       - uses: jiro4989/build-deb-action@v2
         with:
