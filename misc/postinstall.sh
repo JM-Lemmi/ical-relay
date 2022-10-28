@@ -7,3 +7,5 @@ if ! id ical-relay > /dev/null 2>&1 ; then
         --ingroup ical-relay --disabled-password --shell /bin/false \
         ical-relay
 fi
+
+systemctl enable ical-relay.service
