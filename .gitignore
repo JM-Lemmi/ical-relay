@@ -6,3 +6,4 @@ addical.ics
 config.toml
 config.yml
 /tmp/
+.debpkg/
