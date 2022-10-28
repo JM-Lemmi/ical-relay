@@ -97,7 +97,6 @@ func notifyChanges(id string, n *notifier) error {
 		writeCalFile(calendar2, notifystore+id+".ics")
 		return nil
 	}
-	return fmt.Errorf("Impossible return location. If you get this error, something is wrong.")
 }
 
 // runs a heartbeat loop with specified sleep duration
@@ -126,7 +125,7 @@ func NotifierStartup() {
 func RunNotifier(id string) error {
 	n, ok := conf.Notifiers[id]
 	if !ok {
-		return fmt.Errorf("Notifier not found")
+		return fmt.Errorf("notifier not found")
 	}
 	return notifyChanges(id, &n)
 }

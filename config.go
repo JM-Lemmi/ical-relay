@@ -3,21 +3,10 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"regexp"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
-
-type regex struct {
-	regexp.Regexp
-}
-
-func (r *regex) UnmarshalText(text []byte) error {
-	tmpRe, err := regexp.Compile("(?i)" + string(text))
-	r.Regexp = *tmpRe
-	return err
-}
 
 // STRUCTS
 
@@ -127,7 +116,7 @@ func (c Config) addNotifyRecipient(notifier string, recipient string) error {
 		c.Notifiers[notifier] = n
 		return c.saveConfig(configPath)
 	} else {
-		return fmt.Errorf("Notifier does not exist")
+		return fmt.Errorf("notifier does not exist")
 	}
 }
 
@@ -141,8 +130,8 @@ func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
 				return c.saveConfig(configPath)
 			}
 		}
-		return fmt.Errorf("Recipient not found")
+		return fmt.Errorf("recipient not found")
 	} else {
-		return fmt.Errorf("Notifier does not exist")
+		return fmt.Errorf("notifier does not exist")
 	}
 }
