@@ -36,10 +36,11 @@ type mailConfig struct {
 }
 
 type serverConfig struct {
-	Addr     string     `yaml:"addr"`
-	URL      string     `yaml:"url"`
-	LogLevel log.Level  `yaml:"loglevel"`
-	Mail     mailConfig `yaml:"mail,omitempty"`
+	Addr        string     `yaml:"addr"`
+	URL         string     `yaml:"url"`
+	LogLevel    log.Level  `yaml:"loglevel"`
+	StoragePath string     `yaml:"storagepath"`
+	Mail        mailConfig `yaml:"mail,omitempty"`
 }
 
 type notifier struct {
@@ -79,6 +80,9 @@ func ParseConfig(path string) (Config, error) {
 	}
 	if tmpConfig.Server.LogLevel == 0 {
 		tmpConfig.Server.LogLevel = log.InfoLevel
+	}
+	if tmpConfig.Server.StoragePath == "" {
+		tmpConfig.Server.StoragePath = "/etc/ical-relay/"
 	}
 
 	return tmpConfig, nil
