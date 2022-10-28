@@ -2,8 +2,8 @@ FROM golang:alpine AS build
 
 RUN apk --update add git
 
-WORKDIR /etc/ical-relay
-COPY . /etc/ical-relay
+WORKDIR /app
+COPY . /app
 
 RUN go build .
 
