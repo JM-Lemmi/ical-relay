@@ -175,6 +175,8 @@ The notifiers do not have to reference a local ical, you can also use this to on
 
 You can configure SMTP with authentication or without to use an external mailserver, or something local like boky/postfix.
 
+If you start the calendar with the `--notifier` flag, it will start the notifier from config. This allows setting up cronjobs to run the notifier.
+
 # WebUI
 
 You can use the [frereit/react-calendar](https://github.com/frereit/react-calendar/) webui to view a calendar.

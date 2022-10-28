@@ -1,3 +1,14 @@
+# v1.2.0
+
+- add Notifiers: Get Notifications per Mail, if a calendar changes
+  - periodic
+  - from cronjobs with `--notifier`
+- add API
+  - `/api/calendars`: Returns all Public Calendars as json-array.
+  - `/api/reloadconfig`: Reloads the config from disk.
+  - `/api/notifier/<notifier>/addrecipient`: with an E-Mail Address as body adds the recipient to the notifier.
+- Release as `.deb` Package
+
 # v1.1.6
 
 - add move-time to `edit-bysummary-regex`-module
