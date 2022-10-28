@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 	"os"
-	"flag"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -28,7 +28,7 @@ func main() {
 	var err error
 	conf, err = ParseConfig(configPath)
 	if err != nil {
-		log.Fatal(err)
+		os.Exit(1)
 	}
 
 	log.SetLevel(conf.Server.LogLevel)
