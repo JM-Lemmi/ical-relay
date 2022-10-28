@@ -10,7 +10,7 @@ RUN go build .
 FROM alpine AS run
 
 COPY --from=build /app/ical-relay /usr/bin/ical-relay
-RUN mkdir /etc/ical-relay/calstore/
+RUN mkdir -p /etc/ical-relay/calstore/
 RUN mkdir /etc/ical-relay/notifystore/
 
 WORKDIR /etc/ical-relay
