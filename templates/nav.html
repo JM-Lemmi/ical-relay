@@ -4,7 +4,7 @@
         {{if .Profiles}}
             <select id="profile">
                 {{range .Profiles}}
-                    <option value="{{.URL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
+                    <option value="{{.ViewURL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
                 {{end}}
             </select>
             <script>
