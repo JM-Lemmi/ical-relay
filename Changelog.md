@@ -1,3 +1,30 @@
+# v1.2.0
+
+- add Notifiers: Get Notifications per Mail, if a calendar changes
+  - periodic
+  - from cronjobs with `--notifier`
+- add API
+  - `/api/calendars`: Returns all Public Calendars as json-array.
+  - `/api/reloadconfig`: Reloads the config from disk.
+  - `/api/notifier/<notifier>/addrecipient`: with an E-Mail Address as body adds the recipient to the notifier.
+- Release as `.deb` Package
+
+# v1.1.6
+
+- add move-time to `edit-bysummary-regex`-module
+
+# v1.1.5
+
+- ignore unavailible URLs
+
+# v1.1.4
+
+- add remote calendar URL to Debug log
+
+# v1.1.3
+
+- remove view handle and replace with frereit/reacht-calendar
+
 # v1.1.2
 
 - Module edit-byid and edit-byregex:

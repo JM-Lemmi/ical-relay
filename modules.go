@@ -42,7 +42,7 @@ func callModule(module func(*ics.Calendar, map[string]string) (int, error), para
 func moduleDeleteSummaryRegex(cal *ics.Calendar, params map[string]string) (int, error) {
 	var count int
 	if params["regex"] == "" {
-		return 0, fmt.Errorf("Missing mandatory Parameter 'regex'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'regex'")
 	}
 	regex, _ := regexp.Compile(params["regex"])
 	if params["from"] != "" && params["until"] != "" {
@@ -53,7 +53,7 @@ func moduleDeleteSummaryRegex(cal *ics.Calendar, params map[string]string) (int,
 		count = removeByRegexSummary(cal, *regex)
 	}
 	if count > 0 {
-		return count, fmt.Errorf("This number should not be positive!")
+		return count, fmt.Errorf("this number should not be positive")
 	}
 	return count, nil
 }
@@ -96,7 +96,7 @@ func removeByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, start t
 func moduleDeleteId(cal *ics.Calendar, params map[string]string) (int, error) {
 	var count int
 	if params["id"] == "" {
-		return 0, fmt.Errorf("Missing mandatory Parameter 'id'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'id'")
 	}
 	for i, component := range cal.Components { // iterate over events
 		switch component.(type) {
@@ -126,7 +126,7 @@ func addEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 
 func moduleAddURL(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["url"] == "" {
-		return 0, fmt.Errorf("Missing mandatory Parameter 'url'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'url'")
 	}
 	// put all params starting with header- into header map
 	header := make(map[string]string)
@@ -152,7 +152,7 @@ func addEventsURL(cal *ics.Calendar, url string, headers map[string]string) (int
 
 	if err != nil {
 		log.Errorln(err)
-		return 0, fmt.Errorf("Error requesting additional URL: %s", err.Error())
+		return 0, fmt.Errorf("error requesting additional URL: %s", err.Error())
 	}
 	if response.StatusCode != 200 {
 		log.Warnf("Unexpected status '%s' from additional URL '%s'", response.Status, url)
@@ -200,14 +200,14 @@ func addMultiURL(cal *ics.Calendar, urls []string, header map[string]string) (in
 
 func moduleAddFile(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["filename"] == "" {
-		return 0, fmt.Errorf("Missing mandatory Parameter 'file'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'file'")
 	}
 	return addEventsFile(cal, params["filename"])
 }
 
 func addEventsFile(cal *ics.Calendar, filename string) (int, error) {
 	if _, err := os.Stat(filename); err != nil {
-		return 0, fmt.Errorf("File %s not found", filename)
+		return 0, fmt.Errorf("file %s not found", filename)
 	}
 	addicsfile, _ := os.Open(filename)
 	addics, _ := ics.ParseCalendar(addicsfile)
@@ -237,7 +237,7 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 	var before time.Time
 	var err error
 	if params["after"] == "" && params["before"] == "" {
-		return 0, fmt.Errorf("Missing both Parameters 'start' or 'end'. One has to be present")
+		return 0, fmt.Errorf("missing both Parameters 'start' or 'end'. One has to be present")
 	}
 	if params["after"] == "" {
 		log.Debug("No after time given. Using time 0.\n")
@@ -247,7 +247,7 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 	} else {
 		after, err = time.Parse(time.RFC3339, params["start"])
 		if err != nil {
-			return 0, fmt.Errorf("Invalid start time: %s", err.Error())
+			return 0, fmt.Errorf("invalid start time: %s", err.Error())
 		}
 	}
 	if params["before"] == "" {
@@ -258,7 +258,7 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 	} else {
 		before, err = time.Parse(time.RFC3339, params["before"])
 		if err != nil {
-			return 0, fmt.Errorf("Invalid end time: %s", err.Error())
+			return 0, fmt.Errorf("invalid end time: %s", err.Error())
 		}
 	}
 
@@ -319,7 +319,7 @@ func moduleDeleteDuplicates(cal *ics.Calendar, params map[string]string) (int, e
 // The return value is the number of events removed or added (should always be 0)
 func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["id"] == "" {
-		return 0, fmt.Errorf("Missing mandatory Parameter 'id'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'id'")
 	}
 	if params["overwrite"] == "" {
 		params["overwrite"] = "true"
@@ -331,11 +331,11 @@ func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 			if event.Id() == params["id"] {
 				log.Debug("Changing event with id " + event.Id())
 				if params["new-summary"] != "" {
-					if event.GetProperty(ics.ComponentPropertySummary) == nil{
+					if event.GetProperty(ics.ComponentPropertySummary) == nil {
 						params["overwrite"] = "true"
 						// if the summary is not set, we need to create it
 					}
-					switch params["overwrite"]{
+					switch params["overwrite"] {
 					case "false":
 						event.SetProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertySummary).Value+"; "+params["new-summary"])
 					case "fillempty":
@@ -348,11 +348,11 @@ func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 					log.Debug("Changed summary to " + event.GetProperty(ics.ComponentPropertySummary).Value)
 				}
 				if params["new-description"] != "" {
-					if event.GetProperty(ics.ComponentPropertyDescription) == nil{
+					if event.GetProperty(ics.ComponentPropertyDescription) == nil {
 						params["overwrite"] = "true"
 						// if the description is not set, we need to create it
 					}
-					switch params["overwrite"]{
+					switch params["overwrite"] {
 					case "false":
 						event.SetProperty(ics.ComponentPropertyDescription, event.GetProperty(ics.ComponentPropertyDescription).Value+"; "+params["new-description"])
 					case "fillempty":
@@ -365,11 +365,11 @@ func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 					log.Debug("Changed description to " + event.GetProperty(ics.ComponentPropertyDescription).Value)
 				}
 				if params["new-location"] != "" {
-					if event.GetProperty(ics.ComponentPropertyLocation) == nil{
+					if event.GetProperty(ics.ComponentPropertyLocation) == nil {
 						params["overwrite"] = "true"
 						// if the description is not set, we need to create it
 					}
-					switch params["overwrite"]{
+					switch params["overwrite"] {
 					case "false":
 						event.SetProperty(ics.ComponentPropertyLocation, event.GetProperty(ics.ComponentPropertyLocation).Value+"; "+params["new-location"])
 					case "fillempty":
@@ -384,7 +384,7 @@ func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 				if params["new-start"] != "" {
 					start, err := time.Parse(time.RFC3339, params["new-start"])
 					if err != nil {
-						return 0, fmt.Errorf("Invalid start time: %s", err.Error())
+						return 0, fmt.Errorf("invalid start time: %s", err.Error())
 					}
 					event.SetStartAt(start)
 					log.Debug("Changed start to " + params["new-start"])
@@ -392,7 +392,7 @@ func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 				if params["new-end"] != "" {
 					end, err := time.Parse(time.RFC3339, params["new-end"])
 					if err != nil {
-						return 0, fmt.Errorf("Invalid end time: %s", err.Error())
+						return 0, fmt.Errorf("invalid end time: %s", err.Error())
 					}
 					event.SetEndAt(end)
 					log.Debug("Changed end to " + params["new-end"])
@@ -422,11 +422,11 @@ func moduleEditId(cal *ics.Calendar, params map[string]string) (int, error) {
 func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, error) {
 	// parse regex
 	if params["regex"] == "" {
-		return 0, fmt.Errorf("Missing mandatory Parameter 'regex'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'regex'")
 	}
 	re, err := regexp.Compile(params["regex"])
 	if err != nil {
-		return 0, fmt.Errorf("Invalid regex: %s", err.Error())
+		return 0, fmt.Errorf("invalid regex: %s", err.Error())
 	}
 	// parse timespan
 	var after time.Time
@@ -439,7 +439,7 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 	} else {
 		after, err = time.Parse(time.RFC3339, params["start"])
 		if err != nil {
-			return 0, fmt.Errorf("Invalid start time: %s", err.Error())
+			return 0, fmt.Errorf("invalid start time: %s", err.Error())
 		}
 	}
 	if params["before"] == "" {
@@ -450,13 +450,13 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 	} else {
 		before, err = time.Parse(time.RFC3339, params["before"])
 		if err != nil {
-			return 0, fmt.Errorf("Invalid end time: %s", err.Error())
+			return 0, fmt.Errorf("invalid end time: %s", err.Error())
 		}
 	}
 
 	// parse move-time
 	if params["move-time"] != "" && (params["new-start"] != "" || params["new-end"] != "") {
-		return 0, fmt.Errorf("Two exclusive params were given: 'move-time' and 'new-start'/'new-end'")
+		return 0, fmt.Errorf("two exclusive params were given: 'move-time' and 'new-start'/'new-end'")
 	}
 
 	// iterate over events backwards
@@ -469,11 +469,11 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 				if re.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
 					log.Debug("Changing event with id " + event.Id())
 					if params["new-summary"] != "" {
-						if event.GetProperty(ics.ComponentPropertySummary) == nil{
+						if event.GetProperty(ics.ComponentPropertySummary) == nil {
 							params["overwrite"] = "true"
 							// if the summary is not set, we need to create it
 						}
-						switch params["overwrite"]{
+						switch params["overwrite"] {
 						case "false":
 							event.SetProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertySummary).Value+"; "+params["new-summary"])
 						case "fillempty":
@@ -486,11 +486,11 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 						log.Debug("Changed summary to " + event.GetProperty(ics.ComponentPropertySummary).Value)
 					}
 					if params["new-description"] != "" {
-						if event.GetProperty(ics.ComponentPropertyDescription) == nil{
+						if event.GetProperty(ics.ComponentPropertyDescription) == nil {
 							params["overwrite"] = "true"
 							// if the description is not set, we need to create it
 						}
-						switch params["overwrite"]{
+						switch params["overwrite"] {
 						case "false":
 							event.SetProperty(ics.ComponentPropertyDescription, event.GetProperty(ics.ComponentPropertyDescription).Value+"; "+params["new-description"])
 						case "fillempty":
@@ -503,11 +503,11 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 						log.Debug("Changed description to " + event.GetProperty(ics.ComponentPropertyDescription).Value)
 					}
 					if params["new-location"] != "" {
-						if event.GetProperty(ics.ComponentPropertyLocation) == nil{
+						if event.GetProperty(ics.ComponentPropertyLocation) == nil {
 							params["overwrite"] = "true"
 							// if the description is not set, we need to create it
 						}
-						switch params["overwrite"]{
+						switch params["overwrite"] {
 						case "false":
 							event.SetProperty(ics.ComponentPropertyLocation, event.GetProperty(ics.ComponentPropertyLocation).Value+"; "+params["new-location"])
 						case "fillempty":
@@ -522,7 +522,7 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 					if params["new-start"] != "" {
 						start, err := time.Parse(time.RFC3339, params["new-start"])
 						if err != nil {
-							return 0, fmt.Errorf("Invalid start time: %s", err.Error())
+							return 0, fmt.Errorf("invalid start time: %s", err.Error())
 						}
 						event.SetStartAt(start)
 						log.Debug("Changed start to " + params["new-start"])
@@ -530,7 +530,7 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 					if params["new-end"] != "" {
 						end, err := time.Parse(time.RFC3339, params["new-end"])
 						if err != nil {
-							return 0, fmt.Errorf("Invalid end time: %s", err.Error())
+							return 0, fmt.Errorf("invalid end time: %s", err.Error())
 						}
 						event.SetEndAt(end)
 						log.Debug("Changed end to " + params["new-end"])
@@ -538,7 +538,7 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 					if params["move-time"] != "" {
 						dur, err := time.ParseDuration(params["move-time"])
 						if err != nil {
-							return 0, fmt.Errorf("Invalid duration: %s", err.Error())
+							return 0, fmt.Errorf("invalid duration: %s", err.Error())
 						}
 						start, _ := event.GetStartAt()
 						log.Debug("Starttime is " + start.String())
