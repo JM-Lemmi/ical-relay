@@ -2,20 +2,19 @@ FROM golang:alpine AS build
 
 RUN apk --update add git
 
-WORKDIR /app
-COPY . /app
+WORKDIR /etc/ical-relay
+COPY . /etc/ical-relay
 
 RUN go build .
 
 FROM alpine AS run
 
-COPY --from=build /app/ical-relay /app/ical-relay
-COPY ./templates/ /app/templates/
-RUN mkdir /app/calstore/
-RUN mkdir /app/notifystore/
+COPY --from=build /app/ical-relay /usr/bin/ical-relay
+RUN mkdir /etc/ical-relay/calstore/
+RUN mkdir /etc/ical-relay/notifystore/
 
-WORKDIR /app
-VOLUME /app/calstore/
+WORKDIR /etc/ical-relay
+VOLUME /etc/ical-relay/
 EXPOSE 80
 
-CMD ./ical-relay
+CMD /usr/bin/ical-relay --config /etc/ical-relay/config.yml

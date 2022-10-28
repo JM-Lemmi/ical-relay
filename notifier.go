@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
-	"fmt"
 
 	"gopkg.in/gomail.v2"
 
@@ -15,8 +15,10 @@ func notifyChanges(id string, n *notifier) error {
 	requestLogger := log.WithFields(log.Fields{"notifier": id})
 	requestLogger.Infoln("Running Notifier!")
 
+	notifystore := conf.Server.StoragePath + "notifystore/"
+
 	// check if file exists, if not download for the first time
-	if _, err := os.Stat("/app/notifystore/" + id + ".ics"); os.IsNotExist(err) {
+	if _, err := os.Stat(notifystore + id + ".ics"); os.IsNotExist(err) {
 		log.Info("File does not exist, downloading for the first time")
 		calendar, err := readCalURL(n.Source)
 		if err != nil {
@@ -24,11 +26,11 @@ func notifyChanges(id string, n *notifier) error {
 			return err
 		}
 		// save file
-		writeCalFile(calendar, "/app/notifystore/"+id+".ics")
+		writeCalFile(calendar, notifystore+id+".ics")
 	}
 
 	// read files
-	file1, _ := os.Open("/app/notifystore/" + id + ".ics")
+	file1, _ := os.Open(notifystore + id + ".ics")
 	calendar1, err := ics.ParseCalendar(file1)
 	if err != nil {
 		requestLogger.Errorln(err)
@@ -43,7 +45,7 @@ func notifyChanges(id string, n *notifier) error {
 
 	added, deleted, changed := compare(calendar1, calendar2)
 
-	if len(added) + len(deleted) + len(changed) == 0 {
+	if len(added)+len(deleted)+len(changed) == 0 {
 		log.Info("No changes detected.")
 		return nil
 	} else {
@@ -92,7 +94,7 @@ func notifyChanges(id string, n *notifier) error {
 		}
 
 		// save updated calendar
-		writeCalFile(calendar2, "/app/notifystore/"+id+".ics")
+		writeCalFile(calendar2, notifystore+id+".ics")
 		return nil
 	}
 	return fmt.Errorf("Impossible return location. If you get this error, something is wrong.")

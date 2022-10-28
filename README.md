@@ -11,7 +11,7 @@ The edited ical can be accessed on `http://server/profiles/profilename`
 ## Docker Container
 
 ```
-docker run -d -p 8080:80 -v ~/ical-relay/config.yml:/app/config.yml ghcr.io/jm-lemmi/ical-relay
+docker run -d -p 8080:80 -v ~/ical-relay/:/etc/ical-relay/ ghcr.io/jm-lemmi/ical-relay
 ```
 
 ## Standalone
@@ -38,6 +38,7 @@ Run a notifier manually:
 server:
   addr: ":80"
   loglevel: "info"
+  storagepath: "/etc/ical-relay/"
 
 profiles:
   relay:
@@ -151,13 +152,13 @@ profiles:
     - name: "add-url"
       url: "http://localhost/profiles/abc-past"
     - name: "save-to-file"
-      file: "/app/calstore/abc-archive.ics"
+      file: "/etc/ical-relay/calstore/abc-archive.ics"
 
   abc-past:
     source: ""
     modules:
     - name: "add-file"
-      filename: "/app/calstore/abc-archive.ics"
+      filename: "/etc/ical-relay/calstore/abc-archive.ics"
     - name: "delete-timeframe"
       after: "now"
 ```
