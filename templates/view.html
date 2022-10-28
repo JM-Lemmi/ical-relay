@@ -1,11 +1,115 @@
 <!DOCTYPE html>
+
 <head>
     <title>{{.Name}} Calendar</title>
     {{template "head.html" .}}
 </head>
+
 <body>
     {{template "nav.html" .}}
     <main class="container">
-        Calendar View
+        <!-- next and previous month buttons -->
+        <div class="row">
+            <div class="col-6">
+                <a class="btn btn-primary btn-sm" id="btn-prev-month">Previous Month</a>
+            </div>
+            <div class="col-6 text-right justify-content-end d-flex">
+                <a class="btn btn-primary btn-sm" id="btn-next-month">Next Month</a>
+            </div>
+        </div>
+        <div class="row" id="calendar">
+            {{ range $date, $events := .EventsThisMonth }}
+            <div class="vstack gap-0 col-md-4 col-lg-2 pt-3">
+                <h5 class="fw-semibold">{{ $date.Format "Monday, 02.01"}}</h5>
+                {{ range $events }}
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ .title }}</h6>
+                        <div class="card-text">
+                            {{ .start.Format "15:04" }} - {{ .end.Format "15:04" }}
+                            {{ if .location }}
+                            <br>{{ .location }}
+                            {{ end }}
+                        </div>
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
     </main>
+    <script>
+        const events = {{ .AllEvents }};
+        let currentMonth = new Date({{ .CurrentMonth }});
+        let calendarElement = document.getElementById("calendar");
+
+        function updateHash() {
+            window.location.hash = currentMonth.toISOString().slice(0, 7);
+        }
+
+        function getEventCard(event) {
+            let event_card = document.createElement("div");
+            event_card.classList.add("card");
+            let event_body = document.createElement("div");
+            event_body.classList.add("card-body");
+            let event_title = document.createElement("h6");
+            event_title.classList.add("card-title");
+            event_title.innerText = event.title;
+            event_body.appendChild(event_title);
+            let event_text = document.createElement("div");
+            event_text.classList.add("card-text");
+            event_text.innerText = new Date(event.start).toLocaleTimeString("de-de", { hour: "2-digit", minute: "2-digit" }) + " - " + new Date(event.end).toLocaleTimeString("de-de", { hour: "2-digit", minute: "2-digit" });
+            if (event.location) {
+                event_text.innerHTML += "<br>" + event.location;
+            }
+            event_body.appendChild(event_text);
+            event_card.appendChild(event_body);
+            return event_card;
+        }
+
+        function updateCalendar() {
+            let calendar_start = new Date(Date.UTC(currentMonth.getFullYear(), currentMonth.getMonth(), 1-currentMonth.getDay()));
+            let calendar_end = new Date(Date.UTC(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0));
+            calendar_end.setDate(calendar_end.getDate() + (7 - calendar_end.getDay()));
+            calendarElement.innerHTML = "";
+            for (let date = calendar_start; date <= calendar_end; date.setDate(date.getDate() + 1)) {
+                if (date.getDay() == 0) {
+                    continue;
+                }
+                let day_vstack = document.createElement("div");
+                day_vstack.classList.add("vstack", "gap-0", "col-md-4", "col-lg-2", "pt-3");
+                let day_title = document.createElement("h5");
+                day_title.classList.add("fw-semibold");
+                day_title.innerText = date.toLocaleDateString("en-US", { weekday: "long", day: "2-digit", month: "2-digit" });
+                day_vstack.appendChild(day_title);
+                const iso_str = date.toISOString().slice(0, 10) + "T00:00:00Z";
+                if (events[iso_str] != undefined) {
+                    for (let event of events[iso_str]) {
+                        day_vstack.appendChild(getEventCard(event));
+                    }
+                }
+                calendarElement.appendChild(day_vstack);
+            }
+        }
+
+        function setMonth(date) {
+            currentMonth = date;
+            updateHash();
+            updateCalendar();
+        }
+
+        if (window.location.hash) {
+            selectedMonth = new Date(window.location.hash.slice(1));
+            if (selectedMonth.getMonth() !== currentMonth.getMonth()) {
+                setMonth(selectedMonth);
+            }
+        }
+
+        document.getElementById("btn-prev-month").addEventListener("click", function () {
+            setMonth(new Date(Date.UTC(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)));
+        });
+        document.getElementById("btn-next-month").addEventListener("click", function () {
+            setMonth(new Date(Date.UTC(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)));
+        });
+    </script>
 </body>
