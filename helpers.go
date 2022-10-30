@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"net/http"
+	"net/mail"
 
 	ics "github.com/arran4/golang-ical"
 )
@@ -30,4 +31,10 @@ func contains(s []string, str string) bool {
 	}
 
 	return false
+}
+
+// https://stackoverflow.com/a/66624104
+func validMail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
 }
