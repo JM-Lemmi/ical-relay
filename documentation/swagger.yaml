@@ -48,7 +48,7 @@ paths:
           description: successful operation
         '500':
           description: Server Error
-  /api/notifier/{notifier}/addrecipient:
+  /api/notifier/{notifier}/recipient:
     post:
       tags:
         - public
@@ -71,8 +71,40 @@ paths:
       responses:
         '200':
           description: successful operation
+        '400':
+          description: not a valid E-Mail address
+        '404':
+          description: Notifier does not exist
         '500':
-          description: Server Error, or Notifier not found
+          description: Server Error
+    delete:
+      tags:
+        - public
+      summary: Removes an E-Mail-Recipient from a Notifier
+      description: ''
+      operationId: rmRecipient
+      parameters:
+        - name: notifier
+          in: path
+          description: Name of Notifier to add to
+          required: true
+          schema:
+            type: string
+        - name: mail
+          in: query
+          description: E-Mail Address that will be removed
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: not a valid E-Mail address
+        '404':
+          description: Notifier does not exist
+        '500':
+          description: Server Error
   /api/profiles/{profile}/checkAuth:
     get:
       tags:

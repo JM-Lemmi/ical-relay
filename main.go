@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 	"os"
-	"flag"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -54,8 +54,7 @@ func main() {
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler)
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
-	router.HandleFunc("/api/notifier/{notifier}/addrecipient", addNotifyRecipientApiHandler).Name("notifier")
-	router.HandleFunc("/api/notifier/{notifier}/removerecipient", removeNotifyRecipientApiHandler).Name("notifier")
+	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
 
 	// start notifiers
 	NotifierStartup()
