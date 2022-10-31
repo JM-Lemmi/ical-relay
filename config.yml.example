@@ -6,6 +6,8 @@ server:
     smtp_server: "mailout.julian-lemmerich.de"
     smtp_port: "25"
     sender: "calnotification@julian-lemmerich.de"
+  super-tokens:
+  - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
 
 profiles:
   relay:

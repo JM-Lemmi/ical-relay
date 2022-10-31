@@ -152,6 +152,20 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         '404':
           description: Profile not found
+  /api/checkSuperAuth:
+    get:
+      tags:
+        - admin
+      summary: Checks Token Autorization
+      description: Checks if token is authorized to access the profile.
+      operationId: checkSuperAuth
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Authentication successful
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
   /api/profiles/{profile}/modules:
     get:
       tags:
