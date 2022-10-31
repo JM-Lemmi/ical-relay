@@ -80,7 +80,7 @@
                 day_vstack.classList.add("vstack", "gap-0", "col-md-4", "col-lg-2", "pt-3");
                 let day_title = document.createElement("h5");
                 day_title.classList.add("fw-semibold");
-                day_title.innerText = date.toLocaleDateString("en-US", { weekday: "long", day: "2-digit", month: "2-digit" });
+                day_title.innerText = date.toLocaleDateString("de-de", { weekday: "long", day: "2-digit", month: "2-digit" });
                 day_vstack.appendChild(day_title);
                 const iso_str = date.toISOString().slice(0, 10) + "T00:00:00Z";
                 if (events[iso_str] != undefined) {
