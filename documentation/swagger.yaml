@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 2.0
 info:
   title: ical-relay
   description: |-
@@ -26,16 +26,18 @@ paths:
         - public
       summary: Get all public calendars
       description: List all public calendars with their URL.
-      operationId: listCalendars
+      operationId: listProfiles
       responses:
         '200':
           description: Successful operation
-          #content:
-          #  application/json:
-          #    schema:
-          #      $ref: '#/components/schemas/Pet'
+          content:
+            application/json:
+              schema:
+                example:
+                  - "profile1"
+                  - "profile2"
         '500':
-          description: Either Error, or calendar not found
+          $ref: '#/components/responses/InternalError'
   /api/reloadconfig:
     get:
       tags:
@@ -47,7 +49,7 @@ paths:
         '200':
           description: successful operation
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
   /api/notifiers/{notifier}/recipient:
     post:
       tags:
@@ -76,7 +78,7 @@ paths:
         '404':
           description: Notifier does not exist
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
     delete:
       tags:
         - public
@@ -104,7 +106,29 @@ paths:
         '404':
           description: Notifier does not exist
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags:
+        - admin
+      summary: Get all E-Mail-Recipients of a Notifier
+      description: ''
+      operationId: getRecipients
+      parameters:
+        - name: notifier
+          in: path
+          description: Name of Notifier to add to
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                example:
+                  - "email1@example.com"
+                  - "email2@example.com"
   /api/profiles/{profile}/checkAuth:
     get:
       tags:
@@ -146,13 +170,13 @@ paths:
         - tokenAuth: []
       responses:
         '200':
-          description: successful operation
+          $ref: "#/components/responses/ModuleList"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '404':
           description: Profile not found
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
     post:
       tags:
         - admin
@@ -166,12 +190,17 @@ paths:
           required: true
           schema:
             type: string
-        # json body with module information, will be piped directly into the config
+        - name: module
+          in: body
+          description: Module to add
+          required: true
+          schema:
+            $ref: "#/components/schemas/Module"
       security:
         - superAuth: []
       responses:
         '200':
-          description: successful operation
+          $ref: "#/components/responses/ModuleList"
         '400':
           description: Module not found
         '401':
@@ -179,7 +208,7 @@ paths:
         '404':
           description: Profile not found
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
   /api/profiles/{profile}/calentry:
     get:
       tags:
@@ -202,7 +231,7 @@ paths:
             type: string
       responses:
         '200':
-          description: successful operation
+          $ref: "#/components/responses/CalEntry"
         '400':
           description: ID not found
         '401':
@@ -210,7 +239,7 @@ paths:
         '404':
           description: Profile not found
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
     post:
       tags:
         - admin
@@ -230,12 +259,17 @@ paths:
           required: true
           schema:
             type: string
-        # json body with changed entry information. Will be parsed and calls the editing functions to add specific modules.
+        - name: calentry
+          in: body
+          description: Edited Components of CalEntry. Only the ones that should be changed need to be included.
+          required: true
+          schema:
+            $ref: "#/components/schemas/CalEntry"
       security:
         - tokenAuth: []
       responses:
         '200':
-          description: successful operation
+          $ref: "#/components/responses/CalEntry"
         '400':
           description: ID not found
         '401':
@@ -243,7 +277,7 @@ paths:
         '404':
           description: Profile not found
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
     put:
       tags:
         - admin
@@ -257,18 +291,23 @@ paths:
           required: true
           schema:
             type: string
-        # json body with entry information. Will be parsed to ics file with add-ics function
+        - name: calentry
+          in: body
+          description: CalEntry to add
+          required: true
+          schema:
+            $ref: "#/components/schemas/CalEntry"
       security:
         - tokenAuth: []
       responses:
         '200':
-          description: successful operation
+          $ref: "#/components/responses/CalEntry"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '404':
           description: Profile not found
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
     delete:
       tags:
         - admin
@@ -298,7 +337,7 @@ paths:
         '404':
           description: Profile not found
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
   /api/profiles/{profile}/uploadICS:
     post:
       tags:
@@ -323,13 +362,13 @@ paths:
         - tokenAuth: []
       responses:
         '200':
-          description: successful operation
+          description: successful upload and parsing
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '404':
           description: Profile not found
         '500':
-          description: Server Error
+          $ref: '#/components/responses/InternalError'
 
 components:
   securitySchemes:
@@ -348,6 +387,39 @@ components:
     UnauthorizedError:
       description: Token is missing or invalid
       headers:
-        WWW_Authenticate:
+        Authorization:
           schema:
             type: string
+            description: Token to use for authentication
+    InternalError:
+      description: Server Error
+      content:
+        plain/text:
+          schema:
+            type: string
+            description: Error message
+    ModuleList:
+      description: successful operation
+      content:
+        application/json:
+          schema:
+            example:
+              - name: "delete-bysummary-regex"
+                regex: "testentry"
+                from: "2021-12-02T00:00:00Z"
+                until: "2021-12-31T00:00:00Z"
+              - name: "add-url"
+                url: "https://othersource.com/othercalendar.ics"
+                header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+    CalEntry:
+      description: Calendar Entry
+      content:
+        application/json:
+          schema:
+            example:
+              - "id": "1234567890@calendar.local"
+                "summary": "Test"
+                "description": "Test"
+                "start": "2020-01-01T00:00:00+01:00"
+                "end": "2020-01-01T01:00:00+01:00"
+                "location": "Test"
