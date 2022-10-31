@@ -11,9 +11,10 @@ import (
 // STRUCTS
 
 type profile struct {
-	Source  string              `yaml:"source"`
-	Public  bool                `yaml:"public"`
-	Modules []map[string]string `yaml:"modules,omitempty"`
+	Source        string              `yaml:"source"`
+	Public        bool                `yaml:"public"`
+	ImmutablePast bool                `yaml:"immutable-past,omitempty"`
+	Modules       []map[string]string `yaml:"modules,omitempty"`
 }
 
 type mailConfig struct {
