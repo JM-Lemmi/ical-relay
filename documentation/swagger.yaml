@@ -181,7 +181,7 @@ paths:
       tags:
         - admin
       summary: Add a Module to a Profile
-      description: General add any Module to a Profile
+      description: General add a Module to a Profile. token Auth allows access to the Modules edit-bysummary-regex and delete-bysummary-regex. Super Auth allows access to all Modules.
       operationId: addModule
       parameters:
         - name: profile
@@ -197,7 +197,7 @@ paths:
           schema:
             $ref: "#/components/schemas/Module"
       security:
-        - superAuth: []
+        - tokenAuth: []
       responses:
         '200':
           $ref: "#/components/responses/ModuleList"
@@ -205,6 +205,8 @@ paths:
           description: Module not found
         '401':
           $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          description: Not allowed to add this Module. (Token Auth)
         '404':
           description: Profile not found
         '500':
