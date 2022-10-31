@@ -44,6 +44,7 @@ profiles:
   relay:
     source: "https://example.com/calendar.ics"
     public: true
+    immutable-past: true
     modules:
     - name: "delete-bysummary-regex"
       regex: "testentry"
@@ -72,6 +73,12 @@ The modules are executed in the order they are listed and you can call a module 
 # Modules
 
 Feel free do open a PR with modules of your own.
+
+## immutable-past
+
+Even though immutable past is not really a module, it is treated as such.
+
+If you enable immutable past, the relay will save all events that have already happened in a file called `<profile>-past.ics` in the storage path. Next time the profile is called, the past events will be added to the ical.
 
 ## delete-bysummary-regex
 
@@ -137,31 +144,6 @@ Parameters:
 
 This module saves the current calendar to a file.
 Parameters: "file" mandatory: full path of file to save
-
-# Special Combinations
-
-Using the save-to-file Module and the delete-timeframe module with "now" you can create a calendar with immutable past. This stops the calendar events in the past from being updated.
-
-```yaml
-profiles:
-  abc:
-    source: "http://example.com/calendar.ics"
-    modules:
-    - name: "delete-timeframe"
-      before: "now"
-    - name: "add-url"
-      url: "http://localhost/profiles/abc-past"
-    - name: "save-to-file"
-      file: "/etc/ical-relay/calstore/abc-archive.ics"
-
-  abc-past:
-    source: ""
-    modules:
-    - name: "add-file"
-      filename: "/etc/ical-relay/calstore/abc-archive.ics"
-    - name: "delete-timeframe"
-      after: "now"
-```
 
 # API
 
