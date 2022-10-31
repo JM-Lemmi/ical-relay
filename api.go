@@ -11,7 +11,15 @@ import (
 )
 
 func checkAuthoriziation(token string, profileName string) bool {
-	if contains(conf.Profiles[profileName].Tokens, token) {
+	if contains(conf.Profiles[profileName].Tokens, token) || checkSuperAuthorization(token) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func checkSuperAuthorization(token string) bool {
+	if contains(conf.Server.SuperTokens, token) {
 		return true
 	} else {
 		return false
@@ -119,5 +127,23 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 		requestLogger.Infoln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
+	}
+}
+
+func checkSuperAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	token := r.Header.Get("Authorization")
+
+	if checkSuperAuthorization(token) {
+		requestLogger.Infoln("Authorization successful!")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Authorized!\n")
+	} else {
+		requestLogger.Infoln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
+		return
 	}
 }
