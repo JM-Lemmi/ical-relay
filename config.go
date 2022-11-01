@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"regexp"
-	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -12,6 +12,7 @@ import (
 type regex struct {
 	regexp.Regexp
 }
+
 func (r *regex) UnmarshalText(text []byte) error {
 	tmpRe, err := regexp.Compile("(?i)" + string(text))
 	r.Regexp = *tmpRe
@@ -23,22 +24,24 @@ func (r *regex) UnmarshalText(text []byte) error {
 type profile struct {
 	Source  string              `yaml:"source"`
 	Public  bool                `yaml:"public"`
+	Tokens  []string            `yaml:"admin-tokens"`
 	Modules []map[string]string `yaml:"modules,omitempty"`
 }
 
 type mailConfig struct {
-	SMTPServer string   `yaml:"smtp_server"`
-	SMTPPort   int      `yaml:"smtp_port"`
-	Sender     string   `yaml:"sender"`
-	SMTPUser   string   `yaml:"smtp_user,omitempty"`
-	SMTPPass   string   `yaml:"smtp_pass,omitempty"`
+	SMTPServer string `yaml:"smtp_server"`
+	SMTPPort   int    `yaml:"smtp_port"`
+	Sender     string `yaml:"sender"`
+	SMTPUser   string `yaml:"smtp_user,omitempty"`
+	SMTPPass   string `yaml:"smtp_pass,omitempty"`
 }
 
 type serverConfig struct {
-	Addr     string     `yaml:"addr"`
-	URL      string     `yaml:"url"`
-	LogLevel log.Level  `yaml:"loglevel"`
-	Mail     mailConfig `yaml:"mail,omitempty"`
+	Addr        string     `yaml:"addr"`
+	URL         string     `yaml:"url"`
+	LogLevel    log.Level  `yaml:"loglevel"`
+	Mail        mailConfig `yaml:"mail,omitempty"`
+	SuperTokens []string   `yaml:"super-tokens,omitempty"`
 }
 
 type notifier struct {
@@ -111,6 +114,16 @@ func (c Config) getPublicCalendars() []string {
 		}
 	}
 	return cal
+}
+
+func (c Config) profileExists(name string) bool {
+	_, ok := c.Profiles[name]
+	return ok
+}
+
+func (c Config) notifierExists(name string) bool {
+	_, ok := c.Notifiers[name]
+	return ok
 }
 
 func (c Config) addNotifyRecipient(notifier string, recipient string) error {
