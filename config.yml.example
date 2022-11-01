@@ -6,11 +6,15 @@ server:
     smtp_server: "mailout.julian-lemmerich.de"
     smtp_port: "25"
     sender: "calnotification@julian-lemmerich.de"
+  super-tokens:
+  - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
 
 profiles:
   relay:
     source: "https://example.com/calendar.ics"
     public: true
+    admin-tokens:
+    - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     modules:
     - name: "delete-bysummary-regex"
       regex: "testentry"
@@ -24,5 +28,6 @@ notifiers:
   relay:
     source: "http://localhost/relay"
     interval: "15m"
+    admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     recipients:
     - email: "jm.lemmerich@gmail.com"

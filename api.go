@@ -10,6 +10,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func checkAuthoriziation(token string, profileName string) bool {
+	if contains(conf.Profiles[profileName].Tokens, token) || checkSuperAuthorization(token) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func checkSuperAuthorization(token string) bool {
+	if contains(conf.Server.SuperTokens, token) {
+		return true
+	} else {
+		return false
+	}
+}
+
 func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": "/api/calendars"})
 	requestLogger.Infoln("New API-Request!")
@@ -37,40 +53,97 @@ func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Config reloaded!\n")
 }
 
-func addNotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
-	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
+func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
 
-	mail := r.URL.Query().Get("mail")
-
-	err := conf.addNotifyRecipient(mux.Vars(r)["notifier"], mail)
-	if err != nil {
-		requestLogger.Errorln(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Error: "+err.Error()+"\n")
+	notifier := mux.Vars(r)["notifier"]
+	if !conf.notifierExists(notifier) {
+		requestLogger.Errorln("Notifier does not exist")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Error: Notifier does not exist\n")
 		return
-	} else {
-		requestLogger.Infoln("Added " + mail + " to " + mux.Vars(r)["notifier"])
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Added " + mail + " to " + mux.Vars(r)["notifier"] + "\n")
+	}
+
+	mail := r.URL.Query().Get("mail")
+	if !validMail(mail) {
+		requestLogger.Errorln("Invalid mail address")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "Error: Invalid mail address\n")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodPost:
+		err := conf.addNotifyRecipient(notifier, mail)
+		if err != nil {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "Error: "+err.Error()+"\n")
+			return
+		} else {
+			requestLogger.Infoln("Added " + mail + " to " + notifier)
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, "Added "+mail+" to "+notifier+"\n")
+		}
+	case http.MethodDelete:
+		err := conf.removeNotifyRecipient(notifier, mail)
+		if err != nil {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "Error: "+err.Error()+"\n")
+			return
+		} else {
+			requestLogger.Infoln("Removed " + mail + " from " + notifier)
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, "Removed "+mail+" from "+notifier+"\n")
+		}
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func removeNotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
+func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
 
-	mail := r.URL.Query().Get("mail")
+	token := r.Header.Get("Authorization")
+	profileName := vars["profile"]
 
-	err := conf.removeNotifyRecipient(mux.Vars(r)["notifier"], mail)
-	if err != nil {
-		requestLogger.Errorln(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Error: "+err.Error()+"\n")
+	_, ok := conf.Profiles[profileName]
+	if !ok {
+		requestLogger.Infoln("Profile " + profileName + " not found!")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
 		return
-	} else {
-		requestLogger.Infoln("Removed " + mail + " from " + mux.Vars(r)["notifier"])
+	}
+
+	if checkAuthoriziation(token, profileName) {
+		requestLogger.Infoln("Authorization successful!")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Removed " + mail + " from " + mux.Vars(r)["notifier"] + "\n")
+		fmt.Fprint(w, "Authorized!\n")
+	} else {
+		requestLogger.Infoln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
+	}
+}
+
+func checkSuperAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	token := r.Header.Get("Authorization")
+
+	if checkSuperAuthorization(token) {
+		requestLogger.Infoln("Authorization successful!")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Authorized!\n")
+	} else {
+		requestLogger.Infoln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
+		return
 	}
 }
