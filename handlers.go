@@ -43,10 +43,22 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Infoln("login request")
+	err := htmlTemplates.ExecuteTemplate(w, "login.html", map[string]interface{}{
+		"Profiles": getProfilesMetadata(),
+	})
+	if err != nil {
+		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
+		return
+	}
+}
+
+func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
-	requestLogger.Infoln("New Request!")
+	requestLogger.Infoln("montly view request")
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
 	if !ok {
@@ -60,25 +72,11 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	allEvents := getEventsByDay(calendar)
-	filteredEvents := make(calendarDataByDay)
 
-	month_start := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC)
-	calendar_start := month_start.AddDate(0, 0, -int(month_start.Weekday())+1)
-	month_end := month_start.AddDate(0, 1, 0)
-	calendar_end := month_end.AddDate(0, 0, 7-int(month_end.Weekday()))
-
-	for day := calendar_start; day.Before(calendar_end); day = day.AddDate(0, 0, 1) {
-		if day.Weekday() != time.Sunday {
-			filteredEvents[day] = allEvents[day]
-		}
-	}
-
-	htmlTemplates.ExecuteTemplate(w, "view.html", map[string]interface{}{
-		"ProfileName":     profileName,
-		"CurrentMonth":    month_start,
-		"EventsThisMonth": filteredEvents,
-		"AllEvents":       allEvents,
-		"Profiles":        getProfilesMetadata(),
+	htmlTemplates.ExecuteTemplate(w, "monthly.html", map[string]interface{}{
+		"ProfileName": profileName,
+		"AllEvents":   allEvents,
+		"Profiles":    getProfilesMetadata(),
 	})
 }
 
@@ -101,6 +99,7 @@ func getEventsByDay(calendar *ics.Calendar) calendarDataByDay {
 			"location": event.GetProperty("LOCATION").Value,
 			"start":    startTime,
 			"end":      endTime,
+			"id":       event.GetProperty("UID").Value,
 		})
 	}
 	return calendarDataByDay

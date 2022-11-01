@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+
+<head>
+    <title>{{.Name}} Calendar</title>
+    {{template "head.html" .}}
+</head>
+
+<body>
+    {{template "nav.html" .}}
+    <main class="container">
+        <!-- next and previous month buttons -->
+        <div class="row">
+            <div class="col text-center">
+                <a class="btn btn-primary btn-sm" id="btn-prev-month">Previous Month</a>
+                <span class="h4 text-center fw-bold">{{.ProfileName}}</span>
+                <a class="btn btn-primary btn-sm" id="btn-next-month">Next Month</a>
+            </div>
+        </div>
+        <div class="row" id="calendar">
+        </div>
+        <div class="dropdown-menu dropdown-menu-sm" id="context-menu">
+            <button class="dropdown-item" onclick=javascript:onDeleteClick() >Delete</button>
+            <button class="dropdown-item" onclick=javascript:onMoveClick() >Move</button>
+        </div>
+    </main>
+    <script>
+        const events_raw = {{ .AllEvents }};
+
+        document.getElementsByTagName("body")[0].addEventListener("click", function() {
+            document.getElementById("context-menu").style.display = "none";
+        });
+
+        function onDeleteClick() {
+            let eventId = document.getElementById("context-menu").getAttribute("data-event-id");
+            console.log(`Deleting ${eventId}`);
+        }
+
+        function onMoveClick() {
+            // get data-event-id from context menu
+            let eventId = document.getElementById("context-menu").getAttribute("data-event-id");
+            console.log(`Moving ${eventId}`);
+        }
+
+        // FIXME: This could be done in the backend
+        const events = Object.fromEntries(
+            Object.entries(events_raw).map(([k, v]) => [dayjs(k).format("YYYY-MM-DD"), v])
+        );
+
+        function getEventCard(event) {
+
+            let event_card = document.createElement("div");
+            event_card.classList.add("card", "rounded-0");
+            let event_body = document.createElement("div");
+            event_body.classList.add("card-body");
+            let event_title = document.createElement("h6");
+            event_title.classList.add("card-title");
+            event_title.innerText = event.title;
+            event_body.appendChild(event_title);
+            let event_text = document.createElement("div");
+            event_text.classList.add("card-text");
+            event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
+            if (event.location) {
+                event_text.innerHTML += "<br>" + event.location;
+            }
+            event_body.appendChild(event_text);
+            event_card.appendChild(event_body);
+            event_card.addEventListener("contextmenu", function (e) {
+                e.preventDefault();
+                let context_menu = document.getElementById("context-menu");
+                context_menu.style.display = "block";
+                context_menu.style.left = e.pageX + "px";
+                context_menu.style.top = e.pageY + "px";
+                context_menu.setAttribute("data-event-id", event.id);
+            });
+            return event_card;
+        }
+
+        function getEmptyCard() {
+            let empty_card = document.createElement("div");
+            empty_card.classList.add("card", "bg-light", "text-center", "p-2", "rounded-0");
+            empty_card.innerHTML = "&varnothing;";
+            return empty_card;
+        }
+
+        function updateCalendar(date) {
+            let calendar_start = date.day(0);
+            let calendar_end = date.add(1, "month").day(6);
+            let calendar = document.getElementById("calendar");
+            calendar.innerHTML = "";
+            let row;
+            for (let date = calendar_start; date <= calendar_end; date = date.add(1, "day")) {
+                if (date.day() == 0) {
+                    row = document.createElement("div");
+                    row.classList.add("row");
+                    calendar.appendChild(row);
+                    continue;
+                }
+                let day_vstack = document.createElement("div");
+                day_vstack.classList.add("vstack", "gap-0", "col-md-4", "col-lg-2", "pt-2", "day-column");
+                let day_title = document.createElement("h5");
+                day_title.classList.add("fw-semibold", "text-center", "m-0");
+                day_title.innerText = date.format("dd, DD.MM.YYYY");
+                day_vstack.appendChild(day_title);
+                if (events[date.format("YYYY-MM-DD")] != undefined) {
+                    for (let event of events[date.format("YYYY-MM-DD")]) {
+                        day_vstack.appendChild(getEventCard(event));
+                    }
+                } else {
+                    day_vstack.appendChild(getEmptyCard());
+                }
+                if (date >= date.add(1, "month")) {
+                    day_vstack.classList.add("bg-light");
+                }
+                row.appendChild(day_vstack);
+            }
+        }
+
+        function setSelectedMonth(date) {
+            currentMonth = date;
+            window.location.hash = currentMonth.format("YYYY-MM");
+            updateCalendar(date);
+        }
+
+        let currentMonth = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf("month");
+        updateCalendar(currentMonth);
+
+        document.getElementById("btn-prev-month").addEventListener("click", () => {
+            setSelectedMonth(currentMonth.subtract(1, "month").startOf("month"));
+        });
+        document.getElementById("btn-next-month").addEventListener("click", () => {
+            setSelectedMonth(currentMonth.add(1, "month").startOf("month"));
+        });
+    </script>
+</body>

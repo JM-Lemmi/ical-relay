@@ -1,0 +1,12 @@
+:root {
+    --dhbw-red: #E3001B;
+}
+
+.day-column > :first-child {
+    border-radius: 10px 10px 0 0 !important;
+    background-color: var(--dhbw-red);
+    color: white;
+}
+.day-column > :last-child {
+    border-radius: 0 0 10px 10px !important;
+}
