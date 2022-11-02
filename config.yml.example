@@ -11,6 +11,7 @@ profiles:
   relay:
     source: "https://example.com/calendar.ics"
     public: true
+    immutable-past: true
     modules:
     - name: "delete-bysummary-regex"
       regex: "testentry"

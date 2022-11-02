@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
@@ -64,6 +65,35 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	origlen := len(calendar.Events())
 	var addedEvents int
 
+	// immutable past (setup):
+	historyFilename := conf.Server.StoragePath + "calstore/" + profileName + "-past.ics"
+	immutableFirstRun := false
+	if profile.ImmutablePast {
+		// check if file exists, if not download for the first time
+		if _, err := os.Stat(historyFilename); os.IsNotExist(err) {
+			log.Info("History file does not exist, saving for the first time")
+			historyCal := calendar
+			_, err := moduleDeleteTimeframe(historyCal, map[string]string{"after": "now"})
+			if err != nil {
+				requestLogger.Errorln(err)
+				http.Error(w, fmt.Sprintf("Error executing immutable past (first-run): %s", err.Error()), 500)
+			}
+			writeCalFile(calendar, historyFilename)
+			immutableFirstRun = true
+		}
+
+		if !immutableFirstRun {
+			// delete events from calendar that are in the past
+			count, err := moduleDeleteTimeframe(calendar, map[string]string{"before": "now"})
+			if err != nil {
+				requestLogger.Errorln(err)
+				http.Error(w, fmt.Sprintf("Error executing immutable past (setup): %s", err.Error()), 500)
+				return
+			}
+			addedEvents += count
+		}
+	}
+
 	for i := range profile.Modules {
 		log.Debug("Requested Module: " + profile.Modules[i]["name"])
 		module, ok := modules[profile.Modules[i]["name"]]
@@ -79,6 +109,28 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		addedEvents += count
 	}
+
+	// immutable past (adding):
+	if profile.ImmutablePast && !immutableFirstRun {
+		// load history file
+		count, err := moduleAddFile(calendar, map[string]string{"filename": historyFilename})
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, fmt.Sprintf("Error executing immutable past (adding): %s", err.Error()), 500)
+			return
+		}
+		addedEvents += count
+
+		//saving history file
+		historyCal := calendar
+		_, err = moduleDeleteTimeframe(historyCal, map[string]string{"after": "now"})
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, fmt.Sprintf("Error executing immutable past (saving): %s", err.Error()), 500)
+		}
+		writeCalFile(calendar, historyFilename)
+	}
+	// it may be neccesary to run delete-duplicates here to avoid duplicates from the history file
 
 	// make sure new calendar has all events but excluded and added
 	eventCountDiff := origlen + addedEvents - len(calendar.Events())
