@@ -11,7 +11,7 @@ function getEventCard(event, goto_edit_on_click = false) {
     event_text.classList.add("card-text");
     event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
     if (event.location) {
-        event_text.innerHTML += "<br>" + event.location;
+        event_text.innerText = "\n" + event.location;
     }
     event_body.appendChild(event_text);
     event_card.appendChild(event_body);
