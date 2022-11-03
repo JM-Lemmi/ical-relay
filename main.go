@@ -56,6 +56,7 @@ func main() {
 	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler)
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
+	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
 
 	// start notifiers
 	NotifierStartup()
