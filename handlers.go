@@ -14,7 +14,7 @@ import (
 var htmlTemplates = template.Must(template.ParseGlob("templates/*.html"))
 
 type eventData map[string]interface{}
-type calendarDataByDay map[time.Time][]eventData
+type calendarDataByDay map[string][]eventData
 
 func tryRenderErrorOrFallback(w http.ResponseWriter, r *http.Request, statusCode int, err error, fallback string) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
@@ -53,6 +53,41 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
 		return
 	}
+}
+
+func editViewHandler(w http.ResponseWriter, r *http.Request) {
+	// simple dummy handler for now
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("edit view request")
+	profileName := vars["profile"]
+	profile, ok := conf.Profiles[profileName]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	// find event by uid in profile
+	uid := vars["uid"]
+	calendar, err := getProfileCalendar(profile)
+	if err != nil {
+		requestLogger.Errorln(err)
+		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, err.Error())
+		return
+	}
+	var event *ics.VEvent
+	for _, e := range calendar.Events() {
+		if e.GetProperty("UID").Value == uid {
+			event = e
+			break
+		}
+	}
+	htmlTemplates.ExecuteTemplate(w, "edit.html", map[string]interface{}{
+		"ProfileName": profileName,
+		"Event":       event,
+		"Profiles":    getProfilesMetadata(),
+	})
 }
 
 func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +129,7 @@ func getEventsByDay(calendar *ics.Calendar) calendarDataByDay {
 			continue
 		}
 		day := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
-		calendarDataByDay[day] = append(calendarDataByDay[day], eventData{
+		calendarDataByDay[day.Format("2006-01-02")] = append(calendarDataByDay[day.Format("2006-01-02")], eventData{
 			"title":    event.GetProperty("SUMMARY").Value,
 			"location": event.GetProperty("LOCATION").Value,
 			"start":    startTime,
