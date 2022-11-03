@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Calendar</title>
+    {{template "head.html" .}}
+</head>
+
+<body>
+    {{template "nav.html" .}}
+    <main class="container">
+        <h1 class="mb-3">Editing {{(.Event.GetProperty "SUMMARY").Value}}</h1>
+        <form id="edit-form container-sm">
+            <div class="row mb-3">
+                <label for="summary" class="col-sm-1 col-form-label">Titel</label>
+                <div class="col-sm-11">
+                    <input type="text" class="form-control" id="summary" name="summary"
+                    value="{{(.Event.GetProperty "SUMMARY").Value}}">
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label for="location" class="col-sm-1 col-form-label">Ort</label>
+                <div class="col-sm-11">
+                    <input type="text" class="form-control" id="location" name="location"
+                    value="{{(.Event.GetProperty "LOCATION").Value}}">                    
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label for="start" class="col-sm-1 col-form-label">Start</label>
+                <div class="col-sm-5">
+                    <input type="datetime-local" class="form-control" id="start" name="start">
+                </div>
+                <label for="end" class="col-sm-1 col-form-label">Ende</label>
+                <div class="col-sm-5">
+                    <input type="datetime-local" class="form-control" id="end" name="end">
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label for="description" class="col-sm-1 col-form-label">Beschreibung</label>
+                <div class="col-sm-11">
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ if .Event.GetProperty "DESCRIPTION" }}{{(.Event.GetProperty "DESCRIPTION").Value}}{{ end }}</textarea>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </main>
+    <script>
+        let start = dayjs({{(.Event.GetProperty "DTSTART").Value}});
+        let end = dayjs({{(.Event.GetProperty "DTEND").Value}});
+        document.getElementById("start").value = start.format("YYYY-MM-DDTHH:mm");
+        document.getElementById("end").value = end.format("YYYY-MM-DDTHH:mm");
+    </script>
+</body>

@@ -1,12 +1,23 @@
 :root {
     --dhbw-red: #E3001B;
+    --day-title-color: white;
+    --shadow-color: rgba(0, 0, 0, 0.07);
 }
 
+
 .day-column > :first-child {
-    border-radius: 10px 10px 0 0 !important;
     background-color: var(--dhbw-red);
-    color: white;
+    color: var(--day-title-color);
 }
+
 .day-column > :last-child {
-    border-radius: 0 0 10px 10px !important;
+    border-radius: 0 0 5px 5px !important;
+}
+
+.day-column > * {
+    box-shadow: 0 1px 1px var(--shadow-color), 
+    0 2px 2px var(--shadow-color), 
+    0 4px 4px var(--shadow-color), 
+    0 8px 8px var(--shadow-color),
+    0 16px 16px var(--shadow-color);
 }

@@ -8,6 +8,9 @@
     <main class="container">
         <form id="login-form">
             <h1>Login</h1>
+            <div class="alert alert-danger" id="login-error" style="display: none;">
+                Dieses Token ist nicht für dieses Profil gültig!
+            </div>
             <div class="row">
                 <div class="col">                    
                     <div class="mb-3">
@@ -30,7 +33,19 @@
     <script>
         function handleLogin(e) {
             e.preventDefault();
-            console.log("TODO: Handle login");
+            fetch(`/api/profiles/${document.getElementById("profile").value}/checkAuth`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `${document.getElementById("token").value}`
+                }
+            }).then(response => {
+                if (response.ok) {
+                    localStorage.setItem("token", document.getElementById("token").value);
+                    window.location.href = "/";
+                } else {
+                    document.getElementById("login-error").style.display = "block";
+                }
+            });
         }
         document.addEventListener('DOMContentLoaded', function () {
             var loginForm = document.querySelector('#login-form');
