@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -100,6 +101,89 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	token := r.Header.Get("Authorization")
+	profileName := vars["profile"]
+
+	_, ok := conf.Profiles[profileName]
+	if !ok {
+		requestLogger.Infoln("Profile " + profileName + " not found!")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
+		return
+	}
+
+	if !checkAuthoriziation(token, profileName) {
+		requestLogger.Warnln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+
+	switch r.Method {
+	case http.MethodGet:
+		// TODO: Implement
+		w.WriteHeader(http.StatusNotImplemented)
+		fmt.Fprint(w, "Not implemented yet!\n")
+	case http.MethodPost:
+		var entry map[string]interface{}
+
+		body, _ := ioutil.ReadAll(r.Body)
+		err := json.Unmarshal(body, &entry)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		module := map[string]string{"name": "edit-byid", "id": id, "overwrite": "true"}
+
+		_, ok := entry["summary"]
+		if ok {
+			module["new-summary"] = entry["summary"].(string)
+		}
+
+		_, ok = entry["location"]
+		if ok {
+			module["new-location"] = entry["location"].(string)
+		}
+
+		_, ok = entry["start"]
+		if ok {
+			module["new-start"] = entry["start"].(string)
+		}
+
+		_, ok = entry["end"]
+		if ok {
+			module["new-end"] = entry["end"].(string)
+		}
+
+		_, ok = entry["description"]
+		if ok {
+			module["new-description"] = entry["description"].(string)
+		}
+
+		conf.addModule(profileName, module)
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Added Module edit-byid to profile "+profileName+"\n")
+	case http.MethodPut:
+		// TODO: Implement
+		w.WriteHeader(http.StatusNotImplemented)
+		fmt.Fprint(w, "Not implemented yet!\n")
+	case http.MethodDelete:
+		module := map[string]string{"name": "delete-byid", "id": id}
+		conf.addModule(profileName, module)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Added Module to delete entry with id "+id+"\n")
 	}
 }
 

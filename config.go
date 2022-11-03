@@ -152,3 +152,13 @@ func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
 		return fmt.Errorf("Notifier does not exist")
 	}
 }
+
+func (c Config) addModule(profile string, module map[string]string) error {
+	if !c.profileExists(profile) {
+		return fmt.Errorf("profile " + profile + " does not exist")
+	}
+	p := c.Profiles[profile]
+	p.Modules = append(c.Profiles[profile].Modules, module)
+	c.Profiles[profile] = p
+	return c.saveConfig(configPath)
+}
