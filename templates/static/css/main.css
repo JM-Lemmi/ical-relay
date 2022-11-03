@@ -4,6 +4,11 @@
     --shadow-color: rgba(0, 0, 0, 0.07);
 }
 
+body {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+}
 
 .day-column > :first-child {
     background-color: var(--dhbw-red);
