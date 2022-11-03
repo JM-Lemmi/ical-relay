@@ -129,13 +129,18 @@ func getEventsByDay(calendar *ics.Calendar) calendarDataByDay {
 			continue
 		}
 		day := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
-		calendarDataByDay[day.Format("2006-01-02")] = append(calendarDataByDay[day.Format("2006-01-02")], eventData{
+		data := eventData{
 			"title":    event.GetProperty("SUMMARY").Value,
 			"location": event.GetProperty("LOCATION").Value,
 			"start":    startTime,
 			"end":      endTime,
 			"id":       event.GetProperty("UID").Value,
-		})
+		}
+		description := event.GetProperty("DESCRIPTION")
+		if description != nil {
+			data["description"] = description.Value
+		}
+		calendarDataByDay[day.Format("2006-01-02")] = append(calendarDataByDay[day.Format("2006-01-02")], data)
 	}
 	return calendarDataByDay
 }

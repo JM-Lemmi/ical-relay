@@ -11,7 +11,16 @@ function getEventCard(event, goto_edit_on_click = false) {
     event_text.classList.add("card-text");
     event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
     if (event.location) {
-        event_text.innerText = "\n" + event.location;
+        event_text.innerText += "\n" + event.location;
+    }
+    if (event.description) {
+        let description_el = document.createElement("p");
+        description_el.classList.add("text-muted", "mb-0");
+        description_el.style.whiteSpace = "nowrap";
+        description_el.style.overflow = "hidden";
+        description_el.style.textOverflow = "ellipsis";
+        description_el.innerText = event.description;
+        event_text.appendChild(description_el);
     }
     event_body.appendChild(event_text);
     event_card.appendChild(event_body);
