@@ -18,7 +18,7 @@ function getEventCard(event, goto_edit_on_click = false) {
     if (goto_edit_on_click) {
         event_card.classList.add("clickable");
         event_card.addEventListener("click", function () {
-            window.location.href = "edit/" + event.id;
+            window.location.href = "edit/" + event.id + "?" + new URLSearchParams({'return-to': window.location.pathname});
         });
     }
     return event_card;
