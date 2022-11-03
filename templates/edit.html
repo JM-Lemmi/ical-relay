@@ -47,6 +47,7 @@
             </div>
         </form>
     </main>
+    {{template "footer.html" .}}
     <script>
         const profileName = {{.ProfileName}};
         const uid = {{(.Event.GetProperty "UID").Value}};
