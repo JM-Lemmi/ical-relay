@@ -187,6 +187,65 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func modulesApiHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	token := r.Header.Get("Authorization")
+	profileName := vars["profile"]
+
+	_, ok := conf.Profiles[profileName]
+	if !ok {
+		requestLogger.Infoln("Profile " + profileName + " not found!")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
+		return
+	}
+
+	if !checkAuthoriziation(token, profileName) {
+		requestLogger.Warnln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		// TODO: Implement
+		w.WriteHeader(http.StatusNotImplemented)
+		fmt.Fprint(w, "Not implemented yet!\n")
+	case http.MethodPost:
+		var module map[string]string
+
+		body, _ := ioutil.ReadAll(r.Body)
+		err := json.Unmarshal(body, &module)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if module["name"] == "" {
+			requestLogger.Errorln("No module name given!")
+			http.Error(w, "No module name given!", http.StatusBadRequest)
+			return
+		}
+
+		if !checkSuperAuthorization(token) {
+			requestLogger.Debugln("Running in low-privilege mode!")
+			if !contains(lowPrivModules, module["name"]) {
+				requestLogger.Warnln("Module " + module["name"] + " not allowed in low-privilege mode!")
+				w.WriteHeader(http.StatusUnauthorized)
+				fmt.Fprint(w, "Module "+module["name"]+" not allowed in low-privilege mode!\n")
+				return
+			}
+		}
+
+		conf.addModule(profileName, module)
+	}
+}
+
 func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
