@@ -20,6 +20,21 @@ function getEventCard(event, goto_edit_on_click = false) {
         description_el.style.overflow = "hidden";
         description_el.style.textOverflow = "ellipsis";
         description_el.innerText = event.description;
+        let description_visible = false;
+        description_el.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (description_visible) {
+                description_el.style.whiteSpace = "nowrap";
+                description_el.style.overflow = "hidden";
+                description_el.style.textOverflow = "ellipsis";
+                description_visible = false;
+            } else {
+                description_el.style.whiteSpace = "normal";
+                description_el.style.overflow = "visible";
+                description_el.style.textOverflow = "visible";
+                description_visible = true;
+            }
+        }); 
         event_text.appendChild(description_el);
     }
     event_body.appendChild(event_text);
