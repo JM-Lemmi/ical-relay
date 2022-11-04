@@ -16,14 +16,20 @@ var htmlTemplates = template.Must(template.ParseGlob("templates/*.html"))
 type eventData map[string]interface{}
 type calendarDataByDay map[string][]eventData
 
+func getGlobalTemplateData() map[string]interface{} {
+	return map[string]interface{}{
+		"Profiles": getProfilesMetadata(),
+		"Version":  version,
+	}
+}
+
 func tryRenderErrorOrFallback(w http.ResponseWriter, r *http.Request, statusCode int, err error, fallback string) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
 	requestLogger.Errorln(err)
 	w.WriteHeader(statusCode)
-	err = htmlTemplates.ExecuteTemplate(w, "error.html", map[string]interface{}{
-		"Error":    err.Error(),
-		"Profiles": getProfilesMetadata(),
-	})
+	data := getGlobalTemplateData()
+	data["Error"] = err
+	err = htmlTemplates.ExecuteTemplate(w, "error.html", data)
 	if err != nil {
 		requestLogger.Errorln(err)
 		http.Error(w, fallback, statusCode)
@@ -34,9 +40,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
 	requestLogger.Infoln("index request")
 
-	err := htmlTemplates.ExecuteTemplate(w, "index.html", map[string]interface{}{
-		"Profiles": getProfilesMetadata(),
-	})
+	err := htmlTemplates.ExecuteTemplate(w, "index.html", getGlobalTemplateData())
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
 		return
@@ -46,9 +50,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
 	requestLogger.Infoln("login request")
-	err := htmlTemplates.ExecuteTemplate(w, "login.html", map[string]interface{}{
-		"Profiles": getProfilesMetadata(),
-	})
+	err := htmlTemplates.ExecuteTemplate(w, "login.html", getGlobalTemplateData())
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
 		return
@@ -83,11 +85,10 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
-	htmlTemplates.ExecuteTemplate(w, "edit.html", map[string]interface{}{
-		"ProfileName": profileName,
-		"Event":       event,
-		"Profiles":    getProfilesMetadata(),
-	})
+	data := getGlobalTemplateData()
+	data["ProfileName"] = profileName
+	data["Event"] = event
+	htmlTemplates.ExecuteTemplate(w, "edit.html", data)
 }
 
 func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
@@ -107,12 +108,10 @@ func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	allEvents := getEventsByDay(calendar)
-
-	htmlTemplates.ExecuteTemplate(w, "monthly.html", map[string]interface{}{
-		"ProfileName": profileName,
-		"AllEvents":   allEvents,
-		"Profiles":    getProfilesMetadata(),
-	})
+	data := getGlobalTemplateData()
+	data["ProfileName"] = profileName
+	data["Events"] = allEvents
+	htmlTemplates.ExecuteTemplate(w, "monthly.html", data)
 }
 
 func getEventsByDay(calendar *ics.Calendar) calendarDataByDay {
