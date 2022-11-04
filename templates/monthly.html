@@ -22,7 +22,7 @@
     </main>
     {{template "footer.html" .}}
     <script>
-        const events = {{ .AllEvents }};
+        const events = {{ .Events }};
 
         function updateCalendar(date) {
             let calendar_start = date.day(0);
