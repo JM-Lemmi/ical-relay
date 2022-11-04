@@ -10,7 +10,7 @@
     <main class="container">
         <h1 class="mb-3">{{(.Event.GetProperty "SUMMARY").Value}} bearbeiten</h1>
         <div class="alert alert-danger" id="edit-error" style="display: none;">
-            Es ist ein Fehler aufgetreten!
+            Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
         </div>
         <form id="edit-form">
             <div class="row mb-3">
@@ -49,16 +49,26 @@
     </main>
     {{template "footer.html" .}}
     <script>
-        const profileName = {{.ProfileName}};
+        const profileName = {{.ProfileName }};
         const uid = {{(.Event.GetProperty "UID").Value}};
         const originalSummary = {{(.Event.GetProperty "SUMMARY").Value}};
         const originalLocation = {{(.Event.GetProperty "LOCATION").Value}};
-        const originalStart = dayjs({{(.Event.GetStartAt ).Format "2006-01-02T15:04:05Z07:00"}});
-        const originalEnd = dayjs({{(.Event.GetEndAt ).Format "2006-01-02T15:04:05Z07:00"}});
-        const originalDescription = {{ if .Event.GetProperty "DESCRIPTION" }}{{(.Event.GetProperty "DESCRIPTION").Value}}{{ else }}""{{ end }};
-
+        const originalStart = dayjs({{(.Event.GetStartAt).Format "2006-01-02T15:04:05Z07:00"}});
+        const originalEnd = dayjs({{(.Event.GetEndAt).Format "2006-01-02T15:04:05Z07:00"}});
+        const originalDescription = {{ if .Event.GetProperty "DESCRIPTION" }}{{ (.Event.GetProperty "DESCRIPTION").Value }}{{ else }} ""{{ end }};
         document.getElementById("start").value = originalStart.format("YYYY-MM-DDTHH:mm");
         document.getElementById("end").value = originalEnd.format("YYYY-MM-DDTHH:mm");
+
+        function return_to_prev() {
+            let next = new URLSearchParams(window.location.search).get("return-to");
+            if (next) {
+                let nextUrl = new URL(next, window.location.origin);
+                if (nextUrl.origin === window.location.origin) {
+                    window.location.href = next;
+                }
+            }
+            window.location.href = `/view/${profileName}/monthly`;
+        }
 
         function handleEdit(e) {
             e.preventDefault();
@@ -80,6 +90,10 @@
             if (document.getElementById("description").value !== originalDescription) {
                 event.description = document.getElementById("description").value;
             }
+            if (Object.keys(event).length === 0) {
+                return_to_prev();
+                return;
+            }
             fetch(`/api/profiles/${profileName}/calentry?` + new URLSearchParams({
                 "id": uid
             }), {
@@ -92,24 +106,16 @@
             }).then(response => {
                 if (response.ok) {
                     // redirect to GET parameter next, if next is at the same origin
-                    let next = new URLSearchParams(window.location.search).get("return-to");
-                    if (next) {
-                        let nextUrl = new URL(next, window.location.origin);
-                        if (nextUrl.origin === window.location.origin) {
-                            window.location.href = next;
-                        }
-                    }
-                    window.location.href = `/view/${profileName}/monthly`;
+                    return_to_prev();
                 } else {
                     console.log(response);
                     document.getElementById("edit-error").style.display = "block";
-                    // FIXME: response does not contain error message
                 }
             });
         }
         document.addEventListener('DOMContentLoaded', function () {
             var editForm = document.querySelector('#edit-form');
-            
+
             editForm.addEventListener('submit', handleEdit);
         });
     </script>
