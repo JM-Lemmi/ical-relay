@@ -46,3 +46,32 @@ func directoryExists(filename string) bool {
 	// check if it's a directory
 	return info.IsDir()
 }
+
+func prettyPrint(e ics.VEvent) string {
+	var output string
+	output += e.GetProperty(ics.ComponentPropertySummary).Value + "\n"
+
+	start, err := e.GetStartAt()
+	if err != nil {
+		start, _ = e.GetAllDayStartAt()
+		output += start.Format("02. Jan 2006") + " - "
+	} else {
+		output += start.Format("Mon 02. Jan 2006, 15:04") + " - "
+	}
+	end, err := e.GetEndAt()
+	if err != nil {
+		end, _ = e.GetAllDayEndAt()
+		output += end.Format("02. Jan 2006") + "\n"
+	} else {
+		output += end.Format("15:04") + "\n"
+	}
+
+	if e.GetProperty(ics.ComponentPropertyLocation) != nil {
+		output += "Location: " + e.GetProperty(ics.ComponentPropertyLocation).Value + "\n"
+	}
+	if e.GetProperty(ics.ComponentPropertyDescription) != nil {
+		output += "Description: " + e.GetProperty(ics.ComponentPropertyDescription).Value + "\n"
+	}
+
+	return output
+}
