@@ -24,6 +24,7 @@ var modules = map[string]func(*ics.Calendar, map[string]string) (int, error){
 	"edit-byid":              moduleEditId,
 	"edit-bysummary-regex":   moduleEditSummaryRegex,
 	"save-to-file":           moduleSaveToFile,
+	"add-reminder":           moduleAddAllReminder,
 }
 
 // This wrappter gets a function from the above modules map and calls it with the parameters and the passed calendar.
@@ -552,6 +553,22 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 					cal.Components[i] = event
 				}
 			}
+		}
+	}
+	return 0, nil
+}
+
+func moduleAddAllReminder(cal *ics.Calendar, params map[string]string) (int, error) {
+	// add reminder to calendar
+	for i := len(cal.Components) - 1; i >= 0; i-- {
+		switch cal.Components[i].(type) {
+		case *ics.VEvent:
+			event := cal.Components[i].(*ics.VEvent)
+			event.AddAlarm()
+			event.Alarms()[0].SetTrigger(("-PT" + params["time"]))
+			event.Alarms()[0].SetAction("DISPLAY")
+			cal.Components[i] = event
+			log.Debug("Added reminder to event " + event.Id())
 		}
 	}
 	return 0, nil
