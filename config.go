@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -11,9 +14,10 @@ import (
 // STRUCTS
 
 type profile struct {
-	Source  string              `yaml:"source"`
-	Public  bool                `yaml:"public"`
-	Modules []map[string]string `yaml:"modules,omitempty"`
+	Source        string              `yaml:"source"`
+	Public        bool                `yaml:"public"`
+	ImmutablePast bool                `yaml:"immutable-past,omitempty"`
+	Modules       []map[string]string `yaml:"modules,omitempty"`
 }
 
 type mailConfig struct {
@@ -71,7 +75,27 @@ func ParseConfig(path string) (Config, error) {
 		tmpConfig.Server.LogLevel = log.InfoLevel
 	}
 	if tmpConfig.Server.StoragePath == "" {
-		tmpConfig.Server.StoragePath = "/etc/ical-relay/"
+		tmpConfig.Server.StoragePath = filepath.Dir(path)
+	}
+	if strings.HasSuffix(tmpConfig.Server.StoragePath, "/") {
+		tmpConfig.Server.StoragePath += "/"
+	}
+
+	if !directoryExists(tmpConfig.Server.StoragePath + "notifystore/") {
+		log.Info("Creating notifystore directory")
+		err = os.MkdirAll(tmpConfig.Server.StoragePath+"notifystore/", 0755)
+		if err != nil {
+			log.Fatalf("Error creating notifystore: %v", err)
+			return tmpConfig, err
+		}
+	}
+	if !directoryExists(tmpConfig.Server.StoragePath + "calstore/") {
+		log.Info("Creating calstore directory")
+		err = os.MkdirAll(tmpConfig.Server.StoragePath+"calstore/", 0755)
+		if err != nil {
+			log.Fatalf("Error creating calstore: %v", err)
+			return tmpConfig, err
+		}
 	}
 
 	return tmpConfig, nil

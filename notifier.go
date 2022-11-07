@@ -55,17 +55,17 @@ func notifyChanges(id string, n *notifier) error {
 
 		if len(added) > 0 {
 			for _, event := range added {
-				body += "Added:\n\n" + event.Serialize() + "\n\n"
+				body += "Added:\n\n" + prettyPrint(event) + "\n\n"
 			}
 		}
 		if len(deleted) > 0 {
 			for _, event := range deleted {
-				body += "Deleted:\n\n" + event.Serialize() + "\n\n"
+				body += "Deleted:\n\n" + prettyPrint(event) + "\n\n"
 			}
 		}
 		if len(changed) > 0 {
 			for _, event := range changed {
-				body += "Changed (displaying new version):\n\n" + event.Serialize() + "\n\n"
+				body += "Changed (displaying new version):\n\n" + prettyPrint(event) + "\n\n"
 			}
 		}
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
@@ -33,6 +34,13 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errorMsg, 404)
 		return
 	}
+
+	// load params
+	time := r.URL.Query().Get("reminder")
+	if time != "" {
+		profile.Modules = append(profile.Modules, map[string]string{"name": "add-reminder", "time": time})
+	}
+
 	// request original ical
 	var calendar *ics.Calendar
 	if profile.Source == "" {
@@ -79,6 +87,67 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		addedEvents += count
 	}
+
+	// immutable past:
+	historyFilename := conf.Server.StoragePath + "calstore/" + profileName + "-past.ics"
+	if profile.ImmutablePast {
+		// check if file exists, if not download for the first time
+		if _, err := os.Stat(historyFilename); os.IsNotExist(err) {
+			log.Info("History file does not exist, saving for the first time")
+			historyCal := calendar
+			_, err := moduleDeleteTimeframe(historyCal, map[string]string{"after": "now"})
+			if err != nil {
+				requestLogger.Errorln(err)
+				http.Error(w, fmt.Sprintf("Error executing immutable past (first-run): %s", err.Error()), 500)
+			}
+			writeCalFile(calendar, historyFilename)
+		}
+
+		// load history file
+		log.Debug("Loading history file")
+		historyCal, err := loadCalFile(historyFilename)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, fmt.Sprintf("Error loading history file: %s", err.Error()), 500)
+		}
+		log.Debug("Removing future from history file")
+		// delete events from historyCal that are in the future
+		_, err = moduleDeleteTimeframe(historyCal, map[string]string{"after": "now"})
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, fmt.Sprintf("Error executing immutable past (setup): %s", err.Error()), 500)
+			return
+		}
+
+		// delete events from calendar that are in the past
+		log.Debug("Removing past from calendar")
+		count, err := moduleDeleteTimeframe(calendar, map[string]string{"before": "now"})
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, fmt.Sprintf("Error executing immutable past (delete): %s", err.Error()), 500)
+			return
+		}
+		addedEvents += count
+		// combine calendars
+		log.Debug("Combining calendars")
+		count = addEvents(calendar, historyCal)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, fmt.Sprintf("Error executing immutable past (adding): %s", err.Error()), 500)
+			return
+		}
+		addedEvents += count
+
+		//saving history file
+		log.Debug("Saving history file")
+		err = writeCalFile(calendar, historyFilename)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, fmt.Sprintf("Error saving history file: %s", err.Error()), 500)
+			return
+		}
+	}
+	// it may be neccesary to run delete-duplicates here to avoid duplicates from the history file
 
 	// make sure new calendar has all events but excluded and added
 	eventCountDiff := origlen + addedEvents - len(calendar.Events())
