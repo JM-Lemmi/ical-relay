@@ -34,6 +34,13 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errorMsg, 404)
 		return
 	}
+
+	// load params
+	time := r.URL.Query().Get("reminder")
+	if time != "" {
+		profile.Modules = append(profile.Modules, map[string]string{"name": "add-reminder", "time": time})
+	}
+
 	// request original ical
 	var calendar *ics.Calendar
 	if profile.Source == "" {
