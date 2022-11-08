@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<head>
+    <title>Calendar</title>
+    {{template "head.html" .}}
+</head>
+<body>
+    {{template "nav.html" .}}
+    <main class="container">
+        <h1>Einstellungen</h1>
+        <form id="settings-form">
+            <div class="alert alert-danger" id="token-error" style="display: none;">
+                Dieses Token ist nicht für dieses Profil gültig!
+            </div>
+            <div class="alert alert-success" id="save-success" style="display: none;">
+                Einstellungen gespeichert!
+            </div>
+            <div class="row">
+                <div class="col">                    
+                    <div class="mb-3">
+                        <label for="profile" class="form-label">Profile</label>
+                        <select class="form-select" id="profile" name="profile">
+                            {{range .Profiles}}
+                            <option value="{{.Name}}">{{.Name}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="token" class="form-label">Token</label>
+                        <input type="text" class="form-control" id="token" name="token">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                </div>
+            </div>
+        </form>
+    </main>
+    {{template "footer.html" .}}
+    <script>
+        if (localStorage.getItem("profile") !== null) {
+            document.getElementById("profile").value = localStorage.getItem("profile");
+        }
+        if (localStorage.getItem("token") !== null) {
+            document.getElementById("token").value = localStorage.getItem("token");
+        }
+        function handleSaveSettings(e) {
+            e.preventDefault();
+            if (document.getElementById("token").value === "") {
+                localStorage.removeItem("token");
+                localStorage.removeItem("profile");
+                document.getElementById("save-success").style.display = "block";
+                document.getElementById("token-error").style.display = "none";
+                return;
+            }
+            let api_url = ({{((.Router.Get "apiCheckAuth").URL "profile" "%PROFILE%").Path}}).replace("%PROFILE%", document.getElementById("profile").value);
+            fetch(api_url, {
+                method: "GET",
+                headers: {
+                    "Authorization": document.getElementById("token").value
+                }
+            }).then(response => {
+                if (response.ok) {
+                    localStorage.setItem("profile", document.getElementById("profile").value);
+                    localStorage.setItem("token", document.getElementById("token").value);
+                    document.getElementById("save-success").style.display = "block";
+                    document.getElementById("token-error").style.display = "none";
+                } else {
+                    document.getElementById("token-error").style.display = "block";
+                    document.getElementById("save-success").style.display = "none";
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var loginForm = document.querySelector('#settings-form');
+            loginForm.addEventListener('submit', handleSaveSettings);
+        });
+    </script>
+</body>

@@ -20,6 +20,7 @@ func getGlobalTemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Profiles": getProfilesMetadata(),
 		"Version":  version,
+		"Router":   router,
 	}
 }
 
@@ -47,10 +48,10 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func settingsHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
-	requestLogger.Infoln("login request")
-	err := htmlTemplates.ExecuteTemplate(w, "login.html", getGlobalTemplateData())
+	requestLogger.Infoln("settings request")
+	err := htmlTemplates.ExecuteTemplate(w, "settings.html", getGlobalTemplateData())
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
 		return
@@ -107,14 +108,14 @@ func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
 		return
 	}
-	allEvents := getEventsByDay(calendar)
+	allEvents := getEventsByDay(calendar, profileName)
 	data := getGlobalTemplateData()
 	data["ProfileName"] = profileName
 	data["Events"] = allEvents
 	htmlTemplates.ExecuteTemplate(w, "monthly.html", data)
 }
 
-func getEventsByDay(calendar *ics.Calendar) calendarDataByDay {
+func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDay {
 	calendarDataByDay := make(calendarDataByDay)
 	for _, event := range calendar.Events() {
 		startTime, err := event.GetStartAt()
@@ -127,6 +128,10 @@ func getEventsByDay(calendar *ics.Calendar) calendarDataByDay {
 			log.Errorln(err)
 			continue
 		}
+		edit_url, err := router.Get("editView").URL("profile", profileName, "uid", event.GetProperty("UID").Value)
+		if err != nil {
+			log.Errorln(err)
+		}
 		day := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
 		data := eventData{
 			"title":    event.GetProperty("SUMMARY").Value,
@@ -134,6 +139,7 @@ func getEventsByDay(calendar *ics.Calendar) calendarDataByDay {
 			"start":    startTime,
 			"end":      endTime,
 			"id":       event.GetProperty("UID").Value,
+			"edit_url": edit_url.String(),
 		}
 		description := event.GetProperty("DESCRIPTION")
 		if description != nil {

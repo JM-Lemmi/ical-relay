@@ -1,4 +1,4 @@
-function getEventCard(event, goto_edit_on_click = false) {
+function getEventCard(event, show_edit = false) {
     let event_card = document.createElement("div");
     event_card.classList.add("card", "rounded-0");
     let event_body = document.createElement("div");
@@ -38,17 +38,21 @@ function getEventCard(event, goto_edit_on_click = false) {
         event_text.appendChild(description_el);
     }
     event_body.appendChild(event_text);
-    event_card.appendChild(event_body);
-    if (goto_edit_on_click) {
-        event_card.classList.add("clickable");
-        event_card.addEventListener("click", function () {
-            window.location.href = "edit/" + event.id + "?" + new URLSearchParams({'return-to': window.location.pathname});
+    if (show_edit) {
+        let edit_button = document.createElement("button");
+        edit_button.classList.add("btn", "btn-sm", "btn-outline-secondary", "rounded-circle", "edit-button");
+        edit_button.addEventListener("click", function (e) {
+            e.stopPropagation();
+            location.href = event.edit_url + '?' + new URLSearchParams({'return-to': window.location.pathname});
         });
+        event_body.appendChild(edit_button);
     }
+    event_card.appendChild(event_body);
     return event_card;
 }
 
 function getDayVStack(date, events) {
+    let show_edit = window.localStorage.getItem("token") !== null;
     let day_vstack = document.createElement("div");
     document.createElement("div");
     day_vstack.classList.add("vstack", "col-md-4", "col-xl-2", "pt-2", "day-column", "mb-3");
@@ -58,7 +62,7 @@ function getDayVStack(date, events) {
     day_vstack.appendChild(day_title);
     if (events[date.format("YYYY-MM-DD")] != undefined) {
         for (let event of events[date.format("YYYY-MM-DD")]) {
-            day_vstack.appendChild(getEventCard(event, true));
+            day_vstack.appendChild(getEventCard(event, show_edit));
         }
     } else {
         day_vstack.appendChild(getEmptyCard());

@@ -26,3 +26,20 @@ body {
     0 8px 8px var(--shadow-color),
     0 16px 16px var(--shadow-color);
 }
+
+.card .edit-button {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+    width: 3em;
+    height: 3em;
+    background-image: url("/static/media/edit.svg");
+    background-size: 2em 2em;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: none;
+}
+
+.card:hover .edit-button {
+    display: block;
+}
