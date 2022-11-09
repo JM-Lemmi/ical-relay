@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"net/mail"
 
 	ics "github.com/arran4/golang-ical"
 )
@@ -74,4 +75,20 @@ func prettyPrint(e ics.VEvent) string {
 	}
 
 	return output
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
+// https://stackoverflow.com/a/66624104
+func validMail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
 }
