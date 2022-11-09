@@ -51,8 +51,7 @@ function getEventCard(event, show_edit = false) {
     return event_card;
 }
 
-function getDayVStack(date, events) {
-    let show_edit = window.localStorage.getItem("token") !== null;
+function getDayVStack(date, events, show_edit = false) {
     let day_vstack = document.createElement("div");
     document.createElement("div");
     day_vstack.classList.add("vstack", "col-md-4", "col-xl-2", "pt-2", "day-column", "mb-3");

@@ -21,9 +21,22 @@
         </div>
     </main>
     {{template "footer.html" .}}
-    <script>
+    <script type="module">
         const events = {{ .Events }};
-
+        
+        let show_edit = window.localStorage.getItem("token") !== null;
+        let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};
+        if (show_edit) {
+            let response = await fetch(check_auth_url, {
+                method: "POST",
+                headers: {
+                    "Authorization": + window.localStorage.getItem("token")
+                }
+            })
+            if (!response.ok) {
+                show_edit = false;
+            }
+        }
         function updateCalendar(date) {
             let calendar_start = date.day(0);
             let calendar_end = date.add(1, "month").day(6);
@@ -37,7 +50,7 @@
                     calendar.appendChild(row);
                     continue;
                 }
-                let day_vstack = getDayVStack(date, events);
+                let day_vstack = getDayVStack(date, events, show_edit);
                 row.appendChild(day_vstack);
             }
         }
