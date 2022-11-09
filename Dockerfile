@@ -13,6 +13,8 @@ COPY --from=build /app/ical-relay /usr/bin/ical-relay
 RUN mkdir -p /etc/ical-relay/calstore/
 RUN mkdir /etc/ical-relay/notifystore/
 
+COPY templates/ /etc/ical-relay/templates
+
 WORKDIR /etc/ical-relay
 VOLUME /etc/ical-relay/
 EXPOSE 80
