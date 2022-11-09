@@ -14,21 +14,26 @@ The edited ical can be accessed on `http://server/profiles/profilename`
 docker run -d -p 8080:80 -v ~/ical-relay/:/etc/ical-relay/ ghcr.io/jm-lemmi/ical-relay
 ```
 
-## Standalone
+## Debian package
 
-Download the binary from the newest release.
+Download the package from the latest release.
+
+Install with your package manager:
 
 ```
-./ical-relay --config config.yml
+apt install ./ical-relay_1.3.0_amd64.deb
 ```
+
+This will create a systemd service called `ical-relay.service` which can be started with `systemctl start ical-relay.service`. The defualt configuration file is located at `/etc/ical-relay/config.yml`.
 
 Run a notifier manually:
 
 ```
-./ical-relay --notifier <name> --config config.yml
+/usr/bin/ical-relay --notifier <name> --config config.yml
 ```
 
 ## Build
+
 * Run from source: `go run .`
 * Build and run: `go build . && ./ical-relay`
 
