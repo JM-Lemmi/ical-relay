@@ -151,6 +151,12 @@ Parameters: "file" mandatory: full path of file to save
 - `/api/reloadconfig`: Reloads the config from disk.
 - `/api/notifier/<notifier>/addrecipient`: with an E-Mail Address as body adds the recipient to the notifier.
 
+Autorization is done in three levels:
+
+- Public: No token, can use all public endpoints.
+- Profile-Admin: Token for a specific profile, can use most endpoints for this profile, but not all module types.
+- Super-Admin: Rights for all profiles and can also use all modules. May include LFI or CSRF-capable config options. Should be used with caution.
+
 # Notifier
 
 The notifiers do not have to reference a local ical, you can also use this to only call external icals.

@@ -17,6 +17,7 @@ type profile struct {
 	Source        string              `yaml:"source"`
 	Public        bool                `yaml:"public"`
 	ImmutablePast bool                `yaml:"immutable-past,omitempty"`
+	Tokens        []string            `yaml:"admin-tokens"`
 	Modules       []map[string]string `yaml:"modules,omitempty"`
 }
 
@@ -34,6 +35,7 @@ type serverConfig struct {
 	LogLevel    log.Level  `yaml:"loglevel"`
 	StoragePath string     `yaml:"storagepath"`
 	Mail        mailConfig `yaml:"mail,omitempty"`
+	SuperTokens []string   `yaml:"super-tokens,omitempty"`
 }
 
 type notifier struct {
@@ -133,6 +135,16 @@ func (c Config) getPublicCalendars() []string {
 	return cal
 }
 
+func (c Config) profileExists(name string) bool {
+	_, ok := c.Profiles[name]
+	return ok
+}
+
+func (c Config) notifierExists(name string) bool {
+	_, ok := c.Notifiers[name]
+	return ok
+}
+
 func (c Config) addNotifyRecipient(notifier string, recipient string) error {
 	if _, ok := c.Notifiers[notifier]; ok {
 		n := c.Notifiers[notifier]
@@ -158,4 +170,14 @@ func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
 	} else {
 		return fmt.Errorf("notifier does not exist")
 	}
+}
+
+func (c Config) addModule(profile string, module map[string]string) error {
+	if !c.profileExists(profile) {
+		return fmt.Errorf("profile " + profile + " does not exist")
+	}
+	p := c.Profiles[profile]
+	p.Modules = append(c.Profiles[profile].Modules, module)
+	c.Profiles[profile] = p
+	return c.saveConfig(configPath)
 }

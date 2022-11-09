@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 2.0
 info:
   title: ical-relay
   description: |-
@@ -8,7 +8,7 @@ info:
   license:
     name:  GNU GENERAL PUBLIC LICENSE
     url: https://www.gnu.org/licenses/gpl-3.0.html
-  version: 1.2.0
+  version: 2.0.0-beta
 externalDocs:
   description: Find out more about ical-relay
   url: https://www.github.com/jm-lemmi/ical-relay
@@ -20,22 +20,24 @@ tags:
   - name: admin
     description: Access to Edit Relay-Profiles
 paths:
-  /api/calendars:
+  /api/profiles:
     get:
       tags:
         - public
       summary: Get all public calendars
       description: List all public calendars with their URL.
-      operationId: listCalendars
+      operationId: listProfiles
       responses:
         '200':
           description: Successful operation
-          #content:
-          #  application/json:
-          #    schema:
-          #      $ref: '#/components/schemas/Pet'
+          content:
+            application/json:
+              schema:
+                example:
+                  - "profile1"
+                  - "profile2"
         '500':
-          description: Either Error, or calendar not found
+          $ref: '#/components/responses/InternalError'
   /api/reloadconfig:
     get:
       tags:
@@ -47,8 +49,8 @@ paths:
         '200':
           description: successful operation
         '500':
-          description: Server Error
-  /api/notifier/{notifier}/addrecipient:
+          $ref: '#/components/responses/InternalError'
+  /api/notifiers/{notifier}/recipient:
     post:
       tags:
         - public
@@ -71,5 +73,369 @@ paths:
       responses:
         '200':
           description: successful operation
+        '400':
+          description: not a valid E-Mail address
+        '404':
+          description: Notifier does not exist
         '500':
-          description: Server Error, or Notifier not found
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags:
+        - public
+      summary: Removes an E-Mail-Recipient from a Notifier
+      description: ''
+      operationId: rmRecipient
+      parameters:
+        - name: notifier
+          in: path
+          description: Name of Notifier to add to
+          required: true
+          schema:
+            type: string
+        - name: mail
+          in: query
+          description: E-Mail Address that will be removed
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: not a valid E-Mail address
+        '404':
+          description: Notifier does not exist
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags:
+        - admin
+      summary: Get all E-Mail-Recipients of a Notifier
+      description: ''
+      operationId: getRecipients
+      parameters:
+        - name: notifier
+          in: path
+          description: Name of Notifier to add to
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                example:
+                  - "email1@example.com"
+                  - "email2@example.com"
+  /api/profiles/{profile}/checkAuth:
+    get:
+      tags:
+        - admin
+      summary: Checks Token Autorization
+      description: Checks if token is authorized to access the profile.
+      operationId: checkAuth
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to check Auth for.
+          required: true
+          schema:
+            type: string
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Authentication successful
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile not found
+  /api/checkSuperAuth:
+    get:
+      tags:
+        - admin
+      summary: Checks Token Autorization
+      description: Checks if token is authorized to access the profile.
+      operationId: checkSuperAuth
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Authentication successful
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+  /api/profiles/{profile}/modules:
+    get:
+      tags:
+        - admin
+      summary: Get all Modules of a Profile
+      description: Get all Modules of a Profile
+      operationId: getModules
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to get Modules for.
+          required: true
+          schema:
+            type: string
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/ModuleList"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile not found
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+        - admin
+      summary: Add a Module to a Profile
+      description: General add a Module to a Profile. token Auth allows access to the Modules edit-bysummary-regex and delete-bysummary-regex. Super Auth allows access to all Modules.
+      operationId: addModule
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to add Module to.
+          required: true
+          schema:
+            type: string
+        - name: module
+          in: body
+          description: Module to add
+          required: true
+          schema:
+            $ref: "#/components/schemas/Module"
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/ModuleList"
+        '400':
+          description: Module not found
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          description: Not allowed to add this Module. (Token Auth)
+        '404':
+          description: Profile not found
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/profiles/{profile}/calentry:
+    get:
+      tags:
+        - public
+      summary: Get specific Calendar Entry
+      description: Get specific Calendar Entry. Probably useless, but maybe for error checking afterwards?
+      operationId: getCalEntry
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to get CalEntries for.
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: ID of Entry to get
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: "#/components/responses/CalEntry"
+        '400':
+          description: ID not found
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile not found
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+        - admin
+      summary: Edit a Calendar Entry
+      description: Edit a Calendar Entry
+      operationId: editCalEntry
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to add CalEntry to.
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: ID of Entry to edit
+          required: true
+          schema:
+            type: string
+        - name: calentry
+          in: body
+          description: Edited Components of CalEntry. Only the ones that should be changed need to be included.
+          required: true
+          schema:
+            $ref: "#/components/schemas/CalEntry"
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/CalEntry"
+        '400':
+          description: ID not found
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile not found
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags:
+        - admin
+      summary: Add a Calendar Entry
+      description: Add a Calendar Entry
+      operationId: addCalEntry
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to add CalEntry to.
+          required: true
+          schema:
+            type: string
+        - name: calentry
+          in: body
+          description: CalEntry to add
+          required: true
+          schema:
+            $ref: "#/components/schemas/CalEntry"
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/CalEntry"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile not found
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags:
+        - admin
+      summary: Delete a Calendar Entry
+      description: Delete a Calendar Entry
+      operationId: rmCalEntry
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to add CalEntry to.
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: ID of Entry to delete
+          required: true
+          schema:
+            type: string
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: successful operation
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile not found
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/profiles/{profile}/uploadICS:
+    post:
+      tags:
+        - admin
+      summary: Upload ICS File
+      description: Upload ICS File, which will be added to profile in full.
+      operationId: uploadICS
+      consumes:
+         - multipart/form-data
+      parameters:
+        - name: profile
+          in: path
+          description: Name of Profile to add CalEntry to.
+          required: true
+          schema:
+            type: string
+        - name: upfile
+          in: formData
+          type: file
+          description: The file to upload
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: successful upload and parsing
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile not found
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token Authentication for specific profiles. Not all features availible.
+    superAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token Authentication for all profiles and Server features. All features availible.
+
+  responses:
+    UnauthorizedError:
+      description: Token is missing or invalid
+      headers:
+        Authorization:
+          schema:
+            type: string
+            description: Token to use for authentication
+    InternalError:
+      description: Server Error
+      content:
+        plain/text:
+          schema:
+            type: string
+            description: Error message
+    ModuleList:
+      description: successful operation
+      content:
+        application/json:
+          schema:
+            example:
+              - name: "delete-bysummary-regex"
+                regex: "testentry"
+                from: "2021-12-02T00:00:00Z"
+                until: "2021-12-31T00:00:00Z"
+              - name: "add-url"
+                url: "https://othersource.com/othercalendar.ics"
+                header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+    CalEntry:
+      description: Calendar Entry
+      content:
+        application/json:
+          schema:
+            example:
+              - "id": "1234567890@calendar.local"
+                "summary": "Test"
+                "description": "Test"
+                "start": "2020-01-01T00:00:00+01:00"
+                "end": "2020-01-01T01:00:00+01:00"
+                "location": "Test"
