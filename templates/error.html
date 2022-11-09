@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<head>
+    <title>Error!</title>
+    {{template "head.html" .}}
+</head>
+<body>
+    {{template "nav.html" .}}
+    <main class="container">
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error</h4>
+            <p>{{.Error}}</p>
+        </div>
+    </main>
+    {{template "footer.html" .}}
+</body>

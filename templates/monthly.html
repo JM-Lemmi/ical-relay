@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+
+<head>
+    <title>{{.Name}} Calendar</title>
+    {{template "head.html" .}}
+    <script src="/static/js/calendar.js"></script>
+</head>
+
+<body>
+    {{template "nav.html" .}}
+    <main class="container">
+        <!-- next and previous month buttons -->
+        <div class="row">
+            <div class="col text-center">
+                <a class="btn btn-primary btn-sm" id="btn-prev-month">Previous Month</a>
+                <span class="h4 text-center fw-bold">{{.ProfileName}}</span>
+                <a class="btn btn-primary btn-sm" id="btn-next-month">Next Month</a>
+            </div>
+        </div>
+        <div id="calendar">
+        </div>
+    </main>
+    {{template "footer.html" .}}
+    <script type="module">
+        const events = {{ .Events }};
+        
+        let show_edit = window.localStorage.getItem("token") !== null;
+        let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};
+        if (show_edit) {
+            let response = await fetch(check_auth_url, {
+                method: "POST",
+                headers: {
+                    "Authorization": + window.localStorage.getItem("token")
+                }
+            })
+            if (!response.ok) {
+                show_edit = false;
+            }
+        }
+        function updateCalendar(date) {
+            let calendar_start = date.day(0);
+            let calendar_end = date.add(1, "month").day(6);
+            let calendar = document.getElementById("calendar");
+            calendar.innerHTML = "";
+            let row;
+            for (let date = calendar_start; date <= calendar_end; date = date.add(1, "day")) {
+                if (date.day() == 0) {
+                    row = document.createElement("div");
+                    row.classList.add("row");
+                    calendar.appendChild(row);
+                    continue;
+                }
+                let day_vstack = getDayVStack(date, events, show_edit);
+                row.appendChild(day_vstack);
+            }
+        }
+
+        function setSelectedMonth(date) {
+            currentMonth = date;
+            window.location.hash = currentMonth.format("YYYY-MM");
+            updateCalendar(date);
+        }
+
+        let currentMonth = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf("month");
+        updateCalendar(currentMonth);
+
+        document.getElementById("btn-prev-month").addEventListener("click", () => {
+            setSelectedMonth(currentMonth.subtract(1, "month").startOf("month"));
+        });
+        document.getElementById("btn-next-month").addEventListener("click", () => {
+            setSelectedMonth(currentMonth.add(1, "month").startOf("month"));
+        });
+    </script>
+</body>
