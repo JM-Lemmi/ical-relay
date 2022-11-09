@@ -85,7 +85,7 @@ func ParseConfig(path string) (Config, error) {
 
 	if !directoryExists(tmpConfig.Server.StoragePath + "notifystore/") {
 		log.Info("Creating notifystore directory")
-		err = os.MkdirAll(tmpConfig.Server.StoragePath+"notifystore/", 0755)
+		err = os.MkdirAll(tmpConfig.Server.StoragePath+"notifystore/", 0750)
 		if err != nil {
 			log.Fatalf("Error creating notifystore: %v", err)
 			return tmpConfig, err
@@ -93,7 +93,7 @@ func ParseConfig(path string) (Config, error) {
 	}
 	if !directoryExists(tmpConfig.Server.StoragePath + "calstore/") {
 		log.Info("Creating calstore directory")
-		err = os.MkdirAll(tmpConfig.Server.StoragePath+"calstore/", 0755)
+		err = os.MkdirAll(tmpConfig.Server.StoragePath+"calstore/", 0750)
 		if err != nil {
 			log.Fatalf("Error creating calstore: %v", err)
 			return tmpConfig, err
@@ -120,7 +120,7 @@ func (c Config) saveConfig(path string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, d, 0644)
+	return ioutil.WriteFile(path, d, 0600)
 }
 
 // CONFIG EDITING FUNCTIONS

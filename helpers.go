@@ -3,8 +3,8 @@ package main
 import (
 	"io/ioutil"
 	"net/http"
-	"os"
 	"net/mail"
+	"os"
 
 	ics "github.com/arran4/golang-ical"
 )
@@ -21,7 +21,7 @@ func readCalURL(url string) (*ics.Calendar, error) {
 
 func writeCalFile(cal *ics.Calendar, filename string) error {
 	// write file
-	return ioutil.WriteFile(filename, []byte(cal.Serialize()), 0644)
+	return ioutil.WriteFile(filename, []byte(cal.Serialize()), 0600)
 }
 
 func loadCalFile(filename string) (*ics.Calendar, error) {
