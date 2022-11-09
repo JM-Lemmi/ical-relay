@@ -46,9 +46,10 @@ func callModule(module func(*ics.Calendar, map[string]string) (int, error), para
 
 // This modules delete all events whose summary match the regex and are in the time range from the calendar.
 // Parameters:
-// - 'regex', mandatory: regular expression to remove.
-// - 'from' & 'until', optional parameters: If timeframe is not given, all events matching the regex are removed.
-//   Currenty if only either "from" or "until" is set, the timeframe will be ignored. TODO
+//   - 'regex', mandatory: regular expression to remove.
+//   - 'from' & 'until', optional parameters: If timeframe is not given, all events matching the regex are removed.
+//     Currenty if only either "from" or "until" is set, the timeframe will be ignored. TODO
+//
 // Returns the number of events removed. This number should always be negative.
 func moduleDeleteSummaryRegex(cal *ics.Calendar, params map[string]string) (int, error) {
 	var count int
@@ -189,7 +190,7 @@ func moduleSaveToFile(cal *ics.Calendar, params map[string]string) (int, error) 
 	if params["file"] == "" {
 		return 0, fmt.Errorf("missing mandatory Parameter 'file'")
 	}
-	err := ioutil.WriteFile(params["file"], []byte(cal.Serialize()), 0644)
+	err := ioutil.WriteFile(params["file"], []byte(cal.Serialize()), 0600)
 	if err != nil {
 		log.Errorln(err)
 		return 0, fmt.Errorf("error writing to file: %s", err.Error())
