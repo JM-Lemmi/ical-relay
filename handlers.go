@@ -2,36 +2,164 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"html/template"
 	"net/http"
-	"os"
+	"time"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
-type templateData struct {
-	Name string
-	URL  string
+var htmlTemplates = template.Must(template.ParseGlob("templates/*.html"))
+
+type eventData map[string]interface{}
+type calendarDataByDay map[string][]eventData
+
+func getGlobalTemplateData() map[string]interface{} {
+	return map[string]interface{}{
+		"Profiles": getProfilesMetadata(),
+		"Version":  version,
+		"Router":   router,
+	}
+}
+
+func tryRenderErrorOrFallback(w http.ResponseWriter, r *http.Request, statusCode int, err error, fallback string) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Errorln(err)
+	w.WriteHeader(statusCode)
+	data := getGlobalTemplateData()
+	data["Error"] = err
+	err = htmlTemplates.ExecuteTemplate(w, "error.html", data)
+	if err != nil {
+		requestLogger.Errorln(err)
+		http.Error(w, fallback, statusCode)
+	}
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "", http.StatusNoContent)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Infoln("index request")
+
+	err := htmlTemplates.ExecuteTemplate(w, "index.html", getGlobalTemplateData())
+	if err != nil {
+		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
+		return
+	}
+}
+
+func settingsHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Infoln("settings request")
+	err := htmlTemplates.ExecuteTemplate(w, "settings.html", getGlobalTemplateData())
+	if err != nil {
+		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
+		return
+	}
+}
+
+func editViewHandler(w http.ResponseWriter, r *http.Request) {
+	// simple dummy handler for now
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("edit view request")
+	profileName := vars["profile"]
+	profile, ok := conf.Profiles[profileName]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// find event by uid in profile
+	uid := vars["uid"]
+	calendar, err := getProfileCalendar(profile, vars["profile"])
+	if err != nil {
+		requestLogger.Errorln(err)
+		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, err.Error())
+		return
+	}
+	var event *ics.VEvent
+	for _, e := range calendar.Events() {
+		if e.GetProperty("UID").Value == uid {
+			event = e
+			break
+		}
+	}
+	data := getGlobalTemplateData()
+	data["ProfileName"] = profileName
+	data["Event"] = event
+	htmlTemplates.ExecuteTemplate(w, "edit.html", data)
+}
+
+func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("montly view request")
+	profileName := vars["profile"]
+	profile, ok := conf.Profiles[profileName]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
+		return
+	}
+	calendar, err := getProfileCalendar(profile, vars["profile"])
+	if err != nil {
+		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
+		return
+	}
+	allEvents := getEventsByDay(calendar, profileName)
+	data := getGlobalTemplateData()
+	data["ProfileName"] = profileName
+	data["Events"] = allEvents
+	htmlTemplates.ExecuteTemplate(w, "monthly.html", data)
+}
+
+func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDay {
+	calendarDataByDay := make(calendarDataByDay)
+	for _, event := range calendar.Events() {
+		startTime, err := event.GetStartAt()
+		if err != nil {
+			log.Errorln(err)
+			continue
+		}
+		endTime, err := event.GetEndAt()
+		if err != nil {
+			log.Errorln(err)
+			continue
+		}
+		edit_url, err := router.Get("editView").URL("profile", profileName, "uid", event.GetProperty("UID").Value)
+		if err != nil {
+			log.Errorln(err)
+		}
+		day := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
+		data := eventData{
+			"title":    event.GetProperty("SUMMARY").Value,
+			"location": event.GetProperty("LOCATION").Value,
+			"start":    startTime,
+			"end":      endTime,
+			"id":       event.GetProperty("UID").Value,
+			"edit_url": edit_url.String(),
+		}
+		description := event.GetProperty("DESCRIPTION")
+		if description != nil {
+			data["description"] = description.Value
+		}
+		calendarDataByDay[day.Format("2006-01-02")] = append(calendarDataByDay[day.Format("2006-01-02")], data)
+	}
+	return calendarDataByDay
 }
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("New Request!")
-
-	// load profile
-	profileName := vars["profile"]
-	profile, ok := conf.Profiles[profileName]
+	profile, ok := conf.Profiles[vars["profile"]]
 	if !ok {
-		errorMsg := fmt.Sprintf("Profile '%s' doesn't exist", profileName)
-		requestLogger.Infoln(errorMsg)
-		http.Error(w, errorMsg, 404)
+		err := fmt.Errorf("profile '%s' doesn't exist", vars["profile"])
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
@@ -41,125 +169,15 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		profile.Modules = append(profile.Modules, map[string]string{"name": "add-reminder", "time": time})
 	}
 
-	// request original ical
-	var calendar *ics.Calendar
-	if profile.Source == "" {
-		calendar = ics.NewCalendar()
-	} else {
-		response, err := http.Get(profile.Source)
-		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, fmt.Sprintf("Error requesting original URL: %s", err.Error()), 500)
-			return
-		}
-		if response.StatusCode != 200 {
-			requestLogger.Errorf("Unexpected status '%s' from original URL\n", response.Status)
-			resp, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				requestLogger.Errorln(err)
-			}
-			requestLogger.Debugf("Full response body: %s\n", resp)
-			http.Error(w, fmt.Sprintf("Error response from original URL: Status %s", response.Status), 500)
-			return
-		}
-		// parse original calendar
-		calendar, err = ics.ParseCalendar(response.Body)
-		if err != nil {
-			requestLogger.Errorln(err)
-		}
+	calendar, err := getProfileCalendar(profile, vars["profile"])
+	if err != nil {
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	origlen := len(calendar.Events())
-	var addedEvents int
-
-	for i := range profile.Modules {
-		log.Debug("Requested Module: " + profile.Modules[i]["name"])
-		module, ok := modules[profile.Modules[i]["name"]]
-		if !ok {
-			requestLogger.Warnf(fmt.Sprintf("Module '%s' doesn't exist", profile.Modules[i]["name"]))
-			continue
-		}
-		count, err := callModule(module, profile.Modules[i], calendar)
-		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, fmt.Sprintf("Error executing module: %s", err.Error()), 500)
-			return
-		}
-		addedEvents += count
-	}
-
-	// immutable past:
-	historyFilename := conf.Server.StoragePath + "calstore/" + profileName + "-past.ics"
-	if profile.ImmutablePast {
-		// check if file exists, if not download for the first time
-		if _, err := os.Stat(historyFilename); os.IsNotExist(err) {
-			log.Info("History file does not exist, saving for the first time")
-			historyCal := calendar
-			_, err := moduleDeleteTimeframe(historyCal, map[string]string{"after": "now"})
-			if err != nil {
-				requestLogger.Errorln(err)
-				http.Error(w, fmt.Sprintf("Error executing immutable past (first-run): %s", err.Error()), 500)
-			}
-			writeCalFile(calendar, historyFilename)
-		}
-
-		// load history file
-		log.Debug("Loading history file")
-		historyCal, err := loadCalFile(historyFilename)
-		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, fmt.Sprintf("Error loading history file: %s", err.Error()), 500)
-		}
-		log.Debug("Removing future from history file")
-		// delete events from historyCal that are in the future
-		_, err = moduleDeleteTimeframe(historyCal, map[string]string{"after": "now"})
-		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, fmt.Sprintf("Error executing immutable past (setup): %s", err.Error()), 500)
-			return
-		}
-
-		// delete events from calendar that are in the past
-		log.Debug("Removing past from calendar")
-		count, err := moduleDeleteTimeframe(calendar, map[string]string{"before": "now"})
-		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, fmt.Sprintf("Error executing immutable past (delete): %s", err.Error()), 500)
-			return
-		}
-		addedEvents += count
-		// combine calendars
-		log.Debug("Combining calendars")
-		count = addEvents(calendar, historyCal)
-		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, fmt.Sprintf("Error executing immutable past (adding): %s", err.Error()), 500)
-			return
-		}
-		addedEvents += count
-
-		//saving history file
-		log.Debug("Saving history file")
-		err = writeCalFile(calendar, historyFilename)
-		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, fmt.Sprintf("Error saving history file: %s", err.Error()), 500)
-			return
-		}
-	}
-	// it may be neccesary to run delete-duplicates here to avoid duplicates from the history file
-
-	// make sure new calendar has all events but excluded and added
-	eventCountDiff := origlen + addedEvents - len(calendar.Events())
-	if eventCountDiff == 0 {
-		requestLogger.Infoln("Output validation successfull; event counts match")
-	} else {
-		requestLogger.Warnf("This shouldn't happen, event count diff: %d", eventCountDiff)
-	}
-	requestLogger.Debugf("Added %d events", addedEvents)
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", vars["profile"]))
 	fmt.Fprint(w, calendar.Serialize())
 }
 
