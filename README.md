@@ -147,9 +147,7 @@ Parameters: "file" mandatory: full path of file to save
 
 # API
 
-- `/api/calendars`: Returns all Public Calendars as json-array.
-- `/api/reloadconfig`: Reloads the config from disk.
-- `/api/notifier/<notifier>/addrecipient`: with an E-Mail Address as body adds the recipient to the notifier.
+For details about the API endpoints, see the swagger documentation at [./documentation/swagger.yml](./documentation/swagger.yml)
 
 Autorization is done in three levels:
 
@@ -164,41 +162,6 @@ The notifiers do not have to reference a local ical, you can also use this to on
 You can configure SMTP with authentication or without to use an external mailserver, or something local like boky/postfix.
 
 If you start the calendar with the `--notifier` flag, it will start the notifier from config. This allows setting up cronjobs to run the notifier.
-
-# WebUI
-
-You can use the [frereit/react-calendar](https://github.com/frereit/react-calendar/) webui to view a calendar.
-
-1. Download the react-calendar release and unpack into an nginx static directory.
-2. Configure nginx to serve the react-calendar webui at `/` and the ical-relay at `/profiles`<br>Example:
-
-```conf
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-
-    server_name cal.julian-lemmerich.de;
-
-    ssl_certificate /etc/nginx/ssl/live/cal.julian-lemmerich.de/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/cal.julian-lemmerich.de/privkey.pem;
-    
-    location /profiles/ {
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Real-IP         $remote_addr;
-	    proxy_buffering                    off;
-    	proxy_pass http://ical/profiles/;
-    }
-
-    location / {
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Real-IP         $remote_addr;
-	    proxy_buffering                    off;
-    	proxy_pass http://static/reactcal/;
-    }
-}
-```
-
-3. Edit the config.js file with the ical file you want to view in the WebUI.
 
 # Support
 
