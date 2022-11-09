@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "1.2.0"
+var version = "2.0.0-beta.1"
 
 var configPath string
 var conf Config
