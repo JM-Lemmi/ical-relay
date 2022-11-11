@@ -18,6 +18,7 @@
         <div class="d-flex">
             {{if .Profiles}}
             <select id="nav-profile">
+                <option value="/">Profil auswählen</option>
                 {{range .Profiles}}
                 <option value="{{.ViewURL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
                 {{end}}
