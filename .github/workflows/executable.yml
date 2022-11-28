@@ -30,6 +30,7 @@ jobs:
         run: |
           mkdir -p .debpkg/etc/ical-relay
           cp config.yml.example .debpkg/etc/ical-relay/
+          cp -r templates .debpkg/etc/ical-relay/templates/
           mkdir -p .debpkg/etc/systemd/system/
           cp misc/ical-relay.service .debpkg/etc/systemd/system/
 
