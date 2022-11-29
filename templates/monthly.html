@@ -41,7 +41,7 @@
             let response = await fetch(check_auth_url, {
                 method: "POST",
                 headers: {
-                    "Authorization": + window.localStorage.getItem("token")
+                    "Authorization": window.localStorage.getItem("token")
                 }
             })
             if (!response.ok) {
