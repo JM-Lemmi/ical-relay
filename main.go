@@ -53,6 +53,8 @@ func main() {
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("templates/static/"))))
 	router.HandleFunc("/view/{profile}/monthly", monthlyViewHandler).Name("monthlyView")
 	router.HandleFunc("/view/{profile}/edit/{uid}", editViewHandler).Name("editView")
+	router.HandleFunc("/notifier/{notifier}/subscribe", notifierSubscribeHandler).Name("notifierSubscribe")
+	//router.HandleFunc("/notifier/{notifier}/unsubscribe", notifierUnubscribeHandler).Name("notifierSubscribe")
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
