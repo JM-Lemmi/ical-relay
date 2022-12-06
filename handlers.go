@@ -196,6 +196,7 @@ func notifierSubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	data := getGlobalTemplateData()
 	data["mail"] = r.URL.Query().Get("mail")
 	data["notifier"] = notifier
+	data["ProfileName"] = notifier // this is vor the nav header to not break
 
 	htmlTemplates.ExecuteTemplate(w, "subscribe.html", data)
 }
@@ -215,6 +216,7 @@ func notifierUnsubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	data := getGlobalTemplateData()
 	data["mail"] = r.URL.Query().Get("mail")
 	data["notifier"] = notifier
+	data["ProfileName"] = notifier // this is vor the nav header to not break
 
 	htmlTemplates.ExecuteTemplate(w, "unsubscribe.html", data)
 }
