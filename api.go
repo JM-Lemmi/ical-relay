@@ -60,10 +60,16 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	notifier := mux.Vars(r)["notifier"]
 	if !conf.notifierExists(notifier) {
-		requestLogger.Errorln("Notifier does not exist")
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Error: Notifier does not exist\n")
-		return
+		requestLogger.Warnln("Notifier does not exist")
+		if !conf.profileExists(notifier) {
+			requestLogger.Errorln("Profile does not exist either.")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Error: Profile and Notifier does not exist\n")
+			return
+		} else {
+			requestLogger.Infoln("Profile exists, but not the notifier. Creating notifier...")
+			conf.addNotifierFromProfile(notifier)
+		}
 	}
 
 	mail := r.URL.Query().Get("mail")

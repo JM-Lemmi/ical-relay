@@ -145,6 +145,14 @@ func (c Config) notifierExists(name string) bool {
 	return ok
 }
 
+func (c Config) addNotifierFromProfile(name string) {
+	c.Notifiers[name] = notifier{
+		Source:     c.Server.URL + "/profiles/" + name,
+		Interval:   "1h",
+		Recipients: []string{},
+	}
+}
+
 func (c Config) addNotifyRecipient(notifier string, recipient string) error {
 	if _, ok := c.Notifiers[notifier]; ok {
 		n := c.Notifiers[notifier]
