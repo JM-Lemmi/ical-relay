@@ -113,7 +113,7 @@ func modulesViewHandler(w http.ResponseWriter, r *http.Request) {
 func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
-	requestLogger.Infoln("montly view request")
+	requestLogger.Infoln("monthly view request")
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
 	if !ok {
