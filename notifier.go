@@ -75,7 +75,7 @@ func notifyChanges(id string, n *notifier) error {
 			m.SetHeader("To", recipient)
 			m.SetHeader("Subject", "Calendar Notification for "+id)
 
-			unsubscribeURL := conf.Server.URL + "/api/notifier/" + id + "/removerecipient?email=" + recipient
+			unsubscribeURL := conf.Server.URL + "/notifier/" + id + "/unsubscribe?mail=" + recipient
 			m.SetHeader("List-Unsubscribe", unsubscribeURL)
 			bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
 			m.SetBody("text/plain", string(bodyunsubscribe))
