@@ -11,6 +11,9 @@
                     <a class="nav-link" href="{{(.Router.Get "settings").URL }}">Einstellungen</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{((.Router.Get "notifierUnsubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="#">¯\_(ツ)_/¯</a>
                 </li>
             </ul>
