@@ -183,7 +183,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 func notifierSubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "notifier": vars["notifier"]})
 	requestLogger.Infoln("New Request!")
 	notifier, ok := vars["notifier"]
 	if !ok {
@@ -202,7 +202,7 @@ func notifierSubscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 func notifierUnsubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "notifier": vars["notifier"]})
 	requestLogger.Infoln("New Request!")
 	notifier, ok := vars["notifier"]
 	if !ok {
