@@ -53,7 +53,7 @@
             document.getElementById("current-month").innerHTML = currentMonth.format("MMMM");
 
             let calendar_start = date.day(0);
-            let calendar_end = date.add(1, "month").day(6);
+            let calendar_end = date.add(4, "week").day(6);
             let calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
             let row;
