@@ -65,6 +65,8 @@ func main() {
 
 	// start notifiers
 	NotifierStartup()
+	// start cleanup
+	CleanupStartup()
 
 	// start server
 	address := conf.Server.Addr
