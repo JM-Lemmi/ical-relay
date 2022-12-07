@@ -8,7 +8,22 @@
 <body>
     {{template "nav.html" .}}
     <main class="container">
-            Index view
+        {{if .Profiles}}
+        <select id="main-profile" style="display: block;margin: 0 auto;font-size: 40px;">
+            <option value="/">Profil auswählen</option>
+            {{range .Profiles}}
+            <option value="{{.ViewURL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
+            {{end}}
+        </select>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var profileSelect = document.querySelector('#main-profile');
+                profileSelect.addEventListener('change', function () {
+                    window.location.href = profileSelect.value;
+                });
+            });
+        </script>
+        {{end}}
     </main>
     {{template "footer.html" .}}
 </body>
