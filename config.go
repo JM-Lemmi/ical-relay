@@ -191,14 +191,18 @@ func (c Config) addModule(profile string, module map[string]string) error {
 	return c.saveConfig(configPath)
 }
 
+func (c Config) removeModuleFromProfile(profile string, index int) {
+	log.Info("Removing expired module at position " + fmt.Sprint(index+1) + " from profile " + profile)
+	removeFromMapString(c.Profiles[profile].Modules, index)
+}
+
 func (c Config) RunCleanup() {
 	for p := range c.Profiles {
 		for i, m := range c.Profiles[p].Modules {
 			if m["expires"] != "" {
 				exp, _ := time.Parse(time.RFC3339, m["expiration"])
 				if time.Now().After(exp) {
-					log.Info("Removing expired module " + m["name"] + " at position " + fmt.Sprint(i+1) + " from profile " + p)
-					removeFromMapString(c.Profiles[p].Modules, i)
+					c.removeModuleFromProfile(p, i)
 				}
 			}
 		}
