@@ -55,6 +55,7 @@ profiles:
       regex: "testentry"
       from: "2021-12-02T00:00:00Z"
       until: "2021-12-31T00:00:00Z"
+      expires: "2022-12-06T00:00:00Z"
     - name: "add-url"
       url: "https://othersource.com/othercalendar.ics"
       header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
@@ -78,6 +79,8 @@ The modules are executed in the order they are listed and you can call a module 
 # Modules
 
 Feel free do open a PR with modules of your own.
+
+Adding `expires: <RFC3339>` to any module will remove it on the next cleanup cycle after the date has passed. Currently the Cleanup runs every 1h.
 
 ## immutable-past
 

@@ -89,7 +89,7 @@ func removeByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, start t
 				// event is in time range
 				if regex.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
 					// event matches regex
-					cal.Components = remove(cal.Components, i)
+					cal.Components = removeFromICS(cal.Components, i)
 					log.Debug("Excluding event '" + event.GetProperty(ics.ComponentPropertySummary).Value + "' with id " + event.Id() + "\n")
 					count--
 				}
@@ -115,7 +115,7 @@ func moduleDeleteId(cal *ics.Calendar, params map[string]string) (int, error) {
 		case *ics.VEvent:
 			event := component.(*ics.VEvent)
 			if event.Id() == params["id"] {
-				cal.Components = remove(cal.Components, i)
+				cal.Components = removeFromICS(cal.Components, i)
 				count--
 				log.Debug("Excluding event with id " + params["id"] + "\n")
 				break
@@ -282,7 +282,7 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 			event := cal.Components[i].(*ics.VEvent)
 			date, _ := event.GetStartAt()
 			if date.After(after) && before.After(date) {
-				cal.Components = remove(cal.Components, i)
+				cal.Components = removeFromICS(cal.Components, i)
 				count--
 				log.Debug("Excluding event with id " + event.Id() + "\n")
 			}
@@ -308,7 +308,7 @@ func moduleDeleteDuplicates(cal *ics.Calendar, params map[string]string) (int, e
 			end, _ := event.GetEndAt()
 			identifier := start.String() + end.String() + event.GetProperty(ics.ComponentPropertySummary).Value
 			if stringInSlice(identifier, uniques) {
-				cal.Components = remove(cal.Components, i)
+				cal.Components = removeFromICS(cal.Components, i)
 				count--
 				log.Debug("Excluding event with id " + event.Id() + "\n")
 			} else {
@@ -583,20 +583,4 @@ func moduleAddAllReminder(cal *ics.Calendar, params map[string]string) (int, err
 		}
 	}
 	return 0, nil
-}
-
-// removes the element at index i from ics.Component slice
-// warning: if you iterate over []ics.Component forward, this remove will lead to mistakes. Iterate backwards instead!
-func remove(slice []ics.Component, s int) []ics.Component {
-	return append(slice[:s], slice[s+1:]...)
-}
-
-// returns true, if a is in list b
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
 }

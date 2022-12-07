@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -180,4 +181,39 @@ func (c Config) addModule(profile string, module map[string]string) error {
 	p.Modules = append(c.Profiles[profile].Modules, module)
 	c.Profiles[profile] = p
 	return c.saveConfig(configPath)
+}
+
+func (c Config) RunCleanup() {
+	for p := range c.Profiles {
+		for i, m := range c.Profiles[p].Modules {
+			if m["expires"] != "" {
+				exp, _ := time.Parse(time.RFC3339, m["expiration"])
+				if time.Now().After(exp) {
+					log.Info("Removing expired module " + m["name"] + " at position " + fmt.Sprint(i+1) + " from profile " + p)
+					removeFromMapString(c.Profiles[p].Modules, i)
+				}
+			}
+		}
+	}
+	c.saveConfig(configPath)
+}
+
+// starts a heartbeat notifier in a sub-routine
+func CleanupStartup() {
+	log.Info("Starting Cleanup Timer")
+	go TimeCleanup()
+}
+
+func TimeCleanup() {
+	interval, _ := time.ParseDuration("1h")
+	if interval == 0 {
+		// failsave for 0s interval, to make machine still responsive
+		interval = 1 * time.Second
+	}
+	log.Debug("Cleanup Timer, Interval: " + interval.String())
+	// endless loop
+	for {
+		time.Sleep(interval)
+		conf.RunCleanup()
+	}
 }
