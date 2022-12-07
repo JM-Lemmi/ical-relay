@@ -93,10 +93,27 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	htmlTemplates.ExecuteTemplate(w, "edit.html", data)
 }
 
+func modulesViewHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("modules view request")
+	profileName := vars["profile"]
+	profile, ok := conf.Profiles[profileName]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
+		return
+	}
+	data := getGlobalTemplateData()
+	data["Modules"] = profile.Modules
+	data["ProfileName"] = profileName
+	htmlTemplates.ExecuteTemplate(w, "modules.html", data)
+}
+
 func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
-	requestLogger.Infoln("montly view request")
+	requestLogger.Infoln("monthly view request")
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
 	if !ok {
