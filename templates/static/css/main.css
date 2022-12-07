@@ -43,3 +43,12 @@ body {
 .card:hover .edit-button {
     display: block;
 }
+.title-div{
+    line-height: 1px;
+}
+.profile-name-div{
+    line-height: 12px;
+}
+.profile-name-div span{
+    font-size: 7pt;
+}
