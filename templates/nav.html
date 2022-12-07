@@ -12,7 +12,7 @@
                 </li>
                 {{ if .ProfileName }}
                 <li class="nav-item">
-                    <a class="nav-link" href="{{((.Router.Get "notifierUnsubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
+                    <a class="nav-link" href="{{((.Router.Get "notifierSubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{((.Router.Get "profile").URL "profile" .ProfileName).Path}}">ICS herunterladen</a>
