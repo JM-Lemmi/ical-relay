@@ -92,3 +92,23 @@ func validMail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil
 }
+
+// returns true, if a is in list b
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+// https://stackoverflow.com/a/37335777/9397749
+// removes the element at index i from ics.Component slice
+// warning: if you iterate over []ics.Component forward, this removeFromICS will lead to mistakes. Iterate backwards instead!
+func removeFromICS(slice []ics.Component, s int) []ics.Component {
+	return append(slice[:s], slice[s+1:]...)
+}
+func removeFromMapString(slice []map[string]string, s int) []map[string]string {
+	return append(slice[:s], slice[s+1:]...)
+}
