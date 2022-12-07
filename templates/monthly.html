@@ -12,9 +12,20 @@
         <!-- next and previous month buttons -->
         <div class="row">
             <div class="col text-center">
-                <a class="btn btn-primary btn-sm" id="btn-prev-month">Previous Month</a>
-                <span class="h4 text-center fw-bold">{{.ProfileName}}</span>
-                <a class="btn btn-primary btn-sm" id="btn-next-month">Next Month</a>
+                <div class="d-inline-block h-75 align-bottom">
+                    <a class="btn btn-primary btn-sm" id="btn-prev-month">Previous Month</a>
+                </div>
+                <div class="d-inline-block title-div">
+                    <div>
+                        <span class="h4 text-center fw-bold m-0" id="current-month"></span>
+                    </div>
+                    <div class="d-inline-block profile-name-div">
+                        <span>{{.ProfileName}}</span>
+                    </div>
+                </div>
+                <div class="d-inline-block h-75 align-bottom">
+                    <a class="btn btn-primary btn-sm" id="btn-next-month">Next Month</a>
+                </div>
             </div>
         </div>
         <div id="calendar">
@@ -30,7 +41,7 @@
             let response = await fetch(check_auth_url, {
                 method: "POST",
                 headers: {
-                    "Authorization": + window.localStorage.getItem("token")
+                    "Authorization": window.localStorage.getItem("token")
                 }
             })
             if (!response.ok) {
@@ -38,6 +49,9 @@
             }
         }
         function updateCalendar(date) {
+
+            document.getElementById("current-month").innerHTML = currentMonth.format("MMMM");
+
             let calendar_start = date.day(0);
             let calendar_end = date.add(1, "month").day(6);
             let calendar = document.getElementById("calendar");
