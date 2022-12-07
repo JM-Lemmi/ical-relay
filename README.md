@@ -84,74 +84,80 @@ Adding `expires: <RFC3339>` to any module will remove it on the next cleanup cyc
 
 ## immutable-past
 
-Even though immutable past is not really a module, it is treated as such.
+Even though immutable past is not really a module, it is listed here, cause it fits.
+
+Add `immutable-past: true` in the profile to enable it.
 
 If you enable immutable past, the relay will save all events that have already happened in a file called `<profile>-past.ics` in the storage path. Next time the profile is called, the past events will be added to the ical.
 
 ## delete-bysummary-regex
 
-Delete all entries with a summary matching the regex.
-The module can be called with a from and/or until date in RFC3339 format.
+* `regex`: The regex to match the summary against
+* `from`, optional: Beginning of timeframe that should be deleted in, in RFC3339 format
+* `until`, optional: End of timeframe that should be deleted in, in RFC3339 format
 
 ## delete-byid
 
-Deletes an entry by its id.
+* `id`: The id of the event to delete
 
 ## add-url
 
-Adds all events from the specified url.
-The module can be called with a header-<headername> option to pass Authentication cookies or X-Forwarded-Host headers.
+* `url`: Adds all events from the specified url.
+* `header-<headername>`, optional: Adds a header to the request. Can be used to pass authentication cookies or X-Forwarded-Host headers.
 
 ## add-file
 
-Adds all events from the specified local file.
+* `file`: Adds all events from the specified local file.
 
 ## delete-timeframe
 
-Deletes all events in the specified timeframe. The timeframe is specified with a after and/or before date in RFC3339 format.
-If only after is specified, all events after the date are deleted.
-If only before is specified, all events before the date are deleted.
-Other possible value is "now" to use current time as value.
+Deletes all events in the specified timeframe.
+
+* `after`:  Start of the timeframe to be deleted in RFC3339 format or "now" for current time as value. If only after is specified, all events after the date are deleted.
+* `before`: End of the timeframe to be deleted in RFC3339 format or "now" for current time as value. If only before is specified, all events before the date are deleted.
 
 ## delete-duplicates
 
 Deletes events, if there already is an event with the same start, end and summary.
 
+No parameters.
+
 ## edit-byid
 
 Edits an Event with the passed id.
 Parameters:
-- 'id', mandatory: the id of the event to edit
-- 'overwrite', default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
-- 'new-summary', optional: the new summary
-- 'new-description', optional: the new description
-- 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
-- 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
-- 'new-location', optional: the new location
+* `id`: the id of the event to edit
+* `overwrite`, default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
+* `new-summary`, optional: the new summary
+* `new-description`, optional: the new description
+* `new-start`, optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
+* `new-end`, optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
+* `new-location`, optional: the new location
 
 ## edit-bysummary-regex
 
 Edits all Events with the matching regex title.
 Parameters:
-- 'id', mandatory: the id of the event to edit
-- 'overwrite', default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
-- 'after', optional: beginning of search timeframe
-- 'before', optional: end of search timeframe
-- 'new-summary', optional: the new summary
-- 'new-description', optional: the new description
-- 'new-start', optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
-- 'new-end', optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
-- 'new-location', optional: the new location
-- 'move-time', optional, not together with 'new-start' or 'new-end': add time to the whole entry, to move entry. uses Go ParseDuration: most useful units are "m", "h"
+* `id`, mandatory: the id of the event to edit
+* `overwrite`, default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
+* `after`, optional: beginning of search timeframe
+* `before`, optional: end of search timeframe
+* `new-summary`, optional: the new summary
+* `new-description`, optional: the new description
+* `new-start`, optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
+* `new-end`, optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
+* `new-location`, optional: the new location
+* `move-time`, optional, not together with 'new-start' or 'new-end': add time to the whole entry, to move entry. uses Go ParseDuration: most useful units are "m", "h"
 
 #### known issues:
 
-'move-time', when the original time does not have a timezone, sets the timezone to UTC, so it needs to be adjusted for that.
+`move-time`, when the original time does not have a timezone, sets the timezone to UTC, so it needs to be adjusted for that.
 
 ## save-to-file
 
-This module saves the current calendar to a file.
-Parameters: "file" mandatory: full path of file to save
+This module saves the current calendar to a local file.
+
+* `file`: full path of file to save
 
 # API
 
