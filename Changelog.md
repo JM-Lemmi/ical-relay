@@ -1,3 +1,9 @@
+# v2.0.0-beta.3.1
+
+- Fix: relative path for static assets #89
+- add Selector to Index Page
+- add ICS link to navbar
+
 # v2.0.0-beta.3
 
 - Frontend
