@@ -11,7 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var htmlTemplates = template.Must(template.ParseGlob("templates/*.html"))
+var templatePath = "/etc/ical-relay/templates/"
+var htmlTemplates = template.Must(template.ParseGlob(templatePath + "*.html"))
 
 type eventData map[string]interface{}
 type calendarDataByDay map[string][]eventData
