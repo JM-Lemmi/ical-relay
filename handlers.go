@@ -198,6 +198,46 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, calendar.Serialize())
 }
 
+func notifierSubscribeHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "notifier": vars["notifier"]})
+	requestLogger.Infoln("New Request!")
+	notifier, ok := vars["notifier"]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", vars["notifier"])
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	// load params
+	data := getGlobalTemplateData()
+	data["mail"] = r.URL.Query().Get("mail")
+	data["notifier"] = notifier
+	data["ProfileName"] = notifier // this is vor the nav header to not break
+
+	htmlTemplates.ExecuteTemplate(w, "subscribe.html", data)
+}
+
+func notifierUnsubscribeHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "notifier": vars["notifier"]})
+	requestLogger.Infoln("New Request!")
+	notifier, ok := vars["notifier"]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", vars["notifier"])
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	// load params
+	data := getGlobalTemplateData()
+	data["mail"] = r.URL.Query().Get("mail")
+	data["notifier"] = notifier
+	data["ProfileName"] = notifier // this is vor the nav header to not break
+
+	htmlTemplates.ExecuteTemplate(w, "unsubscribe.html", data)
+}
+
 func GetIP(r *http.Request) string {
 	forwarded := r.Header.Get("X-Forwarded-For")
 	if forwarded != "" {
