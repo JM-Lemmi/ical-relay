@@ -48,8 +48,23 @@
 
         function deleteModule(id) {
             console.log("delete module " + id);
-            // FIXME: Implement Module deletion
-            alert("Not implemented yet");
+            // DELETE request with id as query parameter
+            let module_api = {{((.Router.Get "modules").URL "profile" .ProfileName).Path}};
+            fetch(module_api + "?id=" + id, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": window.localStorage.getItem("token")
+                }
+            }).then(response => {
+                if (response.ok) {
+                    console.log("deleted module " + id);
+                    location.reload();
+                } else {
+                    console.log("failed to delete module " + id);
+                    // FIXME: Use HTML to display error message, not alert()
+                    alert("failed to delete module!");
+                }
+            });
         }
         function saveModule(id) {
             let module = document.getElementById("module-" + id);
