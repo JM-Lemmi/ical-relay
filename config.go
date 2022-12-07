@@ -194,6 +194,7 @@ func (c Config) addModule(profile string, module map[string]string) error {
 func (c Config) removeModuleFromProfile(profile string, index int) {
 	log.Info("Removing expired module at position " + fmt.Sprint(index+1) + " from profile " + profile)
 	removeFromMapString(c.Profiles[profile].Modules, index)
+	c.saveConfig(configPath)
 }
 
 func (c Config) RunCleanup() {
@@ -207,7 +208,6 @@ func (c Config) RunCleanup() {
 			}
 		}
 	}
-	c.saveConfig(configPath)
 }
 
 // starts a heartbeat notifier in a sub-routine
