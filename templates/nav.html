@@ -14,9 +14,13 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{((.Router.Get "notifierUnsubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{((.Router.Get "profile").URL "profile" .ProfileName).Path}}">ICS herunterladen</a>
+                </li>
+                </li>
                 {{ end }}
                 <li class="nav-item">
-                    <a class="nav-link" href="#">¯\_(ツ)_/¯</a>
+                    <a class="nav-link" href="#">BETA!</a>
                 </li>
             </ul>
         </div>
