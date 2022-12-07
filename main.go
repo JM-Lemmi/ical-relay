@@ -53,6 +53,7 @@ func main() {
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("templates/static/"))))
 	router.HandleFunc("/view/{profile}/monthly", monthlyViewHandler).Name("monthlyView")
 	router.HandleFunc("/view/{profile}/edit/{uid}", editViewHandler).Name("editView")
+	router.HandleFunc("/view/{profile}/edit", modulesViewHandler).Name("modulesView")
 	router.HandleFunc("/notifier/{notifier}/subscribe", notifierSubscribeHandler).Name("notifierSubscribe")
 	router.HandleFunc("/notifier/{notifier}/unsubscribe", notifierUnsubscribeHandler).Name("notifierUnsubscribe")
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
@@ -70,5 +71,6 @@ func main() {
 
 	// start server
 	address := conf.Server.Addr
+	log.Info("Starting server on " + address)
 	log.Fatal(http.ListenAndServe(address, router))
 }

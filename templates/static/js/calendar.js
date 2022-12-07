@@ -59,22 +59,32 @@ function getDayVStack(date, events, show_edit = false) {
     day_title.classList.add("fw-semibold", "text-center", "m-0");
     day_title.innerText = date.format("dd, DD.MM.YYYY");
     day_vstack.appendChild(day_title);
+
+    let currentMonth = location.hash ? dayjs(location.hash.substring(1)).format("MM") : dayjs().startOf("month").format("MM");
     if (events[date.format("YYYY-MM-DD")] != undefined) {
         for (let event of events[date.format("YYYY-MM-DD")]) {
-            day_vstack.appendChild(getEventCard(event, show_edit));
+            let card = getEventCard(event, show_edit);
+            if(date.format("MM") != currentMonth){
+                card.style.backgroundColor = "#e1e6ea";
+            }
+            day_vstack.appendChild(card);
+            
         }
     } else {
-        day_vstack.appendChild(getEmptyCard());
-    }
-    if (date >= date.add(1, "month")) {
-        day_vstack.classList.add("bg-light");
+        let card = getEmptyCard();
+        if(date.format("MM") != currentMonth){
+            card.style.backgroundColor = "#e1e6ea";
+        }else{
+            card.classList.add("bg-light");
+        }
+        day_vstack.appendChild(card);
     }
     return day_vstack;
 }
 
 function getEmptyCard() {
     let empty_card = document.createElement("div");
-    empty_card.classList.add("card", "bg-light", "text-center", "p-2", "rounded-0");
+    empty_card.classList.add("card", "text-center", "p-2", "rounded-0");
     empty_card.innerHTML = "&varnothing;";
     return empty_card;
 }

@@ -15,12 +15,12 @@
                 <div class="d-inline-block h-75 align-bottom">
                     <a class="btn btn-primary btn-sm" id="btn-prev-month">Previous Month</a>
                 </div>
-                <div class="d-inline-block title-div">
+                <div class="d-inline-block vstack">
                     <div>
-                        <span class="h4 text-center fw-bold m-0" id="current-month"></span>
+                        <span class="h5 text-center fw-bold m-0" id="current-month"></span>
                     </div>
-                    <div class="d-inline-block profile-name-div">
-                        <span>{{.ProfileName}}</span>
+                    <div>
+                        <span class="h6">{{.ProfileName}}</span>
                     </div>
                 </div>
                 <div class="d-inline-block h-75 align-bottom">
@@ -53,7 +53,7 @@
             document.getElementById("current-month").innerHTML = currentMonth.format("MMMM");
 
             let calendar_start = date.day(0);
-            let calendar_end = date.add(1, "month").day(6);
+            let calendar_end = date.add(4, "week").day(6);
             let calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
             let row;
