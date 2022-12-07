@@ -1,3 +1,10 @@
+# v2.0.0-beta.3
+
+- Frontend
+  - Module Hinzufügen oder Entfernen
+  - Mail-Benachrichtigungen hinzufügen oder entfernen
+- Fix templates folder in docker & debian package
+
 # v2.0.0-beta.1
 
 - API
