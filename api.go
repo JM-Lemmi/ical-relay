@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -249,6 +250,23 @@ func modulesApiHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		conf.addModule(profileName, module)
+	case http.MethodDelete:
+		id := r.URL.Query().Get("id")
+
+		if id == "" {
+			requestLogger.Errorln("No id given!")
+			http.Error(w, "No id given!", http.StatusBadRequest)
+			return
+		}
+
+		idint, err := strconv.Atoi(id)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		conf.removeModuleFromProfile(profileName, idint)
 	}
 }
 
