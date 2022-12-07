@@ -94,10 +94,27 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	htmlTemplates.ExecuteTemplate(w, "edit.html", data)
 }
 
+func modulesViewHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("modules view request")
+	profileName := vars["profile"]
+	profile, ok := conf.Profiles[profileName]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
+		return
+	}
+	data := getGlobalTemplateData()
+	data["Modules"] = profile.Modules
+	data["ProfileName"] = profileName
+	htmlTemplates.ExecuteTemplate(w, "modules.html", data)
+}
+
 func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
-	requestLogger.Infoln("montly view request")
+	requestLogger.Infoln("monthly view request")
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
 	if !ok {
@@ -180,6 +197,46 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", vars["profile"]))
 	fmt.Fprint(w, calendar.Serialize())
+}
+
+func notifierSubscribeHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "notifier": vars["notifier"]})
+	requestLogger.Infoln("New Request!")
+	notifier, ok := vars["notifier"]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", vars["notifier"])
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	// load params
+	data := getGlobalTemplateData()
+	data["mail"] = r.URL.Query().Get("mail")
+	data["notifier"] = notifier
+	data["ProfileName"] = notifier // this is vor the nav header to not break
+
+	htmlTemplates.ExecuteTemplate(w, "subscribe.html", data)
+}
+
+func notifierUnsubscribeHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "notifier": vars["notifier"]})
+	requestLogger.Infoln("New Request!")
+	notifier, ok := vars["notifier"]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", vars["notifier"])
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	// load params
+	data := getGlobalTemplateData()
+	data["mail"] = r.URL.Query().Get("mail")
+	data["notifier"] = notifier
+	data["ProfileName"] = notifier // this is vor the nav header to not break
+
+	htmlTemplates.ExecuteTemplate(w, "unsubscribe.html", data)
 }
 
 func GetIP(r *http.Request) string {
