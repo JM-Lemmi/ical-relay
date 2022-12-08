@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-danger ml-3">Löschen</button>
+                <button type="button" class="btn btn-danger ml-3" id="delete-btn">Löschen</button>
                 <button type="submit" class="btn btn-primary">Speichern</button>
             </div>
         </form>
@@ -115,8 +115,31 @@
         }
         document.addEventListener('DOMContentLoaded', function () {
             var editForm = document.querySelector('#edit-form');
-
             editForm.addEventListener('submit', handleEdit);
+        });
+    </script>
+    <script>
+        function handleDelete(e) {
+            e.preventDefault();
+            fetch(`/api/profiles/${profileName}/calentry?` + new URLSearchParams({
+                "id": uid
+            }), {
+                method: "DELETE",
+                headers: {
+                    "Authorization": localStorage.getItem("token")
+                }
+            }).then(response => {
+                if (response.ok) {
+                    return_to_prev();
+                } else {
+                    console.log(response);
+                    document.getElementById("edit-error").style.display = "block";
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var deleteBtn = document.getElementById('delete-btn');
+            deleteBtn.addEventListener('click', handleDelete);
         });
     </script>
 </body>
