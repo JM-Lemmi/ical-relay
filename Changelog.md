@@ -1,3 +1,9 @@
+# v2.0.0-beta3.2
+
+- fix navbar subscribe link
+- fix html lang
+- add Delete Button functionality
+
 # v2.0.0-beta.3.1
 
 - Fix: relative path for static assets #89
