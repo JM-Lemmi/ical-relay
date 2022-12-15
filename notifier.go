@@ -30,7 +30,11 @@ func notifyChanges(id string, n *notifier) error {
 	}
 
 	// read files
-	file1, _ := os.Open(notifystore + id + ".ics")
+	file1, err := os.Open(notifystore + id + ".ics")
+	if err != nil {
+		requestLogger.Errorln("error opening calendar1 file: " + err.Error())
+		return err
+	}
 	calendar1, err := ics.ParseCalendar(file1)
 	if err != nil {
 		requestLogger.Errorln("error parsing calendar1 file: " + err.Error())
