@@ -49,7 +49,7 @@
         }
         function updateCalendar(date) {
 
-            document.getElementById("current-month").innerHTML = currentMonth.format("MMMM");
+            document.getElementById("current-month").innerHTML = currentMonth.format("MMMM YYYY");
 
             let calendar_start = date.day(0);
             let calendar_end = date.add(4, "week").day(6);
