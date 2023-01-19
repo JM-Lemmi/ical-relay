@@ -80,7 +80,7 @@ func ParseConfig(path string) (Config, error) {
 	if tmpConfig.Server.StoragePath == "" {
 		tmpConfig.Server.StoragePath = filepath.Dir(path)
 	}
-	if strings.HasSuffix(tmpConfig.Server.StoragePath, "/") {
+	if !strings.HasSuffix(tmpConfig.Server.StoragePath, "/") {
 		tmpConfig.Server.StoragePath += "/"
 	}
 
