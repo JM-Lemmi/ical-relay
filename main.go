@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"html/template"
 	"net/http"
 	"os"
 
@@ -46,6 +47,10 @@ func main() {
 	} else {
 		log.Debug("Server mode.")
 	}
+
+	// setup template path
+	templatePath = conf.Server.StoragePath + "templates/"
+	htmlTemplates = template.Must(template.ParseGlob(templatePath + "*.html"))
 
 	// setup routes
 	router = mux.NewRouter()
