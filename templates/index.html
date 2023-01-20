@@ -8,21 +8,33 @@
     {{template "nav.html" .}}
     <main class="container">
         {{if .Profiles}}
-        <select id="main-profile" style="display: block;margin: 0 auto;font-size: 40px;">
-            <option value="/">Profil auswählen</option>
+		<div class="w-50 mx-auto">
+        <select class="form-control" id="main-profile">
+			<option></option>
             {{range .Profiles}}
-            <option value="{{.ViewURL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
+            <option value="{{.ViewURL}}"{{if eq .Name $.ProfileName}} selected{{end}}>{{.Name}}</option>
             {{end}}
         </select>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var profileSelect = document.querySelector('#main-profile');
-                profileSelect.addEventListener('change', function () {
-                    window.location.href = profileSelect.value;
-                });
-            });
-        </script>
+		</div>
         {{end}}
     </main>
     {{template "footer.html" .}}
+    <script>
+		function initSelect2(selectorId){
+			$(selectorId).on('select2:select', function (event){
+				console.log(event.params.data.id);
+				window.location.href = event.params.data.id;
+			});
+			$(selectorId).select2({
+				placeholder: "Profil auswählen",
+				theme: 'bootstrap4',
+				width: 'style',
+				//language: 'de'
+			});
+			$(document).on('select2:open', () => {
+				document.querySelector('.select2-search__field').focus();
+			});
+		}
+		initSelect2('#main-profile')
+    </script>
 </body>
