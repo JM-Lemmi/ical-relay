@@ -26,7 +26,7 @@
             {{if .Profiles}}
 			<form class="d-flex">
    			<select class="form-select" id="nav-profile">
-                <option value="/">Profil auswählen</option>
+                <option></option>
                 {{range .Profiles}}
                 <option value="{{.ViewURL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
                 {{end}}
@@ -42,6 +42,5 @@
 			</form>
             {{end}}
         </div>
-
     </div>
 </nav>
