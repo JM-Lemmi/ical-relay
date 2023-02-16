@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"github.com/jmoiron/sqlx"
 	"html/template"
 	"net/http"
 	"os"
@@ -14,6 +16,7 @@ var version = "2.0.0-beta.4.0"
 
 var configPath string
 var conf Config
+var db sqlx.DB
 
 var router *mux.Router
 
@@ -23,11 +26,12 @@ func main() {
 	var notifier string
 	flag.StringVar(&notifier, "notifier", "", "Run notifier with given ID")
 	flag.StringVar(&configPath, "config", "config.yml", "Path to config file")
+	importData := flag.Bool("import-data", false, "Whether to import data")
 	flag.Parse()
 
 	// load config
 	var err error
-	conf, err = ParseConfig(configPath)
+	conf, err = ParseConfig(configPath, *importData)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -46,6 +50,16 @@ func main() {
 		}
 	} else {
 		log.Debug("Server mode.")
+	}
+
+	if len(conf.Server.DB.Host) > 0 {
+		// connect to DB
+		db = connect()
+		fmt.Printf("%#v\n", db)
+
+		if *importData {
+			conf.importToDB()
+		}
 	}
 
 	// setup template path

@@ -87,13 +87,15 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("edit view request")
 	profileName := vars["profile"]
-	profile, ok := conf.Profiles[profileName]
-	if !ok {
+
+	if !dbProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		requestLogger.Errorln(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	conf.ensureProfileLoaded(profileName)
+	profile := conf.Profiles[profileName]
 
 	// find event by uid in profile
 	uid := vars["uid"]
@@ -121,12 +123,14 @@ func modulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("modules view request")
 	profileName := vars["profile"]
-	profile, ok := conf.Profiles[profileName]
-	if !ok {
+
+	if !conf.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
+	conf.ensureProfileLoaded(profileName)
+	profile := conf.Profiles[profileName]
 	data := getGlobalTemplateData()
 	data["Modules"] = profile.Modules
 	data["ProfileName"] = profileName
@@ -138,12 +142,13 @@ func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("monthly view request")
 	profileName := vars["profile"]
-	profile, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
+	conf.ensureProfileLoaded(profileName)
+	profile := conf.Profiles[profileName]
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
@@ -196,13 +201,15 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("New Request!")
-	profile, ok := conf.Profiles[vars["profile"]]
-	if !ok {
-		err := fmt.Errorf("profile '%s' doesn't exist", vars["profile"])
-		requestLogger.Errorln(err)
-		http.Error(w, err.Error(), http.StatusNotFound)
+	profileName := vars["profile"]
+
+	if !conf.profileExists(profileName) {
+		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
+	conf.ensureProfileLoaded(profileName)
+	profile := conf.Profiles[profileName]
 
 	// load params
 	time := r.URL.Query().Get("reminder")
@@ -210,7 +217,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		profile.Modules = append(profile.Modules, map[string]string{"name": "add-reminder", "time": time})
 	}
 
-	calendar, err := getProfileCalendar(profile, vars["profile"])
+	calendar, err := getProfileCalendar(profile, profileName)
 	if err != nil {
 		requestLogger.Errorln(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -218,7 +225,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", vars["profile"]))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
 	fmt.Fprint(w, calendar.Serialize())
 }
 
