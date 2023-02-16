@@ -13,6 +13,7 @@ import (
 )
 
 func checkAuthoriziation(token string, profileName string) bool {
+	conf.ensureProfileLoaded(profileName)
 	if contains(conf.Profiles[profileName].Tokens, token) || checkSuperAuthorization(token) {
 		return true
 	} else {
@@ -36,7 +37,7 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	caljson, _ := json.Marshal(callist)
-	fmt.Fprint(w, string(caljson)+"\n")
+	w.Write(caljson)
 }
 
 func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,8 +120,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
@@ -202,8 +202,7 @@ func modulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
@@ -278,8 +277,7 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !dbProfileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")

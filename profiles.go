@@ -18,25 +18,23 @@ type profileMetadata struct {
 
 func getProfilesMetadata() []profileMetadata {
 	profiles := make([]profileMetadata, 0)
-	for name, this_profile := range conf.Profiles {
-		if this_profile.Public {
-			// FIXME: any name with "/" will break the URL
-			viewUrl, err := router.Get("monthlyView").URL("profile", name)
-			if err != nil {
-				log.Errorln(err)
-				continue
-			}
-			icalUrl, err := router.Get("profile").URL("profile", name)
-			if err != nil {
-				log.Errorln(err)
-				continue
-			}
-			profiles = append(profiles, profileMetadata{
-				Name:    name,
-				ViewURL: viewUrl.String(),
-				IcalURL: icalUrl.String(),
-			})
+	for _, name := range conf.getPublicCalendars() {
+		// FIXME: any name with "/" will break the URL
+		viewUrl, err := router.Get("monthlyView").URL("profile", name)
+		if err != nil {
+			log.Errorln(err)
+			continue
 		}
+		icalUrl, err := router.Get("profile").URL("profile", name)
+		if err != nil {
+			log.Errorln(err)
+			continue
+		}
+		profiles = append(profiles, profileMetadata{
+			Name:    name,
+			ViewURL: viewUrl.String(),
+			IcalURL: icalUrl.String(),
+		})
 	}
 	// sort profiles by name
 	sort.SliceStable(profiles, func(i, j int) bool {
