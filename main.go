@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"html/template"
 	"net/http"
 	"os"
@@ -16,7 +15,6 @@ var version = "2.0.0-beta.4.0"
 
 var configPath string
 var conf Config
-var db sqlx.DB
 
 var router *mux.Router
 
@@ -54,7 +52,7 @@ func main() {
 
 	if len(conf.Server.DB.Host) > 0 {
 		// connect to DB
-		db = connect()
+		connect()
 		fmt.Printf("%#v\n", db)
 
 		if *importData {

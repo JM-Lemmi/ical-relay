@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -10,23 +11,59 @@ import (
 	"time"
 )
 
-// only used for reading
-type dbModule struct {
-	Name       string `db:"name"`
-	Parameters string `db:"parameters"`
-}
+var db sqlx.DB
 
-func connect() sqlx.DB {
+const CurrentDbVersion = 1
+
+func connect() {
 	connStr := "postgresql://" + conf.Server.DB.Host + "/" + conf.Server.DB.DbName + "?sslmode=disable"
 	log.Debug("Connecting to db using " + connStr)
 
-	db, err := sqlx.Connect("postgres", connStr)
+	dbConn, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		panic(err)
 	}
 	log.Debug("Connected to db")
+	db = *dbConn
 
-	return *db
+	var dbVersion int
+	err = db.Get(&dbVersion, `SELECT MAX(version) FROM schema_upgrades`)
+	if err != nil {
+		initTables()
+		setDbVersion(CurrentDbVersion)
+	}
+	if dbVersion != CurrentDbVersion {
+		doDbUpgrade(dbVersion)
+	}
+}
+
+//go:embed db.sql
+var dbInitScript string
+
+func initTables() {
+	_, err := db.Exec(dbInitScript)
+	if err != nil {
+		panic("Failed to execute db init script")
+	}
+}
+
+func doDbUpgrade(fromDbVersion int) {
+
+}
+
+func setDbVersion(dbVersion int) {
+	_, err := db.Exec("INSERT INTO schema_upgrades(version) VALUES ($1)", dbVersion)
+	if err != nil {
+		log.Panicf(
+			"Failed to set db version! If future restarts fail, you might have to manually set the version to %d",
+			dbVersion)
+	}
+}
+
+// only used for reading
+type dbModule struct {
+	Name       string `db:"name"`
+	Parameters string `db:"parameters"`
 }
 
 func dbProfileExists(profileName string) bool {
