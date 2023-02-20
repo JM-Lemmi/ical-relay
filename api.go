@@ -53,8 +53,7 @@ func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "Config reloaded!\n")
+	ok(w, requestLogger)
 }
 
 func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
@@ -287,8 +286,7 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	if checkAuthoriziation(token, profileName) {
 		requestLogger.Infoln("Authorization successful!")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Authorized!\n")
+		ok(w, requestLogger)
 	} else {
 		requestLogger.Infoln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -304,8 +302,7 @@ func checkSuperAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	if checkSuperAuthorization(token) {
 		requestLogger.Infoln("Authorization successful!")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Authorized!\n")
+		ok(w, requestLogger)
 	} else {
 		requestLogger.Infoln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
