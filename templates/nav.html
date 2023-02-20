@@ -20,8 +20,10 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{((.Router.Get "profile").URL "profile" .ProfileName).Path}}">ICS herunterladen</a>
                 </li>
-                </li>
                 {{ end }}
+                <li class="nav-item d-none" id="nav-admin-link">
+                    <a class="nav-link" href="{{((.Router.Get "admin").URL).Path}}">Admin</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#">BETA!</a>
                 </li>
