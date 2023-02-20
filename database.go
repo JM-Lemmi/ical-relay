@@ -13,7 +13,7 @@ import (
 
 var db sqlx.DB
 
-const CurrentDbVersion = 1
+const CurrentDbVersion = 2
 
 func connect() {
 	connStr := "postgresql://" + conf.Server.DB.Host + "/" + conf.Server.DB.DbName + "?sslmode=disable"
@@ -48,7 +48,13 @@ func initTables() {
 }
 
 func doDbUpgrade(fromDbVersion int) {
-
+	if fromDbVersion < 2 {
+		_, err := db.Exec("ALTER TABLE admin_tokens ADD COLUMN note text")
+		if err != nil {
+			panic("Failed to upgrade db")
+		}
+		setDbVersion(2)
+	}
 }
 
 func setDbVersion(dbVersion int) {
