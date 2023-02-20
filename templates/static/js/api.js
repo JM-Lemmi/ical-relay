@@ -1,17 +1,22 @@
-const apiBase = "/api/"
-const HEADERS = {
-    "Authorization": localStorage.getItem("token")
-}
-const JSON_HEADERS = {...HEADERS, ...{
-        "Content-Type": "application/json"
-    }};
+const apiBase = "/api/";
 
 class API{
+    static getHeaders(){
+        return {
+            "Authorization": localStorage.getItem("token")
+        }
+    }
+    static getJsonHeaders(){
+        return {...self.getHeaders(), ...{
+            "Content-Type": "application/json"
+        }};
+    }
+
     static async get(method, options){
         return handleFetchPromise(
             fetch(apiBase+method+"?"+(new URLSearchParams(options).toString()),{
                 cache: "no-store",
-                headers: HEADERS
+                headers: API.getHeaders()
             }),
             method, "GET"
         );
@@ -20,7 +25,7 @@ class API{
     static async put(method, data){
         return handleFetchPromise(fetch(apiBase+method, {
             method: "PUT",
-            headers: JSON_HEADERS,
+            headers: API.getJsonHeaders(),
             body: JSON.stringify(data),
         }), method, "PUT")
     }
@@ -28,7 +33,7 @@ class API{
     static async patch(method, data){
         return handleFetchPromise(fetch(apiBase+method, {
             method: "PATCH",
-            headers: JSON_HEADERS,
+            headers: API.getJsonHeaders(),
             body: JSON.stringify(data),
         }), method, "PATCH")
     }
@@ -36,7 +41,7 @@ class API{
     static async delete(method, data){
         return handleFetchPromise(fetch(apiBase+method, {
             method: "DELETE",
-            headers: JSON_HEADERS,
+            headers: API.getJsonHeaders(),
             body: JSON.stringify(data),
         }), method, "DELETE")
     }
@@ -53,7 +58,9 @@ function handleFetchPromise(promise, apiMethod, httpMethod){
     return promise.then(async(response) => {
         console.log(response);
         if(!response.ok){
-            alert("Failed to execute "+httpMethod+" "+apiMethod+": "+await response.text());
+            if(!(response.status >= 400 && response.status < 500)){
+                alert("Failed to execute "+httpMethod+" "+apiMethod+": "+await response.text());
+            }
             //TODO handle 401, 403 etc.
             throw new APIError; //TODO: possibly make this contain useful info about the API failure
         }
