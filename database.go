@@ -29,6 +29,7 @@ func connect() {
 	var dbVersion int
 	err = db.Get(&dbVersion, `SELECT MAX(version) FROM schema_upgrades`)
 	if err != nil {
+		log.Info("Initially creating tables...")
 		initTables()
 		setDbVersion(CurrentDbVersion)
 	}
@@ -48,6 +49,7 @@ func initTables() {
 }
 
 func doDbUpgrade(fromDbVersion int) {
+	log.Debugf("Upgrading db from version %d", fromDbVersion)
 	if fromDbVersion < 2 {
 		_, err := db.Exec("ALTER TABLE admin_tokens ADD COLUMN note text")
 		if err != nil {
@@ -58,6 +60,7 @@ func doDbUpgrade(fromDbVersion int) {
 }
 
 func setDbVersion(dbVersion int) {
+	log.Infof("DB is now at version %d", dbVersion)
 	_, err := db.Exec("INSERT INTO schema_upgrades(version) VALUES ($1)", dbVersion)
 	if err != nil {
 		log.Panicf(
