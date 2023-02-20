@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -144,7 +144,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var entry map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		err := json.Unmarshal(body, &entry)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -224,7 +224,7 @@ func modulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var module map[string]string
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		err := json.Unmarshal(body, &module)
 		if err != nil {
 			requestLogger.Errorln(err)
@@ -277,7 +277,7 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	if !dbProfileExists(profileName) {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")

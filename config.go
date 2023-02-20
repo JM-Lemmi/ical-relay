@@ -233,6 +233,7 @@ func (c Config) addNotifier(notifier notifier) {
 	c.Notifiers[notifier.Name] = notifier
 }
 
+// getNotifiers returns the a map of notifier WITHOUT the recipients populated
 func (c Config) getNotifiers() map[string]notifier {
 	if db.DB != nil {
 		var notifiers map[string]notifier
