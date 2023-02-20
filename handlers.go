@@ -27,6 +27,7 @@ func initHandlers() {
 	router.HandleFunc("/notifier/{notifier}/unsubscribe", notifierUnsubscribeHandler).Name("notifierUnsubscribe")
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
 	router.HandleFunc("/howto-users", howtoUsersHandler).Name("howtoUsers")
+	router.HandleFunc("/admin", adminHandler).Name("admin")
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
@@ -67,6 +68,17 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("index request")
 
 	err := htmlTemplates.ExecuteTemplate(w, "index.html", getGlobalTemplateData())
+	if err != nil {
+		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
+		return
+	}
+}
+
+func adminHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Infoln("admin request")
+
+	err := htmlTemplates.ExecuteTemplate(w, "admin.html", getGlobalTemplateData())
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
 		return
