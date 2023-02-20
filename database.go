@@ -111,6 +111,10 @@ func dbReadProfile(profileName string) *profile {
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = db.Select(&profile.NTokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("%#v\n", profile)
 
 	var dbModules []dbModule
@@ -176,13 +180,14 @@ func dbRemoveProfileModule(profile profile, module map[string]string) {
 	}
 }
 
-func dbAddProfileToken(profile profile, token string) {
+func dbWriteProfileToken(profile profile, token string, note *string) {
 	if len(token) != 64 {
 		log.Fatal("Only 64-byte tokens are allowed!")
 	}
 	_, err := db.Exec(
-		`INSERT INTO admin_tokens (profile, token) VALUES ($1, $2)`,
-		profile.Name, token)
+		`INSERT INTO admin_tokens (profile, token, note) VALUES ($1, $2, $3)
+ON CONFLICT (token) DO UPDATE SET note = excluded.note`,
+		profile.Name, token, note)
 	if err != nil {
 		panic(err)
 	}

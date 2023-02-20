@@ -28,13 +28,15 @@ func initHandlers() {
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
 	router.HandleFunc("/howto-users", howtoUsersHandler).Name("howtoUsers")
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
+
+	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
-	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler).Name("apiCheckAuth")
-	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
+	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler).Name("apiCheckAuth")
 	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
 	router.HandleFunc("/api/profiles/{profile}/modules", modulesApiHandler).Name("modules")
+	router.HandleFunc("/api/profiles/{profile}/tokens", tokenEndpoint).Name("tokens")
 }
 
 func getGlobalTemplateData() map[string]interface{} {

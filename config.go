@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/thanhpk/randstr"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,7 +21,13 @@ type profile struct {
 	Public        bool                `yaml:"public" db:"public"`
 	ImmutablePast bool                `yaml:"immutable-past,omitempty" db:"immutable_past"`
 	Tokens        []string            `yaml:"admin-tokens"`
+	NTokens       []token             `yaml:"admin-tokens-storage-v2,omitempty"`
 	Modules       []map[string]string `yaml:"modules,omitempty"`
+}
+
+type token struct {
+	Token string `db:"token"`
+	Note  string `db:"note"`
 }
 
 type dbConfig struct {
@@ -133,7 +140,7 @@ func (c Config) importToDB() {
 		log.Debug("Importing profile " + name)
 		dbWriteProfile(profile)
 		for _, token := range profile.Tokens {
-			dbAddProfileToken(profile, token)
+			dbWriteProfileToken(profile, token, nil)
 		}
 		for _, module := range profile.Modules {
 			dbAddProfileModule(profile, module)
@@ -309,6 +316,50 @@ func (c Config) removeModuleFromProfile(profile string, index int) {
 	log.Info("Removing expired module at position " + fmt.Sprint(index+1) + " from profile " + profile)
 	removeFromMapString(c.Profiles[profile].Modules, index)
 	c.saveConfig(configPath)
+}
+
+func (c Config) createToken(profileName string, note string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	token := randstr.Base62(64)
+	if db.DB != nil {
+		dbWriteProfileToken(profile{Name: profileName}, token, &note)
+		return nil
+	}
+	p := c.Profiles[profileName]
+	p.Tokens = append(c.Profiles[profileName].Tokens, token)
+	c.Profiles[profileName] = p
+	return c.saveConfig(configPath)
+}
+
+func (c Config) modifyTokenNote(profileName string, token string, note string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	if db.DB != nil {
+		dbWriteProfileToken(profile{Name: profileName}, token, &note)
+	}
+	return nil
+}
+
+func (c Config) deleteToken(profileName string, token string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	if db.DB != nil {
+		dbRemoveProfileToken(profile{Name: profileName}, token)
+		return nil
+	}
+	p := c.Profiles[profileName]
+	for i, cToken := range p.Tokens {
+		if cToken == token {
+			p.Tokens = append(p.Tokens[:i], p.Tokens[i+1:]...)
+			break
+		}
+	}
+	c.Profiles[profileName] = p
+	return c.saveConfig(configPath)
 }
 
 func (c Config) RunCleanup() {
