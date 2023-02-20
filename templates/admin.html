@@ -93,7 +93,6 @@
         Wichtig: Tokens haben keine gespeicherte Reihenfolge. Die Reihenfolge in der Liste ist nicht deterministisch.
     </main>
     {{template "footer.html" .}}
-    <script src="static/js/api.js"></script>
     <script>
         async function deleteToken(profile, token) {
             await API.delete("profiles/"+profile+"/tokens", {token: token});
