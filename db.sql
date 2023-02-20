@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS module (
 
 CREATE TABLE IF NOT EXISTS admin_tokens (
     profile text REFERENCES profile(name) ON DELETE CASCADE NOT NULL,
-    token   char(64) PRIMARY KEY
+    token   char(64) PRIMARY KEY,
+    note    text
 );
 
 CREATE TABLE IF NOT EXISTS notifier (
