@@ -34,14 +34,6 @@
                 <option value="{{.ViewURL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
                 {{end}}
             </select>
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    var profileSelect = document.querySelector('#nav-profile');
-                    profileSelect.addEventListener('change', function () {
-                        window.location.href = profileSelect.value;
-                    });
-                });
-            </script>
 			</form>
             {{end}}
         </div>
