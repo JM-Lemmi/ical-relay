@@ -14,6 +14,8 @@ The edited ical can be accessed on `http://server/profiles/profilename`
 docker run -d -p 8080:80 -v ~/ical-relay/:/etc/ical-relay/ ghcr.io/jm-lemmi/ical-relay
 ```
 
+You can mount mount templates from `/opt/ical-relay/templates` to edit them. Please be aware of updates to the templates when choosing this method.
+
 ## Debian package
 
 Download the package from the latest release.
