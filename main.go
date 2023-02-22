@@ -49,8 +49,7 @@ func main() {
 	}
 
 	// setup template path
-	templatePath = conf.Server.StoragePath + "templates/"
-	htmlTemplates = template.Must(template.ParseGlob(templatePath + "*.html"))
+	htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
 
 	// setup routes
 	router = mux.NewRouter()

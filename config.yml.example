@@ -2,6 +2,7 @@ server:
   addr: ":80"
   loglevel: "info"
   url: "https://cal.julian-lemmerich.de"
+  templatepath: /opt/ical-relay/templates
   mail:
     smtp_server: "mailout.julian-lemmerich.de"
     smtp_port: "25"
