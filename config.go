@@ -85,7 +85,7 @@ func ParseConfig(path string) (Config, error) {
 		tmpConfig.Server.StoragePath += "/"
 	}
 	if tmpConfig.Server.TemplatePath == "" {
-		tmpConfig.Server.TemplatePath = filepath.Dir(path + "/templates/")
+		tmpConfig.Server.TemplatePath = filepath.Dir("/opt/ical-relay/templates/")
 	}
 	if !strings.HasSuffix(tmpConfig.Server.TemplatePath, "/") {
 		tmpConfig.Server.TemplatePath += "/"
