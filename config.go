@@ -31,12 +31,13 @@ type mailConfig struct {
 }
 
 type serverConfig struct {
-	Addr        string     `yaml:"addr"`
-	URL         string     `yaml:"url"`
-	LogLevel    log.Level  `yaml:"loglevel"`
-	StoragePath string     `yaml:"storagepath"`
-	Mail        mailConfig `yaml:"mail,omitempty"`
-	SuperTokens []string   `yaml:"super-tokens,omitempty"`
+	Addr         string     `yaml:"addr"`
+	URL          string     `yaml:"url"`
+	LogLevel     log.Level  `yaml:"loglevel"`
+	StoragePath  string     `yaml:"storagepath"`
+	TemplatePath string     `yaml:"templatepath"`
+	Mail         mailConfig `yaml:"mail,omitempty"`
+	SuperTokens  []string   `yaml:"super-tokens,omitempty"`
 }
 
 type notifier struct {
@@ -80,8 +81,14 @@ func ParseConfig(path string) (Config, error) {
 	if tmpConfig.Server.StoragePath == "" {
 		tmpConfig.Server.StoragePath = filepath.Dir(path)
 	}
-	if strings.HasSuffix(tmpConfig.Server.StoragePath, "/") {
+	if !strings.HasSuffix(tmpConfig.Server.StoragePath, "/") {
 		tmpConfig.Server.StoragePath += "/"
+	}
+	if tmpConfig.Server.TemplatePath == "" {
+		tmpConfig.Server.TemplatePath = filepath.Dir("/opt/ical-relay/templates/")
+	}
+	if !strings.HasSuffix(tmpConfig.Server.TemplatePath, "/") {
+		tmpConfig.Server.TemplatePath += "/"
 	}
 
 	if !directoryExists(tmpConfig.Server.StoragePath + "notifystore/") {
