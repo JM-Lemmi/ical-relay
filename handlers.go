@@ -131,6 +131,7 @@ func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 	data := getGlobalTemplateData()
 	data["ProfileName"] = profileName
 	data["Events"] = allEvents
+	data["ImmutablePast"] = profile.ImmutablePast
 	htmlTemplates.ExecuteTemplate(w, "monthly.html", data)
 }
 
