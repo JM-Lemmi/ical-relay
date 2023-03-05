@@ -62,7 +62,11 @@ function getDayVStack(date, events, show_edit = false) {
 
     let currentMonth = location.hash ? dayjs(location.hash.substring(1)).format("MM") : dayjs().startOf("month").format("MM");
     if (events[date.format("YYYY-MM-DD")] != undefined) {
-        for (let event of events[date.format("YYYY-MM-DD")]) {
+        let day_events = events[date.format("YYYY-MM-DD")];
+        day_events.sort(function (a, b) {
+            return dayjs(a.start).diff(dayjs(b.start));
+        });
+        for (let event of day_events) {
             let card = getEventCard(event, show_edit);
             if(date.format("MM") != currentMonth){
                 card.style.backgroundColor = "#e1e6ea";
