@@ -40,6 +40,7 @@ func connect() {
 		log.Info("Initially creating tables...")
 		initTables()
 		setDbVersion(CurrentDbVersion)
+		dbVersion = CurrentDbVersion
 	}
 	if dbVersion != CurrentDbVersion {
 		doDbUpgrade(dbVersion)
