@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/arran4/golang-ical v0.0.0-20220517104411-fd89fefb0182
+	github.com/fergusstrange/embedded-postgres v1.21.0 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.7
