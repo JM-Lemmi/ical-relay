@@ -1,4 +1,17 @@
-# v2.0.0-beta3.2
+# v2.0.0-beta.4
+
+- Templates are now in `/opt/ical-relay/templates` by default and can be changed by config setting.
+- Use CDN for javascript
+- Frontend
+  - Add Year
+  - Show Error if Token is invalid
+  - Hide Edit Button for Past, when immutable past is active
+  - Automatic Redirection to saved Profile
+  - Sort Events
+  - User How-To
+  - Configurable Dataprivacypolicy and Impressum Links
+
+# v2.0.0-beta.3.2
 
 - fix navbar subscribe link
 - fix html lang
