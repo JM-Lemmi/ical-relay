@@ -247,3 +247,10 @@ func GetIP(r *http.Request) string {
 	}
 	return r.RemoteAddr
 }
+
+func howtoUsersHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Infoln("New Request!")
+	data := getGlobalTemplateData()
+	htmlTemplates.ExecuteTemplate(w, "howto-users.html", data)
+}
