@@ -35,6 +35,7 @@
         const events = {{ .Events }};
         
         let show_edit = window.localStorage.getItem("token") !== null;
+        let immutable_past = {{ .ImmutablePast }};
         let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};
         if (show_edit) {
             let response = await fetch(check_auth_url, {
@@ -63,7 +64,7 @@
                     calendar.appendChild(row);
                     continue;
                 }
-                let day_vstack = getDayVStack(date, events, show_edit);
+                let day_vstack = getDayVStack(date, events, show_edit && (!immutable_past || date >= dayjs()));
                 row.appendChild(day_vstack);
             }
         }
