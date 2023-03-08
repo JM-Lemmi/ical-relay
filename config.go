@@ -26,8 +26,8 @@ type profile struct {
 }
 
 type token struct {
-	Token string `db:"token"`
-	Note  string `db:"note"`
+	Token string  `db:"token"`
+	Note  *string `db:"note"`
 }
 
 type dbConfig struct {
