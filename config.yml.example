@@ -5,7 +5,7 @@ server:
   templatepath: /opt/ical-relay/templates
   mail:
     smtp_server: "mailout.julian-lemmerich.de"
-    smtp_port: "25"
+    smtp_port: 25
     sender: "calnotification@julian-lemmerich.de"
   super-tokens:
   - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
@@ -33,4 +33,4 @@ notifiers:
     interval: "15m"
     admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     recipients:
-    - email: "jm.lemmerich@gmail.com"
+    - "jm.lemmerich@gmail.com"
