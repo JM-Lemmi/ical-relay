@@ -7,7 +7,7 @@ class API{
         }
     }
     static getJsonHeaders(){
-        return {...self.getHeaders(), ...{
+        return {...API.getHeaders(), ...{
             "Content-Type": "application/json"
         }};
     }
