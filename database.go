@@ -167,6 +167,32 @@ immutable_past = excluded.immutable_past`,
 	}
 }
 
+// used for importing
+func dbProfileModuleExists(profile profile, module map[string]string) bool {
+	moduleCopy := make(map[string]string)
+	for k, v := range module {
+		moduleCopy[k] = v
+	}
+
+	name := moduleCopy["name"]
+	delete(moduleCopy, "name")
+	parametersJson, err := json.Marshal(moduleCopy)
+	if err != nil {
+		panic(err)
+	}
+
+	var moduleExists bool
+	err = db.Get(
+		&moduleExists, `SELECT EXISTS (SELECT * FROM module WHERE profile = $1 AND name = $2 AND parameters = $3)`,
+		profile.Name, name, parametersJson)
+	fmt.Printf("%#v\n", moduleExists)
+	if err != nil {
+		panic(err)
+	}
+
+	return moduleExists
+}
+
 func dbAddProfileModule(profile profile, module map[string]string) {
 	name := module["name"]
 	delete(module, "name")
