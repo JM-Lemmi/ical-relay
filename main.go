@@ -54,7 +54,7 @@ func main() {
 	// setup routes
 	router = mux.NewRouter()
 	router.HandleFunc("/", indexHandler)
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(templatePath+"static/"))))
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.Server.TemplatePath+"static/"))))
 	router.HandleFunc("/view/{profile}/monthly", monthlyViewHandler).Name("monthlyView")
 	router.HandleFunc("/view/{profile}/edit/{uid}", editViewHandler).Name("editView")
 	router.HandleFunc("/view/{profile}/edit", modulesViewHandler).Name("modulesView")
