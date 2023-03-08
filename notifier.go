@@ -30,16 +30,20 @@ func notifyChanges(id string, n *notifier) error {
 	}
 
 	// read files
-	file1, _ := os.Open(notifystore + id + ".ics")
+	file1, err := os.Open(notifystore + id + ".ics")
+	if err != nil {
+		requestLogger.Errorln("error opening calendar1 file: " + err.Error())
+		return err
+	}
 	calendar1, err := ics.ParseCalendar(file1)
 	if err != nil {
-		requestLogger.Errorln(err)
+		requestLogger.Errorln("error parsing calendar1 file: " + err.Error())
 		return err
 	}
 
 	calendar2, err := readCalURL(n.Source)
 	if err != nil {
-		requestLogger.Errorln(err)
+		requestLogger.Errorln("error parsing calendar2 file: " + err.Error())
 		return err
 	}
 
@@ -88,7 +92,7 @@ func notifyChanges(id string, n *notifier) error {
 
 			err := d.DialAndSend(m)
 			if err != nil {
-				requestLogger.Errorln(err)
+				requestLogger.Errorln("error sending mail: " + err.Error())
 				return err
 			}
 		}
