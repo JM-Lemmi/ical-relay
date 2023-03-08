@@ -41,13 +41,22 @@
         if (localStorage.getItem("token") !== null) {
             document.getElementById("token").value = localStorage.getItem("token");
         }
+        function redirect_to_profile(profile_name) {
+            let profile_url = ({{((.Router.Get "monthlyView").URL "profile" "%PROFILE%").Path}}).replace('%PROFILE%', encodeURIComponent(profile_name));
+            window.location.href =  profile_url;
+        }
         function handleSaveSettings(e) {
             e.preventDefault();
             if (document.getElementById("token").value === "") {
                 localStorage.removeItem("token");
-                localStorage.removeItem("profile");
+                if(document.getElementById("profile").value === "") {
+                    localStorage.removeItem("profile");
+                } else {
+                    localStorage.setItem("profile", document.getElementById("profile").value);
+                }
                 document.getElementById("save-success").style.display = "block";
                 document.getElementById("token-error").style.display = "none";
+                setTimeout(redirect_to_profile, 1000, document.getElementById("profile").value);
                 return;
             }
             let api_url = ({{((.Router.Get "apiCheckAuth").URL "profile" "%PROFILE%").Path}}).replace("%PROFILE%", document.getElementById("profile").value);
@@ -62,6 +71,7 @@
                     localStorage.setItem("token", document.getElementById("token").value);
                     document.getElementById("save-success").style.display = "block";
                     document.getElementById("token-error").style.display = "none";
+                    setTimeout(redirect_to_profile, 1000, document.getElementById("profile").value);
                 } else {
                     document.getElementById("token-error").style.display = "block";
                     document.getElementById("save-success").style.display = "none";
