@@ -16,7 +16,15 @@ var db sqlx.DB
 const CurrentDbVersion = 2
 
 func connect() {
-	connStr := "postgresql://" + conf.Server.DB.Host + "/" + conf.Server.DB.DbName + "?sslmode=disable"
+	userStr := ""
+	if conf.Server.DB.User != "" {
+		userStr = conf.Server.DB.User
+		if conf.Server.DB.Password != "" {
+			userStr += ":" + conf.Server.DB.Password
+		}
+		userStr += "@"
+	}
+	connStr := "postgresql://" + userStr + conf.Server.DB.Host + "/" + conf.Server.DB.DbName + "?sslmode=disable"
 	log.Debug("Connecting to db using " + connStr)
 
 	dbConn, err := sqlx.Connect("postgres", connStr)
