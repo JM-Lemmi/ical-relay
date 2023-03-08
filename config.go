@@ -136,14 +136,17 @@ func (c Config) importToDB() {
 	for name, profile := range c.Profiles {
 		// Write profile name into object
 		profile.Name = name
-		// Write the profile to the db, adding tokens and profiles afterwards
+		// Write the profile to the db, adding tokens and modules afterwards
 		log.Debug("Importing profile " + name)
 		dbWriteProfile(profile)
 		for _, token := range profile.Tokens {
 			dbWriteProfileToken(profile, token, nil)
 		}
 		for _, module := range profile.Modules {
-			dbAddProfileModule(profile, module)
+			if !dbProfileModuleExists(profile, module) {
+				log.Debug("Adding module " + module["name"])
+				dbAddProfileModule(profile, module)
+			}
 		}
 	}
 	for name, notifier := range c.Notifiers {
