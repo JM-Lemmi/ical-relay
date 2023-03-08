@@ -127,21 +127,21 @@ func dbReadProfile(profileName string) *profile {
 	fmt.Printf("%#v\n", profile)
 
 	var dbModules []dbModule
-	moduleParameters := map[string]string{}
 	err = db.Select(&dbModules, "SELECT name, parameters FROM module WHERE profile = $1", profileName)
 	fmt.Printf("%#v\n", dbModules)
 	if err != nil {
 		log.Fatal(err)
 	}
 	for _, dbModule := range dbModules {
+		moduleParameters := map[string]string{}
 		err = json.Unmarshal([]byte(dbModule.Parameters), &moduleParameters)
-		moduleParameters["name"] = dbModule.Name
-		profile.Modules = append(profile.Modules, moduleParameters)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%#v\n", profile.Modules)
+		moduleParameters["name"] = dbModule.Name
+		profile.Modules = append(profile.Modules, moduleParameters)
 	}
+	fmt.Printf("%#v\n", profile.Modules)
 	return profile
 }
 
