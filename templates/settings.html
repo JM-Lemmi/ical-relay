@@ -19,6 +19,7 @@
                     <div class="mb-3">
                         <label for="profile" class="form-label">Profile</label>
                         <select class="form-select" id="profile" name="profile">
+							<option></option>
                             {{range .Profiles}}
                             <option value="{{.Name}}">{{.Name}}</option>
                             {{end}}
@@ -82,5 +83,6 @@
             var loginForm = document.querySelector('#settings-form');
             loginForm.addEventListener('submit', handleSaveSettings);
         });
+		initSelect2('#profile', false);
     </script>
 </body>
