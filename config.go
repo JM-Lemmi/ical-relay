@@ -31,13 +31,15 @@ type mailConfig struct {
 }
 
 type serverConfig struct {
-	Addr         string     `yaml:"addr"`
-	URL          string     `yaml:"url"`
-	LogLevel     log.Level  `yaml:"loglevel"`
-	StoragePath  string     `yaml:"storagepath"`
-	TemplatePath string     `yaml:"templatepath"`
-	Mail         mailConfig `yaml:"mail,omitempty"`
-	SuperTokens  []string   `yaml:"super-tokens,omitempty"`
+	Addr          string     `yaml:"addr"`
+	URL           string     `yaml:"url"`
+	LogLevel      log.Level  `yaml:"loglevel"`
+	StoragePath   string     `yaml:"storagepath"`
+	TemplatePath  string     `yaml:"templatepath"`
+	Imprint       string     `yaml:"imprintlink"`
+	PrivacyPolicy string     `yaml:"privacypolicylink"`
+	Mail          mailConfig `yaml:"mail,omitempty"`
+	SuperTokens   []string   `yaml:"super-tokens,omitempty"`
 }
 
 type notifier struct {
