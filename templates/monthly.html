@@ -8,6 +8,13 @@
 <body>
     {{template "nav.html" .}}
     <main class="container">
+        <!-- Error Message with a close button -->
+        <div class="row d-none" id="error-message-wrapper">
+            <div class="text-center alert alert-danger alert-dismissible" role="alert">
+                <span id="error-message"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
         <!-- next and previous month buttons -->
         <div class="row">
             <div class="col text-center">
@@ -33,7 +40,7 @@
     {{template "footer.html" .}}
     <script type="module">
         const events = {{ .Events }};
-        
+
         let show_edit = window.localStorage.getItem("token") !== null;
         let immutable_past = {{ .ImmutablePast }};
         let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};
@@ -46,6 +53,9 @@
             })
             if (!response.ok) {
                 show_edit = false;
+                // We have a token, but it's not valid anymore.
+                document.getElementById("error-message").innerHTML = "Der gespeicherte Token ist ungültig. Bearbeitung ist deaktiviert.";
+                document.getElementById("error-message-wrapper").classList.remove("d-none");
             }
         }
         function updateCalendar(date) {
