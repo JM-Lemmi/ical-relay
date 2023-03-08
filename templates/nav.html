@@ -10,6 +10,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{(.Router.Get "settings").URL }}">Einstellungen</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{(.Router.Get "howtoUsers").URL }}">How-To</a>
+                </li>
                 {{ if .ProfileName }}
                 <li class="nav-item">
                     <a class="nav-link" href="{{((.Router.Get "notifierSubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
