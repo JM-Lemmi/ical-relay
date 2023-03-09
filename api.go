@@ -151,50 +151,50 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		module := map[string]string{"name": "edit-byid", "id": id, "overwrite": "true"}
+		rule := map[string]string{"name": "edit-byid", "id": id, "overwrite": "true"}
 
 		_, ok := entry["summary"]
 		if ok {
-			module["new-summary"] = entry["summary"].(string)
+			rule["new-summary"] = entry["summary"].(string)
 		}
 
 		_, ok = entry["location"]
 		if ok {
-			module["new-location"] = entry["location"].(string)
+			rule["new-location"] = entry["location"].(string)
 		}
 
 		_, ok = entry["start"]
 		if ok {
-			module["new-start"] = entry["start"].(string)
+			rule["new-start"] = entry["start"].(string)
 		}
 
 		_, ok = entry["end"]
 		if ok {
-			module["new-end"] = entry["end"].(string)
+			rule["new-end"] = entry["end"].(string)
 		}
 
 		_, ok = entry["description"]
 		if ok {
-			module["new-description"] = entry["description"].(string)
+			rule["new-description"] = entry["description"].(string)
 		}
 
-		conf.addModule(profileName, module)
+		conf.addRule(profileName, rule)
 
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Added Module edit-byid to profile "+profileName+"\n")
+		fmt.Fprint(w, "Added Rule edit-byid to profile "+profileName+"\n")
 	case http.MethodPut:
 		// TODO: Implement
 		w.WriteHeader(http.StatusNotImplemented)
 		fmt.Fprint(w, "Not implemented yet!\n")
 	case http.MethodDelete:
-		module := map[string]string{"name": "delete-byid", "id": id}
-		conf.addModule(profileName, module)
+		rule := map[string]string{"name": "delete-byid", "id": id}
+		conf.addRule(profileName, rule)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Added Module to delete entry with id "+id+"\n")
+		fmt.Fprint(w, "Added Rule to delete entry with id "+id+"\n")
 	}
 }
 
-func modulesApiHandler(w http.ResponseWriter, r *http.Request) {
+func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
@@ -223,17 +223,17 @@ func modulesApiHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotImplemented)
 		fmt.Fprint(w, "Not implemented yet!\n")
 	case http.MethodPost:
-		var module map[string]string
+		var rule map[string]string
 
 		body, _ := ioutil.ReadAll(r.Body)
-		err := json.Unmarshal(body, &module)
+		err := json.Unmarshal(body, &rule)
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		if module["name"] == "" {
+		if rule["name"] == "" {
 			requestLogger.Errorln("No module name given!")
 			http.Error(w, "No module name given!", http.StatusBadRequest)
 			return
@@ -241,15 +241,15 @@ func modulesApiHandler(w http.ResponseWriter, r *http.Request) {
 
 		if !checkSuperAuthorization(token) {
 			requestLogger.Debugln("Running in low-privilege mode!")
-			if !contains(lowPrivModules, module["name"]) {
-				requestLogger.Warnln("Module " + module["name"] + " not allowed in low-privilege mode!")
+			if !contains(lowPrivModules, rule["name"]) {
+				requestLogger.Warnln("Module " + rule["name"] + " not allowed in low-privilege mode!")
 				w.WriteHeader(http.StatusUnauthorized)
-				fmt.Fprint(w, "Module "+module["name"]+" not allowed in low-privilege mode!\n")
+				fmt.Fprint(w, "Module "+rule["name"]+" not allowed in low-privilege mode!\n")
 				return
 			}
 		}
 
-		conf.addModule(profileName, module)
+		conf.addRule(profileName, rule)
 	case http.MethodDelete:
 		id := r.URL.Query().Get("id")
 
@@ -266,7 +266,7 @@ func modulesApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		conf.removeModuleFromProfile(profileName, idint)
+		conf.removeRuleFromProfile(profileName, idint)
 	}
 }
 

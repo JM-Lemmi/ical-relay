@@ -19,7 +19,7 @@ profiles:
     immutable-past: true
     admin-tokens:
     - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
-    modules:
+    rules:
     - name: "delete-bysummary-regex"
       regex: "testentry"
       from: "2021-12-02T00:00:00Z"
