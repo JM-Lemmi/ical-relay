@@ -36,9 +36,10 @@ func callModule(module func(*ics.Calendar, map[string]string) (int, error), para
 
 // This modules delete all events whose summary match the regex and are in the time range from the calendar.
 // Parameters:
-// - 'regex', mandatory: regular expression to remove.
-// - 'from' & 'until', optional parameters: If timeframe is not given, all events matching the regex are removed.
-//   Currenty if only either "from" or "until" is set, the timeframe will be ignored. TODO
+//   - 'regex', mandatory: regular expression to remove.
+//   - 'from' & 'until', optional parameters: If timeframe is not given, all events matching the regex are removed.
+//     Currenty if only either "from" or "until" is set, the timeframe will be ignored. TODO
+//
 // Returns the number of events removed. This number should always be negative.
 func moduleDeleteSummaryRegex(cal *ics.Calendar, params map[string]string) (int, error) {
 	var count int
@@ -201,7 +202,7 @@ func addMultiURL(cal *ics.Calendar, urls []string, header map[string]string) (in
 
 func moduleAddFile(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["filename"] == "" {
-		return 0, fmt.Errorf("missing mandatory Parameter 'file'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'filename'")
 	}
 	return addEventsFile(cal, params["filename"])
 }
