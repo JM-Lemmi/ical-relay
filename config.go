@@ -19,7 +19,7 @@ type profile struct {
 	Public        bool                `yaml:"public"`
 	ImmutablePast bool                `yaml:"immutable-past,omitempty"`
 	Tokens        []string            `yaml:"admin-tokens"`
-	Modules       []map[string]string `yaml:"modules,omitempty"`
+	Rules         []map[string]string `yaml:"rules,omitempty"`
 }
 
 type mailConfig struct {
@@ -190,29 +190,29 @@ func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
 	}
 }
 
-func (c Config) addModule(profile string, module map[string]string) error {
+func (c Config) addRule(profile string, rule map[string]string) error {
 	if !c.profileExists(profile) {
 		return fmt.Errorf("profile " + profile + " does not exist")
 	}
 	p := c.Profiles[profile]
-	p.Modules = append(c.Profiles[profile].Modules, module)
+	p.Rules = append(c.Profiles[profile].Rules, rule)
 	c.Profiles[profile] = p
 	return c.saveConfig(configPath)
 }
 
-func (c Config) removeModuleFromProfile(profile string, index int) {
-	log.Info("Removing expired module at position " + fmt.Sprint(index+1) + " from profile " + profile)
-	removeFromMapString(c.Profiles[profile].Modules, index)
+func (c Config) removeRuleFromProfile(profile string, index int) {
+	log.Info("Removing expired rule at position " + fmt.Sprint(index+1) + " from profile " + profile)
+	removeFromMapString(c.Profiles[profile].Rules, index)
 	c.saveConfig(configPath)
 }
 
 func (c Config) RunCleanup() {
 	for p := range c.Profiles {
-		for i, m := range c.Profiles[p].Modules {
+		for i, m := range c.Profiles[p].Rules {
 			if m["expires"] != "" {
 				exp, _ := time.Parse(time.RFC3339, m["expiration"])
 				if time.Now().After(exp) {
-					c.removeModuleFromProfile(p, i)
+					c.removeRuleFromProfile(p, i)
 				}
 			}
 		}

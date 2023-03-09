@@ -52,7 +52,7 @@ profiles:
     source: "https://example.com/calendar.ics"
     public: true
     immutable-past: true
-    modules:
+    rules:
     - name: "delete-bysummary-regex"
       regex: "testentry"
       from: "2021-12-02T00:00:00Z"
@@ -75,14 +75,14 @@ notifiers:
 
 The `server` section contains the configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
 You can list as many profiles as you want. Each profile has to have a source.
-You can then add as many modules as you want. They are identified by the `name:`. All other fields are dependent on the module.
-The modules are executed in the order they are listed and you can call a module multiple times.
+You can then add as many rules as you want. The `name:` filed specifies the module, the rule references. All other fields are dependent on the module.
+The rule are executed in the order they are listed. You can create multiple rules from one module.
 
 # Modules
 
 Feel free do open a PR with modules of your own.
 
-Adding `expires: <RFC3339>` to any module will remove it on the next cleanup cycle after the date has passed. Currently the Cleanup runs every 1h.
+Adding `expires: <RFC3339>` to any rule will remove it on the next cleanup cycle after the date has passed. Currently the Cleanup runs every 1h.
 
 ## immutable-past
 
