@@ -1,3 +1,11 @@
+# v1.3.1
+
+- basic RRULE handling in delete-timeframe Module
+  - waiting for upstream RRULE Handling in golang-ical
+  - cannot handle COUNT
+  - cannot handle when timeframe is inbetween or only in the beginning of the RRULE
+- fix "invalid start time" in delete-timeframe with only "before"-option
+
 # v1.3.0
 
 - Immutable past is now a profile boolean option. Simply add `immutable-past: true` to your profile configuration.
