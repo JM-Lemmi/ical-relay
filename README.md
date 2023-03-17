@@ -8,13 +8,24 @@ You can download an example configuration file from [here](https://raw.githubuse
 
 The edited ical can be accessed on `http://server/profiles/profilename`
 
-## Docker Container
+## Install from Apt Repository
 
-```
-docker run -d -p 8080:80 -v ~/ical-relay/:/etc/ical-relay/ ghcr.io/jm-lemmi/ical-relay
+If you're running a Debian based system, you can install the latest release from the my Package Repository.
+
+This allows automatic updates to the latest version with `apt upgrade`.
+
+```bash
+echo "deb [arch=amd64] http://pkg.julian-lemmerich.de/deb stable main" | tee /etc/apt/sources.list.d/jm-lemmi.list
+curl http://pkg.julian-lemmerich.de/deb/gpg.key | apt-key add -
+apt update
+apt install ical-relay
 ```
 
-You can mount mount templates from `/opt/ical-relay/templates` to edit them. Please be aware of updates to the templates when choosing this method.
+If you want to run the beta version, you can use the `testing` repository. Replace `stable` with `testing` in the above commands.
+
+This installs the ical-relay as a systemd service. Change the configuration in `/etc/ical-relay/config.yml` and start the service with `systemctl start ical-relay`.
+
+## Run standalone Binary
 
 ## Debian package
 
@@ -34,7 +45,15 @@ Run a notifier manually:
 /usr/bin/ical-relay --notifier <name> --config config.yml
 ```
 
-## Build
+## Docker Container
+
+```
+docker run -d -p 8080:80 -v ~/ical-relay/:/etc/ical-relay/ ghcr.io/jm-lemmi/ical-relay
+```
+
+## Build from Source
+
+Clone this repo then either:
 
 * Run from source: `go run .`
 * Build and run: `go build . && ./ical-relay`
