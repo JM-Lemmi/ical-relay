@@ -15,7 +15,6 @@ var modules = map[string]func(*ics.Calendar, map[string]string) (int, error){
 	"add-url":      moduleAddURL,
 	"add-file":     moduleAddFile,
 	"save-to-file": moduleSaveToFile,
-	"add-reminder": moduleAddAllReminder,
 }
 
 // These modules are allowed to be edited by the module admin. This is a security measure to prevent SSRF and LFI attacks.
@@ -146,22 +145,6 @@ func addMultiFile(cal *ics.Calendar, filenames []string) (int, error) {
 		count += c
 	}
 	return count, nil
-}
-
-func moduleAddAllReminder(cal *ics.Calendar, params map[string]string) (int, error) {
-	// add reminder to calendar
-	for i := len(cal.Components) - 1; i >= 0; i-- {
-		switch cal.Components[i].(type) {
-		case *ics.VEvent:
-			event := cal.Components[i].(*ics.VEvent)
-			event.AddAlarm()
-			event.Alarms()[0].SetTrigger(("-PT" + params["time"]))
-			event.Alarms()[0].SetAction("DISPLAY")
-			cal.Components[i] = event
-			log.Debug("Added reminder to event " + event.Id())
-		}
-	}
-	return 0, nil
 }
 
 // removes the element at index i from ics.Component slice
