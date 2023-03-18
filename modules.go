@@ -212,7 +212,7 @@ func addMultiURL(cal *ics.Calendar, urls []string, header map[string]string) (in
 
 func moduleAddFile(cal *ics.Calendar, params map[string]string) (int, error) {
 	if params["filename"] == "" {
-		return 0, fmt.Errorf("missing mandatory Parameter 'file'")
+		return 0, fmt.Errorf("missing mandatory Parameter 'filename'")
 	}
 	return addEventsFile(cal, params["filename"])
 }
@@ -239,6 +239,7 @@ func addMultiFile(cal *ics.Calendar, filenames []string) (int, error) {
 }
 
 // Removes all Events in a passed Timeframe.
+// Sets UNTIL parameter to the end of the timeframe for RRULE events.
 // Parameters: either "after" or "before" mandatory
 // Format is RFC3339: "2006-01-02T15:04:05Z"
 // or "now" for current time
@@ -257,7 +258,7 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 	} else if params["after"] == "now" {
 		after = time.Now()
 	} else {
-		after, err = time.Parse(time.RFC3339, params["start"])
+		after, err = time.Parse(time.RFC3339, params["after"])
 		if err != nil {
 			return 0, fmt.Errorf("invalid start time: %s", err.Error())
 		}
@@ -280,6 +281,54 @@ func moduleDeleteTimeframe(cal *ics.Calendar, params map[string]string) (int, er
 		switch cal.Components[i].(type) {
 		case *ics.VEvent:
 			event := cal.Components[i].(*ics.VEvent)
+			if event.GetProperty(ics.ComponentPropertyRrule) != nil {
+				// event has RRULE
+				// TODO handle RRULEs in the past?
+				log.Debug("Event with RRULE: " + event.Id())
+				// read RRULE, split into different rule parts
+				props := strings.Split(event.GetProperty(ics.ComponentPropertyRrule).Value, ";")
+				// cast into map for easy queries
+				m := make(map[string]string)
+				for _, e := range props {
+					p := strings.Split(e, "=")
+					m[p[0]] = p[1]
+				}
+				// either UNTIL or COUNT is present, otherwise, add UNTIL
+				if v, ok := m["UNTIL"]; ok {
+					// time format from from golang-ical/components.go/icalTimestampFormatUtc
+					until, err := time.Parse("20060102T150405Z", v)
+					if err != nil {
+						return 0, fmt.Errorf("invalid UNTIL time: %s", err.Error())
+					}
+					// only checking after to not break RRULEs with UNTIL in the past
+					if until.After(after) {
+						// RRULE UNTIL is not in timeframe, shortening UNTIL
+						log.Debug("Shortening UNTIL in RRULE of event with id " + event.Id() + "\n")
+						m["UNTIL"] = after.Format("20060102T150405Z")
+					}
+				} else if _, ok := m["COUNT"]; ok {
+					// TODO implement calculating COUNT
+					log.Debug("COUNT in RRULE of event with id " + event.Id() + " not implemented\n")
+				} else {
+					// no UNTIL or COUNT, adding UNTIL
+					log.Debug("Adding UNTIL in RRULE of event with id " + event.Id() + "\n")
+					m["UNTIL"] = after.Format("20060102T150405Z")
+				}
+				// reassemble RRULE
+				rrulestring := ""
+				for k, v := range m {
+					rrulestring += k + "=" + v + ";"
+				}
+				// delete old RRULE. TODO upstream function to delete property
+				for i, p := range event.Properties {
+					if ics.ComponentProperty(p.IANAToken) == ics.ComponentPropertyRrule {
+						removeProperty(event.Properties, i)
+					}
+				}
+				event.AddRrule(rrulestring)
+				// adding edited event back to calendar
+				cal.Components[i] = event
+			}
 			date, _ := event.GetStartAt()
 			if date.After(after) && before.After(date) {
 				cal.Components = removeFromICS(cal.Components, i)
@@ -583,4 +632,26 @@ func moduleAddAllReminder(cal *ics.Calendar, params map[string]string) (int, err
 		}
 	}
 	return 0, nil
+}
+
+// removes the element at index i from ics.Component slice
+// warning: if you iterate over []ics.Component forward, this remove will lead to mistakes. Iterate backwards instead!
+func remove(slice []ics.Component, s int) []ics.Component {
+	return append(slice[:s], slice[s+1:]...)
+}
+
+// removes the element at index i from ics.Component slice
+// warning: if you iterate over []ics.IANAProperty forward, this remove will lead to mistakes. Iterate backwards instead!
+func removeProperty(slice []ics.IANAProperty, s int) []ics.IANAProperty {
+	return append(slice[:s], slice[s+1:]...)
+}
+
+// returns true, if a is in list b
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
