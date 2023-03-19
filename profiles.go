@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/juliangruber/go-intersect/v2" // requires go1.18
 	log "github.com/sirupsen/logrus"
 )
 
@@ -70,20 +71,40 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 	}
 
 	// apply rules
-	origlen := len(calendar.Events())
-	var addedEvents int
+	for i, rule := range profile.Rules {
+		log.Debug("Executing Rule ", i)
 
-	for _, module_request := range profile.Rules {
-		log.Debug("Requested module: ", module_request["name"])
-		module, ok := modules[module_request["name"]]
-		if !ok {
-			return nil, fmt.Errorf("module '%s' doesn't exist", module_request["name"])
+		var indices []int
+
+		// run filters
+		for _, filter := range rule.filters {
+			filter_name, ok := filters[filter["type"]]
+			if !ok {
+				return nil, fmt.Errorf("filter type '%s' doesn't exist", filter["type"])
+			}
+			local_indices, err := callFilter(filter_name, calendar, filter)
+			if err != nil {
+				return nil, err
+			}
+
+			if rule.operator == "and" {
+				indices = intersect.SimpleGeneric(indices, local_indices)
+			} else if rule.operator == "or" {
+				indices = append(indices, local_indices...)
+			} else {
+				return nil, fmt.Errorf("Unknown operator '%s'", rule.operator)
+			}
 		}
-		count, err := callModule(module, module_request, calendar)
+
+		// run action
+		action_name, ok := actions[rule.action["type"]]
+		if !ok {
+			return nil, fmt.Errorf("action type '%s' doesn't exist", rule.action["type"])
+		}
+		err := callAction(action_name, calendar, indices, rule.action)
 		if err != nil {
 			return nil, err
 		}
-		addedEvents += count
 	}
 
 	// immutable past:
@@ -93,7 +114,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		if _, err := os.Stat(historyFilename); os.IsNotExist(err) {
 			log.Info("History file does not exist, saving for the first time")
 			historyCal := calendar
-			_, err := moduleDeleteTimeframe(historyCal, map[string]string{"after": "now"})
+			err := ImmutablePastDelete(historyCal, "after")
 			if err != nil {
 				log.Errorln(err)
 				return calendar, fmt.Errorf("Error executing immutable past (first-run): %s", err.Error())
@@ -110,7 +131,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 		log.Debug("Removing future from history file")
 		// delete events from historyCal that are in the future
-		_, err = moduleDeleteTimeframe(historyCal, map[string]string{"after": "now"})
+		err = ImmutablePastDelete(historyCal, "after")
 		if err != nil {
 			log.Errorln(err)
 			return calendar, fmt.Errorf("Error executing immutable past (setup): %s", err.Error())
@@ -118,20 +139,18 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 
 		// delete events from calendar that are in the past
 		log.Debug("Removing past from calendar")
-		count, err := moduleDeleteTimeframe(calendar, map[string]string{"before": "now"})
+		err = ImmutablePastDelete(calendar, "before")
 		if err != nil {
 			log.Errorln(err)
 			return calendar, fmt.Errorf("Error executing immutable past (delete): %s", err.Error())
 		}
-		addedEvents += count
 		// combine calendars
 		log.Debug("Combining calendars")
-		count = addEvents(calendar, historyCal)
+		addEvents(calendar, historyCal)
 		if err != nil {
 			log.Errorln(err)
 			return calendar, fmt.Errorf("Error executing immutable past (adding): %s", err.Error())
 		}
-		addedEvents += count
 
 		//saving history file
 		log.Debug("Saving history file")
@@ -143,11 +162,20 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 	}
 	// it may be neccesary to run delete-duplicates here to avoid duplicates from the history file
 
-	// make sure new calendar has all events but excluded and added
-	eventCountDiff := origlen + addedEvents - len(calendar.Events())
-	if eventCountDiff != 0 {
-		log.Warnf("Calendar has %d events after applying rules, but should have %d", len(calendar.Events()), origlen+addedEvents)
-	}
-	log.Debugf("Added %d events", addedEvents)
 	return calendar, nil
+}
+
+// Delete Helper funtion for immutable past.
+// Will delete events from the calendar either before or after now.
+// timeframes: "before": delete up till now, "after" delete everything after now
+func ImmutablePastDelete(cal *ics.Calendar, timeframe string) error {
+	indices, err := callFilter(filters["timeframe"], cal, map[string]string{"timeframe": timeframe})
+	if err != nil {
+		return err
+	}
+	err = callAction(actions["delete"], cal, indices, map[string]string{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
