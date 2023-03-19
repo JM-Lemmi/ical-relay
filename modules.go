@@ -148,12 +148,6 @@ func addMultiFile(cal *ics.Calendar, filenames []string) (int, error) {
 }
 
 // removes the element at index i from ics.Component slice
-// warning: if you iterate over []ics.Component forward, this remove will lead to mistakes. Iterate backwards instead!
-func remove(slice []ics.Component, s int) []ics.Component {
-	return append(slice[:s], slice[s+1:]...)
-}
-
-// removes the element at index i from ics.Component slice
 // warning: if you iterate over []ics.IANAProperty forward, this remove will lead to mistakes. Iterate backwards instead!
 func removeProperty(slice []ics.IANAProperty, s int) []ics.IANAProperty {
 	return append(slice[:s], slice[s+1:]...)

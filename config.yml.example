@@ -20,14 +20,15 @@ profiles:
     admin-tokens:
     - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     rules:
-    - name: "delete-bysummary-regex"
-      regex: "testentry"
-      from: "2021-12-02T00:00:00Z"
-      until: "2021-12-31T00:00:00Z"
+      filters:
+      - type: "regex"
+        regex: "testentry"
+        target: "summary"
+      - type: "timeframe"
+        from: "2021-12-02T00:00:00Z"
+        until: "2021-12-31T00:00:00Z"
+      action: "delete"
       expires: "2022-12-31T00:00:00Z"
-    - name: "add-url"
-      url: "https://othersource.com/othercalendar.ics"
-      header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
 
 notifiers:
   relay:

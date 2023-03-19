@@ -42,11 +42,18 @@ type mailConfig struct {
 }
 
 type profile struct {
-	Source        string              `yaml:"source"`
-	Public        bool                `yaml:"public"`
-	ImmutablePast bool                `yaml:"immutable-past,omitempty"`
-	Tokens        []string            `yaml:"admin-tokens"`
-	Rules         []map[string]string `yaml:"rules,omitempty"`
+	Source        string   `yaml:"source"`
+	Public        bool     `yaml:"public"`
+	ImmutablePast bool     `yaml:"immutable-past,omitempty"`
+	Tokens        []string `yaml:"admin-tokens"`
+	Rules         []rule   `yaml:"rules,omitempty"`
+}
+
+type rule struct {
+	filters  []map[string]string `yaml:"filters"`
+	operator string              `yaml:"operator"`
+	action   map[string]string   `yaml:"action"`
+	expiry   string              `yaml:"expiry,omitempty"`
 }
 
 type notifier struct {
@@ -190,7 +197,7 @@ func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
 	}
 }
 
-func (c Config) addRule(profile string, rule map[string]string) error {
+func (c Config) addRule(profile string, rule rule) error {
 	if !c.profileExists(profile) {
 		return fmt.Errorf("profile " + profile + " does not exist")
 	}
@@ -201,16 +208,18 @@ func (c Config) addRule(profile string, rule map[string]string) error {
 }
 
 func (c Config) removeRuleFromProfile(profile string, index int) {
-	log.Info("Removing expired rule at position " + fmt.Sprint(index+1) + " from profile " + profile)
-	removeFromMapString(c.Profiles[profile].Rules, index)
+	log.Info("Removing rule at position " + fmt.Sprint(index+1) + " from profile " + profile)
+	p := c.Profiles[profile]
+	p.Rules = append(p.Rules[:index], p.Rules[index+1:]...)
+	c.Profiles[profile] = p
 	c.saveConfig(configPath)
 }
 
 func (c Config) RunCleanup() {
 	for p := range c.Profiles {
 		for i, m := range c.Profiles[p].Rules {
-			if m["expires"] != "" {
-				exp, _ := time.Parse(time.RFC3339, m["expiration"])
+			if m.expiry != "" {
+				exp, _ := time.Parse(time.RFC3339, m.expiry)
 				if time.Now().After(exp) {
 					c.removeRuleFromProfile(p, i)
 				}
