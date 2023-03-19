@@ -49,7 +49,7 @@ func getProfilesMetadata() []profileMetadata {
 func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, error) {
 	var calendar *ics.Calendar
 
-	// get the base calendar to which to apply modules
+	// get the base calendar to which to apply rules
 	if profile.Source == "" {
 		calendar = ics.NewCalendar()
 	} else {
@@ -69,11 +69,11 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 	}
 
-	// apply modules
+	// apply rules
 	origlen := len(calendar.Events())
 	var addedEvents int
 
-	for _, module_request := range profile.Modules {
+	for _, module_request := range profile.Rules {
 		log.Debug("Requested module: ", module_request["name"])
 		module, ok := modules[module_request["name"]]
 		if !ok {
@@ -146,7 +146,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 	// make sure new calendar has all events but excluded and added
 	eventCountDiff := origlen + addedEvents - len(calendar.Events())
 	if eventCountDiff != 0 {
-		log.Warnf("Calendar has %d events after applying modules, but should have %d", len(calendar.Events()), origlen+addedEvents)
+		log.Warnf("Calendar has %d events after applying rules, but should have %d", len(calendar.Events()), origlen+addedEvents)
 	}
 	log.Debugf("Added %d events", addedEvents)
 	return calendar, nil
