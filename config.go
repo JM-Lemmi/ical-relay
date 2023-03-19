@@ -46,14 +46,14 @@ type profile struct {
 	Public        bool     `yaml:"public"`
 	ImmutablePast bool     `yaml:"immutable-past,omitempty"`
 	Tokens        []string `yaml:"admin-tokens"`
-	Rules         []rule   `yaml:"rules,omitempty"`
+	Rules         []Rule   `yaml:"rules,omitempty"`
 }
 
-type rule struct {
-	filters  []map[string]string `yaml:"filters"`
-	operator string              `yaml:"operator"`
-	action   map[string]string   `yaml:"action"`
-	expiry   string              `yaml:"expiry,omitempty"`
+type Rule struct {
+	Filters  []map[string]string `yaml:"filters" json:"filters"`
+	Operator string              `yaml:"operator" json:"operator"`
+	Action   map[string]string   `yaml:"action" json:"action"`
+	Expiry   string              `yaml:"expiry,omitempty" json:"expiry,omitempty"`
 }
 
 type notifier struct {
@@ -197,7 +197,7 @@ func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
 	}
 }
 
-func (c Config) addRule(profile string, rule rule) error {
+func (c Config) addRule(profile string, rule Rule) error {
 	if !c.profileExists(profile) {
 		return fmt.Errorf("profile " + profile + " does not exist")
 	}
@@ -218,14 +218,21 @@ func (c Config) removeRuleFromProfile(profile string, index int) {
 func (c Config) RunCleanup() {
 	for p := range c.Profiles {
 		for i, m := range c.Profiles[p].Rules {
-			if m.expiry != "" {
-				exp, _ := time.Parse(time.RFC3339, m.expiry)
+			if m.Expiry != "" {
+				exp, _ := time.Parse(time.RFC3339, m.Expiry)
 				if time.Now().After(exp) {
 					c.removeRuleFromProfile(p, i)
 				}
 			}
 		}
 	}
+}
+
+// checks if a rule is valid.
+// returns true if rule is valid, false if not
+func checkRuleIntegrity(rule Rule) bool {
+	// TODO implement!
+	return true
 }
 
 // starts a heartbeat notifier in a sub-routine

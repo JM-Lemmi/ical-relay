@@ -207,7 +207,15 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// load params
 	time := r.URL.Query().Get("reminder")
 	if time != "" {
-		profile.Rules = append(profile.Rules, map[string]string{"name": "add-reminder", "time": time})
+		profile.Rules = append(profile.Rules, Rule{
+			Filters: []map[string]string{
+				{"type": "all"},
+			},
+			Action: map[string]string{
+				"type": "reminder",
+				"time": time,
+			},
+		})
 	}
 
 	calendar, err := getProfileCalendar(profile, vars["profile"])

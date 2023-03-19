@@ -17,16 +17,6 @@ var modules = map[string]func(*ics.Calendar, map[string]string) (int, error){
 	"save-to-file": moduleSaveToFile,
 }
 
-// These modules are allowed to be edited by the module admin. This is a security measure to prevent SSRF and LFI attacks.
-var lowPrivModules = []string{
-	"delete-bysummary-regex",
-	"delete-byid",
-	"delete-timeframe",
-	"delete-duplicates",
-	"edit-byid",
-	"edit-bysummary-regex",
-}
-
 // This wrappter gets a function from the above modules map and calls it with the parameters and the passed calendar.
 // parameters can be any dictionary. The function will then choose how to handle the parameters.
 // Returns the number of added entries. negative, if it removed entries.
