@@ -77,7 +77,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		var indices []int
 
 		// run filters
-		for _, filter := range rule.filters {
+		for _, filter := range rule.Filters {
 			filter_name, ok := filters[filter["type"]]
 			if !ok {
 				return nil, fmt.Errorf("filter type '%s' doesn't exist", filter["type"])
@@ -87,21 +87,21 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 				return nil, err
 			}
 
-			if rule.operator == "and" {
+			if rule.Operator == "and" || rule.Operator == "" {
 				indices = intersect.SimpleGeneric(indices, local_indices)
-			} else if rule.operator == "or" {
+			} else if rule.Operator == "or" {
 				indices = append(indices, local_indices...)
 			} else {
-				return nil, fmt.Errorf("Unknown operator '%s'", rule.operator)
+				return nil, fmt.Errorf("Unknown operator '%s'", rule.Operator)
 			}
 		}
 
 		// run action
-		action_name, ok := actions[rule.action["type"]]
+		action_name, ok := actions[rule.Action["type"]]
 		if !ok {
-			return nil, fmt.Errorf("action type '%s' doesn't exist", rule.action["type"])
+			return nil, fmt.Errorf("action type '%s' doesn't exist", rule.Action["type"])
 		}
-		err := callAction(action_name, calendar, indices, rule.action)
+		err := callAction(action_name, calendar, indices, rule.Action)
 		if err != nil {
 			return nil, err
 		}

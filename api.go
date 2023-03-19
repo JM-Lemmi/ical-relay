@@ -28,6 +28,7 @@ func checkSuperAuthorization(token string) bool {
 	}
 }
 
+// Path: /api/calendars
 func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": "/api/calendars"})
 	requestLogger.Infoln("New API-Request!")
@@ -39,6 +40,7 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(caljson)+"\n")
 }
 
+// Path: /api/reloadconfig
 func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
@@ -55,6 +57,7 @@ func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Config reloaded!\n")
 }
 
+// Path: /api/notifier/{notifier}/recipient
 func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
@@ -111,6 +114,7 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Path: /api/profiles/{profile}/calentry
 func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
@@ -151,49 +155,66 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		rule := map[string]string{"name": "edit-byid", "id": id, "overwrite": "true"}
+		rule := Rule{
+			Filters: []map[string]string{
+				{
+					"type": "id",
+					"id":   id,
+				},
+			},
+			Action: map[string]string{"overwrite": "true"},
+		}
 
 		_, ok := entry["summary"]
 		if ok {
-			rule["new-summary"] = entry["summary"].(string)
+			rule.Action["new-summary"] = entry["summary"].(string)
 		}
 
 		_, ok = entry["location"]
 		if ok {
-			rule["new-location"] = entry["location"].(string)
+			rule.Action["new-location"] = entry["location"].(string)
 		}
 
 		_, ok = entry["start"]
 		if ok {
-			rule["new-start"] = entry["start"].(string)
+			rule.Action["new-start"] = entry["start"].(string)
 		}
 
 		_, ok = entry["end"]
 		if ok {
-			rule["new-end"] = entry["end"].(string)
+			rule.Action["new-end"] = entry["end"].(string)
 		}
 
 		_, ok = entry["description"]
 		if ok {
-			rule["new-description"] = entry["description"].(string)
+			rule.Action["new-description"] = entry["description"].(string)
 		}
 
 		conf.addRule(profileName, rule)
 
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Added Rule edit-byid to profile "+profileName+"\n")
+		fmt.Fprint(w, "Added Rule with filter-type 'id' to profile "+profileName+"\n")
 	case http.MethodPut:
 		// TODO: Implement
 		w.WriteHeader(http.StatusNotImplemented)
 		fmt.Fprint(w, "Not implemented yet!\n")
 	case http.MethodDelete:
-		rule := map[string]string{"name": "delete-byid", "id": id}
+		rule := Rule{
+			Filters: []map[string]string{
+				{
+					"type": "id",
+					"id":   id,
+				},
+			},
+			Action: map[string]string{"type": "delete"},
+		}
 		conf.addRule(profileName, rule)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Added Rule to delete entry with id "+id+"\n")
 	}
 }
 
+// Path: /api/profiles/{profile}/rules
 func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
@@ -223,7 +244,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotImplemented)
 		fmt.Fprint(w, "Not implemented yet!\n")
 	case http.MethodPost:
-		var rule map[string]string
+		var rule Rule
 
 		body, _ := ioutil.ReadAll(r.Body)
 		err := json.Unmarshal(body, &rule)
@@ -233,20 +254,11 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if rule["name"] == "" {
-			requestLogger.Errorln("No module name given!")
-			http.Error(w, "No module name given!", http.StatusBadRequest)
+		// TODO implement
+		if !checkRuleIntegrity(rule) {
+			requestLogger.Errorln("Rule is invalid!")
+			http.Error(w, "Rule is invalid!", http.StatusBadRequest)
 			return
-		}
-
-		if !checkSuperAuthorization(token) {
-			requestLogger.Debugln("Running in low-privilege mode!")
-			if !contains(lowPrivModules, rule["name"]) {
-				requestLogger.Warnln("Module " + rule["name"] + " not allowed in low-privilege mode!")
-				w.WriteHeader(http.StatusUnauthorized)
-				fmt.Fprint(w, "Module "+rule["name"]+" not allowed in low-privilege mode!\n")
-				return
-			}
 		}
 
 		conf.addRule(profileName, rule)
@@ -270,6 +282,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Path: /api/profiles/{profile}/checkAuth
 func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
@@ -297,6 +310,7 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Path: /api/checkSuperAuth
 func checkSuperAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
