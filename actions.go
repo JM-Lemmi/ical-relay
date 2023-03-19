@@ -18,8 +18,8 @@ var actions = map[string]func(*ics.Calendar, []int, map[string]string) error{
 }
 
 // This wrappter gets a function from the above action map and calls it with the indices and the passed calendar.
-func callAction(action func(*ics.Calendar, []int) error, indices []int, cal *ics.Calendar) error {
-	return action(cal, indices)
+func callAction(action func(*ics.Calendar, []int, map[string]string) error, cal *ics.Calendar, indices []int, params map[string]string) error {
+	return action(cal, indices, params)
 }
 
 // Deletes events from the calendar.

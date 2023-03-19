@@ -22,7 +22,7 @@ var filters = map[string]func(*ics.Calendar, map[string]string) ([]int, error){
 // This wrappter gets a function from the above filters map and calls it with the parameters and the passed calendar.
 // parameters can be any dictionary. The function will then choose how to handle the parameters.
 // Returns an array of indices of the events that are filtered out.
-func callFilter(filter func(*ics.Calendar, map[string]string) ([]int, error), params map[string]string, cal *ics.Calendar) ([]int, error) {
+func callFilter(filter func(*ics.Calendar, map[string]string) ([]int, error), cal *ics.Calendar, params map[string]string) ([]int, error) {
 	return filter(cal, params)
 }
 
