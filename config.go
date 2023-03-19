@@ -14,20 +14,11 @@ import (
 
 // STRUCTS
 
-type profile struct {
-	Source        string              `yaml:"source"`
-	Public        bool                `yaml:"public"`
-	ImmutablePast bool                `yaml:"immutable-past,omitempty"`
-	Tokens        []string            `yaml:"admin-tokens"`
-	Rules         []map[string]string `yaml:"rules,omitempty"`
-}
-
-type mailConfig struct {
-	SMTPServer string `yaml:"smtp_server"`
-	SMTPPort   int    `yaml:"smtp_port"`
-	Sender     string `yaml:"sender"`
-	SMTPUser   string `yaml:"smtp_user,omitempty"`
-	SMTPPass   string `yaml:"smtp_pass,omitempty"`
+// Config represents configuration for the application
+type Config struct {
+	Server    serverConfig        `yaml:"server"`
+	Profiles  map[string]profile  `yaml:"profiles,omitempty"`
+	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
 }
 
 type serverConfig struct {
@@ -42,17 +33,26 @@ type serverConfig struct {
 	SuperTokens   []string   `yaml:"super-tokens,omitempty"`
 }
 
+type mailConfig struct {
+	SMTPServer string `yaml:"smtp_server"`
+	SMTPPort   int    `yaml:"smtp_port"`
+	Sender     string `yaml:"sender"`
+	SMTPUser   string `yaml:"smtp_user,omitempty"`
+	SMTPPass   string `yaml:"smtp_pass,omitempty"`
+}
+
+type profile struct {
+	Source        string              `yaml:"source"`
+	Public        bool                `yaml:"public"`
+	ImmutablePast bool                `yaml:"immutable-past,omitempty"`
+	Tokens        []string            `yaml:"admin-tokens"`
+	Rules         []map[string]string `yaml:"rules,omitempty"`
+}
+
 type notifier struct {
 	Source     string   `yaml:"source"`
 	Interval   string   `yaml:"interval"`
 	Recipients []string `yaml:"recipients"`
-}
-
-// Config represents configuration for the application
-type Config struct {
-	Server    serverConfig        `yaml:"server"`
-	Profiles  map[string]profile  `yaml:"profiles,omitempty"`
-	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
 }
 
 // CONFIG MANAGEMENT FUNCTIONS
