@@ -106,6 +106,9 @@ func stringInSlice(a string, list []string) bool {
 // https://stackoverflow.com/a/37335777/9397749
 // removes the element at index i from ics.Component slice
 // warning: if you iterate over []ics.Component forward, this removeFromICS will lead to mistakes. Iterate backwards instead!
+func remove(slice []interface{}, s int) []interface{} {
+	return append(slice[:s], slice[s+1:]...)
+}
 func removeFromICS(slice []ics.Component, s int) []ics.Component {
 	return append(slice[:s], slice[s+1:]...)
 }
