@@ -645,13 +645,3 @@ func remove(slice []ics.Component, s int) []ics.Component {
 func removeProperty(slice []ics.IANAProperty, s int) []ics.IANAProperty {
 	return append(slice[:s], slice[s+1:]...)
 }
-
-// returns true, if a is in list b
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
