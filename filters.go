@@ -126,7 +126,10 @@ func filterTimeframe(cal *ics.Calendar, params map[string]string) ([]int, error)
 		case *ics.VEvent:
 			event := component.(*ics.VEvent)
 			if event.GetProperty(ics.ComponentPropertyRrule) != nil {
-				// TODO: event has RRULE, think of how to handle this. Deleting and changing will have to be handled differently. maybe this needs its own breakout function.
+				// event is a repeating event
+				// TODO: get all repeating dates (as its own function) and filter them
+				// TODO: add to rruleIndices
+				// TODO: break out of switch
 			}
 			date, _ := event.GetStartAt()
 			if date.After(after) && before.After(date) {
