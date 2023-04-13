@@ -115,3 +115,19 @@ func removeFromICS(slice []ics.Component, s int) []ics.Component {
 func removeFromMapString(slice []map[string]string, s int) []map[string]string {
 	return append(slice[:s], slice[s+1:]...)
 }
+
+// warning: if you iterate over []ics.IANAProperty forward, this remove will lead to mistakes. Iterate backwards instead!
+func removeProperty(slice []ics.IANAProperty, s int) []ics.IANAProperty {
+	return append(slice[:s], slice[s+1:]...)
+}
+
+// This function adds all events from cal2 to cal1.
+// All other properties, such as TZ are retained from cal1.
+func addEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
+	var count int
+	for _, event := range cal2.Events() {
+		cal1.AddVEvent(event)
+		count++
+	}
+	return count
+}
