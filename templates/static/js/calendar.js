@@ -1,3 +1,15 @@
+function locationToNode(location) {
+    try {
+        const url = new URL(location);
+        const a = document.createElement("a");
+        a.href = url;
+        a.innerText = url.hostname;
+        return a;
+    } catch (_) {
+        return document.createTextNode(location);
+    }
+}
+
 function getEventCard(event, show_edit = false) {
     let event_card = document.createElement("div");
     event_card.classList.add("card", "rounded-0");
@@ -11,7 +23,8 @@ function getEventCard(event, show_edit = false) {
     event_text.classList.add("card-text");
     event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
     if (event.location) {
-        event_text.innerText += "\n" + event.location;
+        event_text.appendChild(document.createElement("br"));
+        event_text.appendChild(locationToNode(event.location));
     }
     if (event.description) {
         let description_el = document.createElement("p");
@@ -72,7 +85,6 @@ function getDayVStack(date, events, show_edit = false) {
                 card.style.backgroundColor = "#e1e6ea";
             }
             day_vstack.appendChild(card);
-            
         }
     } else {
         let card = getEmptyCard();
