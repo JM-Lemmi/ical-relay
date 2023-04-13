@@ -27,7 +27,8 @@ profiles:
       - type: "timeframe"
         from: "2021-12-02T00:00:00Z"
         until: "2021-12-31T00:00:00Z"
-      action: "delete"
+      action:
+        type: "delete"
       expires: "2022-12-31T00:00:00Z"
 
 notifiers:

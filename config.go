@@ -81,6 +81,7 @@ func ParseConfig(path string) (Config, error) {
 		return tmpConfig, err
 	}
 
+	log.Trace("Read config, now setting defaults")
 	// defaults
 	if tmpConfig.Server.Addr == "" {
 		tmpConfig.Server.Addr = ":8080"
@@ -125,6 +126,7 @@ func ParseConfig(path string) (Config, error) {
 			p.Source = ""
 			tmpConfig.Profiles[i] = p
 		}
+		log.Trace("Loading Profile Sources complete. Profile " + i + " has sources: " + strings.Join(p.Sources, ", "))
 	}
 
 	return tmpConfig, nil
