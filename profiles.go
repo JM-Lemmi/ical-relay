@@ -53,22 +53,24 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 
 	// get all sources
 	if len(profile.Sources) == 0 {
+		log.Debug("No sources, creating empty calendar")
 		calendar = ics.NewCalendar()
 	} else {
 		// loop over sources and combine
-		var calendar *ics.Calendar
 		var ncalendar *ics.Calendar
 		var err error
 
 		for i, s := range profile.Sources {
 			if i == 0 {
 				// first source gets assigned to base calendar
+				log.Debug("Loading source ", s, " as base calendar")
 				calendar, err = getSource(s)
 				if err != nil {
 					return nil, err
 				}
 			} else {
 				// all other calendars only load events
+				log.Debug("Loading source ", s, " as additional calendar")
 				ncalendar, err = getSource(s)
 				if err != nil {
 					return nil, err

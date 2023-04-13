@@ -35,6 +35,9 @@ func main() {
 	log.SetLevel(conf.Server.LogLevel)
 	log.Debug("Debug log is enabled") // only shows if Debug is actually enabled
 
+	log.Trace("Trace log is enabled") // only shows if Trace is actually enabled
+	log.Tracef("%+v\n", conf)
+
 	// run notifier if specified
 	if notifier != "" {
 		log.Debug("Notifier mode called. Running: " + notifier)
