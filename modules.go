@@ -3,17 +3,12 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
 
 	ics "github.com/arran4/golang-ical"
 	log "github.com/sirupsen/logrus"
 )
 
 var modules = map[string]func(*ics.Calendar, map[string]string) (int, error){
-	"add-url":      moduleAddURL,
-	"add-file":     moduleAddFile,
 	"save-to-file": moduleSaveToFile,
 }
 
@@ -35,54 +30,6 @@ func addEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 	return count
 }
 
-func moduleAddURL(cal *ics.Calendar, params map[string]string) (int, error) {
-	if params["url"] == "" {
-		return 0, fmt.Errorf("missing mandatory Parameter 'url'")
-	}
-	// put all params starting with header- into header map
-	header := make(map[string]string)
-	for k, v := range params {
-		if strings.HasPrefix(k, "header-") {
-			header[strings.TrimPrefix(k, "header-")] = v
-		}
-	}
-
-	return addEventsURL(cal, params["url"], header)
-}
-
-func addEventsURL(cal *ics.Calendar, url string, headers map[string]string) (int, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	response, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		log.Errorln(err)
-		return 0, fmt.Errorf("error requesting additional URL: %s", err.Error())
-	}
-	if response.StatusCode != 200 {
-		log.Warnf("Unexpected status '%s' from additional URL '%s'", response.Status, url)
-		resp, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			log.Errorln(err)
-		}
-		log.Debugf("Full response body: %s\n", resp)
-		return 0, nil // we are not returning an error here, to just ignore URLs that are unavailible. TODO: make this configurable
-	}
-	// parse aditional calendar
-	addcal, err := ics.ParseCalendar(response.Body)
-	if err != nil {
-		log.Errorln(err)
-	}
-	// add to new calendar
-	return addEvents(cal, addcal), nil
-}
-
 // This module saves the current calendar to a file.
 // Parameters: "file" mandatory: full path of file to save
 func moduleSaveToFile(cal *ics.Calendar, params map[string]string) (int, error) {
@@ -95,46 +42,6 @@ func moduleSaveToFile(cal *ics.Calendar, params map[string]string) (int, error) 
 		return 0, fmt.Errorf("error writing to file: %s", err.Error())
 	}
 	return 0, nil
-}
-
-func addMultiURL(cal *ics.Calendar, urls []string, header map[string]string) (int, error) {
-	var count int
-	for _, url := range urls {
-		c, err := addEventsURL(cal, url, header)
-		if err != nil {
-			return count, err
-		}
-		count += c
-	}
-	return count, nil
-}
-
-func moduleAddFile(cal *ics.Calendar, params map[string]string) (int, error) {
-	if params["filename"] == "" {
-		return 0, fmt.Errorf("missing mandatory Parameter 'filename'")
-	}
-	return addEventsFile(cal, params["filename"])
-}
-
-func addEventsFile(cal *ics.Calendar, filename string) (int, error) {
-	if _, err := os.Stat(filename); err != nil {
-		return 0, fmt.Errorf("file %s not found", filename)
-	}
-	addicsfile, _ := os.Open(filename)
-	addics, _ := ics.ParseCalendar(addicsfile)
-	return addEvents(cal, addics), nil
-}
-
-func addMultiFile(cal *ics.Calendar, filenames []string) (int, error) {
-	var count int
-	for _, filename := range filenames {
-		c, err := addEventsFile(cal, filename)
-		if err != nil {
-			return count, err
-		}
-		count += c
-	}
-	return count, nil
 }
 
 // removes the element at index i from ics.Component slice
