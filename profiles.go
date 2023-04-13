@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/juliangruber/go-intersect/v2" // requires go1.18
@@ -50,23 +51,30 @@ func getProfilesMetadata() []profileMetadata {
 func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, error) {
 	var calendar *ics.Calendar
 
-	// get the base calendar to which to apply rules
-	if profile.Source == "" {
+	// get all sources
+	if len(profile.Sources) == 0 {
 		calendar = ics.NewCalendar()
 	} else {
-		response, err := http.Get(profile.Source)
-		if err != nil {
-			return nil, err
-		}
-		if response.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("HTTP error: %s", response.Status)
-		}
-		if err != nil {
-			return nil, err
-		}
-		calendar, err = ics.ParseCalendar(response.Body)
-		if err != nil {
-			return nil, err
+		// loop over sources and combine
+		var calendar *ics.Calendar
+		var ncalendar *ics.Calendar
+		var err error
+
+		for i, s := range profile.Sources {
+			if i == 0 {
+				// first source gets assigned to base calendar
+				calendar, err = getSource(s)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				// all other calendars only load events
+				ncalendar, err = getSource(s)
+				if err != nil {
+					return nil, err
+				}
+				addEvents(calendar, ncalendar)
+			}
 		}
 	}
 
@@ -178,4 +186,41 @@ func ImmutablePastDelete(cal *ics.Calendar, timeframe string) error {
 		return err
 	}
 	return nil
+}
+
+func getSource(source string) (*ics.Calendar, error) {
+	var calendar *ics.Calendar
+	var err error
+
+	switch strings.Split(source, "://")[0] {
+	case "http", "https":
+		response, err := http.Get(source)
+		if err != nil {
+			return nil, err
+		}
+		if response.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("HTTP error: %s", response.Status)
+		}
+		if err != nil {
+			return nil, err
+		}
+		calendar, err = ics.ParseCalendar(response.Body)
+		if err != nil {
+			return nil, err
+		}
+	case "file":
+		calendar, err = loadCalFile(strings.Split(source, "://")[1])
+		if err != nil {
+			return nil, err
+		}
+	case "profile":
+		profileName := strings.Split(source, "://")[1]
+		calendar, err = getProfileCalendar(conf.Profiles[profileName], profileName)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknown source type '%s'", strings.Split(source, "://")[0])
+	}
+	return calendar, nil
 }
