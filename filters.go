@@ -94,7 +94,7 @@ func filterTimeframe(cal *ics.Calendar, params map[string]string) ([]int, error)
 	var before time.Time
 	var err error
 	if params["after"] == "" && params["before"] == "" {
-		return indices, fmt.Errorf("missing both Parameters 'start' or 'end'. One has to be present")
+		return indices, fmt.Errorf("missing both Parameters 'after' or 'before'. One has to be present")
 	}
 	if params["after"] == "" {
 		log.Debug("No after time given. Using time 0.\n")
