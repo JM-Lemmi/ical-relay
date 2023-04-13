@@ -18,7 +18,18 @@
                     <a class="nav-link" href="{{((.Router.Get "notifierSubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{((.Router.Get "profile").URL "profile" .ProfileName).Path}}">ICS herunterladen</a>
+                    <a class="nav-link" onclick="copyIcalLink();">ICAL Link kopieren</a>
+                    <script>
+                        function copyIcalLink(){
+                            try{
+                                navigator.clipboard.writeText("{{((.Router.Get "profile").URL "profile" .ProfileName).Path}}")
+                                alert("Copied the text: " + copyText.value);
+                            } catch (err){
+                                console.error("Couldn't copy to clipboard:", err);
+                                alert("Copy not supported");
+                            }
+                        }
+                    </script>
                 </li>
                 </li>
                 {{ end }}
