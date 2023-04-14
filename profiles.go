@@ -117,6 +117,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		if err != nil {
 			return nil, err
 		}
+		log.Trace("Finished action!")
 	}
 
 	// immutable past:

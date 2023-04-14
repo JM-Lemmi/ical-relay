@@ -15,6 +15,7 @@ var actions = map[string]func(*ics.Calendar, []int, map[string]string) error{
 	"delete":       actionDelete,
 	"edit":         actionEdit,
 	"add-reminder": actionAddReminder,
+	"strip-info":   actionStripInfo,
 }
 
 // This wrappter gets a function from the above action map and calls it with the indices and the passed calendar.
@@ -140,6 +141,64 @@ func actionAddReminder(cal *ics.Calendar, indices []int, params map[string]strin
 			event.Alarms()[0].SetAction("DISPLAY")
 			cal.Components[i] = event
 			log.Debug("Added reminder to event " + event.Id())
+		}
+	}
+	return nil
+}
+
+// Strips information from events, similar to Outlooks export feature.
+// Params: 'mode': 'availibility' (only show freebusy availibility), 'limited' (show only summary)
+func actionStripInfo(cal *ics.Calendar, indices []int, params map[string]string) error {
+	// strip info from events
+	for _, i := range indices {
+		switch cal.Components[i].(type) {
+		case *ics.VEvent:
+			event := cal.Components[i].(*ics.VEvent)
+			// create new event and copy only the needed data over
+			var newevent *ics.VEvent
+
+			switch params["mode"] {
+			case "availibility":
+				// copies: start, end, uid and freebusy status
+				newevent = ics.NewEvent(event.GetProperty(ics.ComponentPropertyUniqueId).Value)
+				start, _ := event.GetStartAt()
+				end, _ := event.GetEndAt()
+				newevent.SetStartAt(start)
+				newevent.SetEndAt(end)
+				if event.GetProperty(ics.ComponentPropertyFreebusy) == nil && event.GetProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS")) == nil {
+					// no freebusy or MS-freebusy status set, assume busy
+					newevent.AddProperty(ics.ComponentPropertySummary, "Busy")
+				} else if event.GetProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS")) != nil {
+					// MS-freebusy status set
+					newevent.AddProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS"), event.GetProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS")).Value)
+					newevent.AddProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS")).Value)
+				} else {
+					// freebusy status set
+					newevent.AddProperty(ics.ComponentPropertyFreebusy, event.GetProperty(ics.ComponentPropertyFreebusy).Value)
+					newevent.AddProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertyFreebusy).Value)
+				}
+
+			case "limited":
+				// copies: summary, start, end, uid and freebusy status
+				newevent = ics.NewEvent(event.GetProperty(ics.ComponentPropertyUniqueId).Value)
+				newevent.AddProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertySummary).Value)
+				start, _ := event.GetStartAt()
+				end, _ := event.GetEndAt()
+				newevent.SetStartAt(start)
+				newevent.SetEndAt(end)
+				if event.GetProperty(ics.ComponentPropertyFreebusy) == nil && event.GetProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS")) == nil {
+					// nothing happens here, we don't want to add a freebusy status
+				} else if event.GetProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS")) != nil {
+					// MS-freebusy status set
+					newevent.AddProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS"), event.GetProperty(ics.ComponentProperty("X-MICROSOFT-CDO-BUSYSTATUS")).Value)
+				} else {
+					// freebusy status set
+					newevent.AddProperty(ics.ComponentPropertyFreebusy, event.GetProperty(ics.ComponentPropertyFreebusy).Value)
+				}
+			}
+
+			cal.Components[i] = newevent
+			log.Debug("Stripped info with mode " + params["mode"] + " from event " + event.Id())
 		}
 	}
 	return nil
