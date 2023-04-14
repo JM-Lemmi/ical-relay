@@ -97,14 +97,16 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 				return nil, err
 			}
 
-			if rule.Operator == "and" || rule.Operator == "" {
+			log.Trace("Filter operator: ", rule.Operator)
+			if rule.Operator == "and" {
 				indices = intersect.SimpleGeneric(indices, local_indices)
-			} else if rule.Operator == "or" {
+			} else if rule.Operator == "or" || rule.Operator == "" {
 				indices = append(indices, local_indices...)
 			} else {
 				return nil, fmt.Errorf("Unknown operator '%s'", rule.Operator)
 			}
 		}
+		log.Trace("Indices after all filters: ", indices)
 
 		// run action
 		action_name, ok := actions[rule.Action["type"]]
