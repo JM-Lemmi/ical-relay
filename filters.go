@@ -17,6 +17,7 @@ var filters = map[string]func(*ics.Calendar, map[string]string) ([]int, error){
 	"timeframe":  filterTimeframe,
 	"duplicates": filterDuplicates,
 	"all":        filterAll,
+	"duration":   filterDuration,
 }
 
 // This wrappter gets a function from the above filters map and calls it with the parameters and the passed calendar.
@@ -176,5 +177,54 @@ func filterAll(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	for i := range cal.Events() {
 		indices = append(indices, i)
 	}
+	return indices, nil
+}
+
+// This function filters events by duration.
+// Parameters: "duration" in timeDuration format
+// "operator" longer/shorter (default: longer). Longer filters events longer than the given duration.
+func filterDuration(cal *ics.Calendar, params map[string]string) ([]int, error) {
+	var indices []int
+
+	// param duration (mandatory)
+	if params["duration"] == "" {
+		return indices, fmt.Errorf("missing mandatory Parameter 'duration'")
+	}
+	duration, err := time.ParseDuration(params["duration"])
+	if err != nil {
+		return indices, fmt.Errorf("invalid duration: %s", err.Error())
+	}
+
+	// param operator (optional)
+	if params["operator"] == "" {
+		params["operator"] = "longer"
+	}
+	if params["operator"] != "longer" && params["operator"] != "shorter" {
+		return indices, fmt.Errorf("invalid operator: %s", params["operator"])
+	}
+
+	for i, component := range cal.Components { // iterate over events
+		switch component.(type) {
+		case *ics.VEvent:
+			event := component.(*ics.VEvent)
+			start, _ := event.GetStartAt()
+			end, _ := event.GetEndAt()
+			if params["operator"] == "longer" {
+				if end.Sub(start) >= duration {
+					indices = append(indices, i)
+					log.Debug("Filtered event with id " + event.Id() + "\n")
+				}
+			} else if params["operator"] == "shorter" {
+				if end.Sub(start) <= duration {
+					indices = append(indices, i)
+					log.Debug("Filtered event with id " + event.Id() + "\n")
+				}
+			}
+		default:
+			// print type of component
+			log.Debug("Unknown component type ignored: " + reflect.TypeOf(cal.Components[i]).String() + "\n")
+		}
+	}
+	log.Trace("Duration Filter indices: " + fmt.Sprint(indices) + "\n")
 	return indices, nil
 }
