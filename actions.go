@@ -26,6 +26,7 @@ func callAction(action func(*ics.Calendar, []int, map[string]string) error, cal 
 func actionDelete(cal *ics.Calendar, indices []int, params map[string]string) error {
 	// sort indices in descending order, so that we can delete them without messing up the indices
 	sort.Sort(sort.Reverse(sort.IntSlice(indices)))
+	log.Trace("Indices to delete: " + fmt.Sprint(indices))
 	// delete events
 	for _, i := range indices {
 		cal.Components = removeFromICS(cal.Components, i)
