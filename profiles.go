@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"os"
@@ -221,6 +223,16 @@ func getSource(source string) (*ics.Calendar, error) {
 	case "profile":
 		profileName := strings.Split(source, "://")[1]
 		calendar, err = getProfileCalendar(conf.Profiles[profileName], profileName)
+		if err != nil {
+			return nil, err
+		}
+	case "base64":
+		decoded, err := base64.StdEncoding.DecodeString(strings.Split(source, "://")[1])
+		if err != nil {
+			return nil, err
+		}
+
+		calendar, err = ics.ParseCalendar(bytes.NewReader(decoded))
 		if err != nil {
 			return nil, err
 		}
