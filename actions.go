@@ -44,6 +44,11 @@ func actionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 		params["overwrite"] = "true"
 	}
 
+	// parse move-time
+	if params["move-time"] != "" && (params["new-start"] != "" || params["new-end"] != "") {
+		return fmt.Errorf("two exclusive params were given: 'move-time' and 'new-start'/'new-end'")
+	}
+
 	// edit events
 	for _, i := range indices {
 		switch cal.Components[i].(type) {
@@ -117,6 +122,19 @@ func actionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				event.SetEndAt(end)
 				log.Debug("Changed end to " + params["new-end"])
+			}
+			if params["move-time"] != "" {
+				dur, err := time.ParseDuration(params["move-time"])
+				if err != nil {
+					return fmt.Errorf("invalid duration: %s", err.Error())
+				}
+				start, _ := event.GetStartAt()
+				log.Debug("Starttime is " + start.String())
+				end, _ := event.GetEndAt()
+				event.SetStartAt(start.Add(dur))
+				log.Debug("Changed start to " + start.Add(dur).String())
+				event.SetEndAt(end.Add(dur))
+				log.Debug("Changed start and end by " + dur.String())
 			}
 			// adding edited event back to calendar
 			cal.Components[i] = event
