@@ -45,30 +45,41 @@ Run a notifier manually:
 server:
   addr: ":80"
   loglevel: "info"
-  storagepath: "/etc/ical-relay/"
+  url: "https://cal.julian-lemmerich.de"
+  templatepath: /opt/ical-relay/templates
+  imprintlink: "https://your-imprint"
+  privacypolicylink: "http://your-data-privacy-policy"
+  mail:
+    smtp_server: "mailout.julian-lemmerich.de"
+    smtp_port: 25
+    sender: "calnotification@julian-lemmerich.de"
+  super-tokens:
+  - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
 
 profiles:
   relay:
     source: "https://example.com/calendar.ics"
     public: true
     immutable-past: true
+    admin-tokens:
+    - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     rules:
-    - name: "delete-bysummary-regex"
-      regex: "testentry"
-      from: "2021-12-02T00:00:00Z"
-      until: "2021-12-31T00:00:00Z"
-      expires: "2022-12-06T00:00:00Z"
-    - name: "add-url"
-      url: "https://othersource.com/othercalendar.ics"
-      header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+      filters:
+      - type: "regex"
+        regex: "testentry"
+        target: "summary"
+      - type: "timeframe"
+        from: "2021-12-02T00:00:00Z"
+        until: "2021-12-31T00:00:00Z"
+        operator: "and"
+      action:
+        type: "delete"
+      expires: "2022-12-31T00:00:00Z"
 
 notifiers:
   relay:
     source: "http://localhost/relay"
     interval: "15m"
-    smtp_server: "mailout.julian-lemmerich.de"
-    smtp_port: "25"
-    sender: "calnotification@julian-lemmerich.de"
     recipients:
     - email: "jm.lemmerich@gmail.com"
 ```
@@ -78,88 +89,80 @@ You can list as many profiles as you want. Each profile has to have a source.
 You can then add as many rules as you want. The `name:` filed specifies the module, the rule references. All other fields are dependent on the module.
 The rule are executed in the order they are listed. You can create multiple rules from one module.
 
-# Modules
-
-Feel free do open a PR with modules of your own.
-
-Adding `expires: <RFC3339>` to any rule will remove it on the next cleanup cycle after the date has passed. Currently the Cleanup runs every 1h.
-
 ## immutable-past
-
-Even though immutable past is not really a module, it is listed here, cause it fits.
 
 Add `immutable-past: true` in the profile to enable it.
 
 If you enable immutable past, the relay will save all events that have already happened in a file called `<profile>-past.ics` in the storage path. Next time the profile is called, the past events will be added to the ical.
 
-## delete-bysummary-regex
+## Rules
 
-* `regex`: The regex to match the summary against
-* `from`, optional: Beginning of timeframe that should be deleted in, in RFC3339 format
-* `until`, optional: End of timeframe that should be deleted in, in RFC3339 format
+A Rule contains one or more filters and one action. The filters determine which events will be edited. The action then determines, what changes for the events.
 
-## delete-byid
+Feel free do open a PR with filters and actions of your own.
 
-* `id`: The id of the event to delete
+Adding `expires: <RFC3339>` to any rule will remove it on the next cleanup cycle after the date has passed. Currently the Cleanup runs every 1h.
 
-## add-url
+### Filters
 
-* `url`: Adds all events from the specified url.
-* `header-<headername>`, optional: Adds a header to the request. Can be used to pass authentication cookies or X-Forwarded-Host headers.
+Currently the Filters can not handle Repeating Events. See Issue #77
 
-## add-file
+#### regex
 
-* `file`: Adds all events from the specified local file.
+* `regex`: The regex to match against
+* `target`: Parameter to match against the regex. Default Summary, options: Summary, Description, Location
 
-## delete-timeframe
+#### id
 
-Deletes all events in the specified timeframe.
+* `id`: Event ID.
 
-* `after`:  Start of the timeframe to be deleted in RFC3339 format or "now" for current time as value. If only after is specified, all events after the date are deleted.
-* `before`: End of the timeframe to be deleted in RFC3339 format or "now" for current time as value. If only before is specified, all events before the date are deleted.
+This can match multiple events, for example with repeating events.
 
-## delete-duplicates
+#### timeframe
 
-Deletes events, if there already is an event with the same start, end and summary.
+* `after`, `before`. At least one is mandatory. Uses max time, if none is given. Can also be set to "now".
 
-No parameters.
+#### duplicates
 
-## edit-byid
+No parameters. Filters the second and following events that are identified as duplicate. Looks at start, end, summary. If all three are equal, the Event is deemed duplicate.
 
-Edits an Event with the passed id.
-Parameters:
-* `id`: the id of the event to edit
-* `overwrite`, default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
+#### all
+
+No parameters. Filters all.
+
+#### duration
+
+* `duration` in timeDuration format (most relevant: `m`, `h`)´
+* `operator`. Either "longer" or "shorter", default "longer".
+
+### Actions
+
+#### delete
+
+No parameters. Deletes the Filtered Events.
+
+#### edit
+
 * `new-summary`, optional: the new summary
 * `new-description`, optional: the new description
 * `new-start`, optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
 * `new-end`, optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
 * `new-location`, optional: the new location
-
-## edit-bysummary-regex
-
-Edits all Events with the matching regex title.
-Parameters:
-* `id`, mandatory: the id of the event to edit
 * `overwrite`, default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
-* `after`, optional: beginning of search timeframe
-* `before`, optional: end of search timeframe
-* `new-summary`, optional: the new summary
-* `new-description`, optional: the new description
-* `new-start`, optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
-* `new-end`, optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
-* `new-location`, optional: the new location
 * `move-time`, optional, not together with 'new-start' or 'new-end': add time to the whole entry, to move entry. uses Go ParseDuration: most useful units are "m", "h"
+  * when the original time does not have a timezone, sets the timezone to UTC, so it needs to be adjusted for that.
 
-#### known issues:
+#### add-reminder
 
-`move-time`, when the original time does not have a timezone, sets the timezone to UTC, so it needs to be adjusted for that.
+* `time`: time in timeDuration Format the alarm will go off before the event.
 
-## save-to-file
+This usually doesnt work when used in server mode. Most Calendar Applications ignore reminders of external calendars.
 
-This module saves the current calendar to a local file.
+#### strip-info
 
-* `file`: full path of file to save
+* `mode`: "availibility" (puts busy status as summary, and removes all other information), or "limited" (only keeps summary and busy status)
+
+Inspired by Outlooks export options.
 
 # API
 
