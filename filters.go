@@ -36,17 +36,30 @@ func filterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	if params["regex"] == "" {
 		return indices, fmt.Errorf("missing mandatory Parameter 'regex'")
 	}
+	if params["target"] == "" {
+		params["target"] = "summary"
+	}
 	regex, _ := regexp.Compile(params["regex"])
-	// TODO add target parameter with enum and return ics.ComponentPorperty type
 
 	for i, component := range cal.Components { // iterate over events
 		switch cal.Components[i].(type) {
 		case *ics.VEvent:
 			event := component.(*ics.VEvent)
-			if regex.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
+			var target string
+
+			switch params["target"] {
+			case "summary":
+				target = event.GetProperty(ics.ComponentPropertySummary).Value
+			case "description":
+				target = event.GetProperty(ics.ComponentPropertyDescription).Value
+			case "location":
+				target = event.GetProperty(ics.ComponentPropertyLocation).Value
+			}
+
+			if regex.MatchString(target) {
 				// event matches regex
 				indices = append(indices, i)
-				log.Debug("Excluding event '" + event.GetProperty(ics.ComponentPropertySummary).Value + "' with id " + event.Id() + "\n")
+				log.Debug("Filtering event with id " + event.Id() + "\n")
 			}
 		default:
 			// print type of component
