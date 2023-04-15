@@ -195,6 +195,9 @@ func actionStripInfo(cal *ics.Calendar, indices []int, params map[string]string)
 					// freebusy status set
 					newevent.AddProperty(ics.ComponentPropertyFreebusy, event.GetProperty(ics.ComponentPropertyFreebusy).Value)
 				}
+
+			default:
+				return fmt.Errorf("invalid mode: %s", params["mode"])
 			}
 
 			cal.Components[i] = newevent
