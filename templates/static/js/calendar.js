@@ -70,6 +70,9 @@ function getDayVStack(date, events, show_edit = false) {
     day_vstack.classList.add("vstack", "col-md-4", "col-xl-2", "pt-2", "day-column", "mb-3");
     let day_title = document.createElement("h5");
     day_title.classList.add("fw-semibold", "text-center", "m-0");
+    if (date.isSame(dayjs(), "day")) {
+        day_title.classList.add("today");
+    }
     day_title.innerText = date.format("dd, DD.MM.YYYY");
     day_vstack.appendChild(day_title);
 
