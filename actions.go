@@ -138,7 +138,6 @@ func actionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 			}
 			// adding edited event back to calendar
 			cal.Components[i] = event
-			return nil
 
 		default:
 			// print type of component
