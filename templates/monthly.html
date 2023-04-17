@@ -74,7 +74,7 @@
                     calendar.appendChild(row);
                     continue;
                 }
-                let day_vstack = getDayVStack(date, events, show_edit && (!immutable_past || date >= dayjs()));
+                let day_vstack = getDayVStack(date, events, show_edit, !immutable_past || date >= dayjs());
                 row.appendChild(day_vstack);
             }
         }

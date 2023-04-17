@@ -46,6 +46,11 @@ body {
     display: none;
 }
 
+.card .edit-button.disabled {
+    background-image: url("/static/media/edit_disabled.svg");
+    border-color: #cccccc;
+}
+
 .card:hover .edit-button {
     display: block;
 }
