@@ -42,6 +42,8 @@ Run a notifier manually:
 # Config
 
 ```yaml
+version: 2
+
 server:
   addr: ":80"
   loglevel: "info"
@@ -54,7 +56,7 @@ server:
     smtp_port: 25
     sender: "calnotification@julian-lemmerich.de"
   super-tokens:
-  - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
+    - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
 
 profiles:
   relay:
@@ -62,32 +64,38 @@ profiles:
     public: true
     immutable-past: true
     admin-tokens:
-    - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+      - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     rules:
-      filters:
-      - type: "regex"
-        regex: "testentry"
-        target: "summary"
-      - type: "timeframe"
-        from: "2021-12-02T00:00:00Z"
-        until: "2021-12-31T00:00:00Z"
-        operator: "and"
-      action:
-        type: "delete"
-      expires: "2022-12-31T00:00:00Z"
+      - filters:
+          - type: "regex"
+            regex: "testentry"
+            target: "summary"
+          - type: "timeframe"
+            from: "2021-12-02T00:00:00Z"
+            until: "2021-12-31T00:00:00Z"
+        action:
+          type: "delete"
+        expires: "2022-12-31T00:00:00Z"
 
 notifiers:
   relay:
     source: "http://localhost/relay"
     interval: "15m"
+    admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     recipients:
-    - email: "jm.lemmerich@gmail.com"
+      - "jm.lemmerich@gmail.com"
 ```
 
 The `server` section contains the configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
 You can list as many profiles as you want. Each profile has to have a source.
 You can then add as many rules as you want. The `name:` filed specifies the module, the rule references. All other fields are dependent on the module.
 The rule are executed in the order they are listed. You can create multiple rules from one module.
+
+## config versioning
+
+| ical-relay version | config version |
+|--------------------|----------------|
+| 2.0.0-beta.5       | 2              |
 
 ## immutable-past
 

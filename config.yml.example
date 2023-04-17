@@ -1,3 +1,5 @@
+version: 2
+
 server:
   addr: ":80"
   loglevel: "info"
