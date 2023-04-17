@@ -18,15 +18,20 @@
                     <a class="nav-link" href="{{((.Router.Get "notifierSubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" onclick="copyIcalLink();">ICAL Link kopieren</a>
+                    <a class="nav-link" id="copy_ical_link" onclick="copy_ical_link();" style="cursor: pointer">iCal Link kopieren</a>
                     <script>
-                        function copyIcalLink(){
+                        function copy_ical_link(){
                             try{
-                                navigator.clipboard.writeText("{{((.Router.Get "profile").URL "profile" .ProfileName).Path}}")
-                                alert("Copied the text: " + copyText.value);
+                                const ical_url = new URL(encodeURI("{{((.Router.Get "profile").URL "profile" .ProfileName).Path}}"), document.location);
+                                navigator.clipboard.writeText(ical_url.href);
+                                const old_text = document.getElementById("copy_ical_link").innerText;
+                                document.getElementById("copy_ical_link").innerText = "Kopiert!";
+                                setTimeout(() => {
+                                    document.getElementById("copy_ical_link").innerText = old_text;
+                                }, 2000);
                             } catch (err){
                                 console.error("Couldn't copy to clipboard:", err);
-                                alert("Copy not supported");
+                                alert("Copying to clipboard is not supported in this browser!");
                             }
                         }
                     </script>
