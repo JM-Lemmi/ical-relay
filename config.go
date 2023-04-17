@@ -44,7 +44,6 @@ type mailConfig struct {
 }
 
 type profile struct {
-	Source        string   `yaml:"source,omitempty"`
 	Sources       []string `yaml:"sources,omitempty"`
 	Public        bool     `yaml:"public"`
 	ImmutablePast bool     `yaml:"immutable-past,omitempty"`
@@ -137,16 +136,6 @@ func ParseConfig(path string) (Config, error) {
 			log.Fatalf("Error creating calstore: %v", err)
 			return tmpConfig, err
 		}
-	}
-
-	// check if all profiles have a source, or maybe duplicated source
-	for i, p := range tmpConfig.Profiles {
-		if tmpConfig.Profiles[i].Source != "" {
-			p.Sources = append([]string{tmpConfig.Profiles[i].Source}, tmpConfig.Profiles[i].Sources...)
-			p.Source = ""
-			tmpConfig.Profiles[i] = p
-		}
-		log.Trace("Loading Profile Sources complete. Profile " + i + " has sources: " + strings.Join(p.Sources, ", "))
 	}
 
 	return tmpConfig, nil
