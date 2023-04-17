@@ -13,9 +13,11 @@ import (
 )
 
 // STRUCTS
+// !! breaking changes need to keep the old version in legacyconfig.go !!
 
 // Config represents configuration for the application
 type Config struct {
+	Version   int                 `yaml:"version"`
 	Server    serverConfig        `yaml:"server"`
 	Profiles  map[string]profile  `yaml:"profiles,omitempty"`
 	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
@@ -77,8 +79,26 @@ func ParseConfig(path string) (Config, error) {
 
 	err = yaml.Unmarshal(yamlFile, &tmpConfig)
 	if err != nil {
-		log.Fatalf("Error Unmarshalling Config: %v", err)
-		return tmpConfig, err
+		log.Warnf("Error Unmarshalling Config: %v; attempting to parse legacy config", err)
+		tmpConfig, err = LegacyParseConfig(path)
+		if err != nil {
+			log.Fatalf("Error Parsing Legacy Config: %v", err)
+			return tmpConfig, err
+			// parsing in legacy mode failed
+		}
+		// parsing in legacy mode succeeded, saving new config
+		tmpConfig.saveConfig(path)
+	}
+
+	// check if config is up to date, if not
+	if tmpConfig.Version < 2 {
+		log.Warn("Config is outdated, upgrading")
+		tmpConfig, err = LegacyParseConfig(path)
+		if err != nil {
+			log.Fatalf("Error Parsing Legacy Config: %v", err)
+			return tmpConfig, err
+		}
+		tmpConfig.saveConfig(path)
 	}
 
 	log.Trace("Read config, now setting defaults")
