@@ -38,7 +38,7 @@
         </div>
     </main>
     {{template "footer.html" .}}
-    <script type="rule">
+    <script type="module">
         const events = {{ .Events }};
 
         let show_edit = window.localStorage.getItem("token") !== null;
