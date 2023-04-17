@@ -1,4 +1,16 @@
-function getEventCard(event, show_edit = false) {
+function locationToNode(location) {
+    try {
+        const url = new URL(location);
+        const a = document.createElement("a");
+        a.href = url;
+        a.innerText = url.hostname;
+        return a;
+    } catch (_) {
+        return document.createTextNode(location);
+    }
+}
+
+function getEventCard(event, show_edit = false, edit_enabled = true) {
     let event_card = document.createElement("div");
     event_card.classList.add("card", "rounded-0");
     let event_body = document.createElement("div");
@@ -11,7 +23,8 @@ function getEventCard(event, show_edit = false) {
     event_text.classList.add("card-text");
     event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
     if (event.location) {
-        event_text.innerText += "\n" + event.location;
+        event_text.appendChild(document.createElement("br"));
+        event_text.appendChild(locationToNode(event.location));
     }
     if (event.description) {
         let description_el = document.createElement("p");
@@ -41,6 +54,9 @@ function getEventCard(event, show_edit = false) {
     if (show_edit) {
         let edit_button = document.createElement("button");
         edit_button.classList.add("btn", "btn-sm", "btn-outline-secondary", "rounded-circle", "edit-button");
+        if(!edit_enabled){
+            edit_button.classList.add("disabled");
+        }
         edit_button.addEventListener("click", function (e) {
             e.stopPropagation();
             location.href = event.edit_url + '?' + new URLSearchParams({'return-to': window.location.pathname});
@@ -51,12 +67,15 @@ function getEventCard(event, show_edit = false) {
     return event_card;
 }
 
-function getDayVStack(date, events, show_edit = false) {
+function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
     let day_vstack = document.createElement("div");
     document.createElement("div");
     day_vstack.classList.add("vstack", "col-md-4", "col-xl-2", "pt-2", "day-column", "mb-3");
     let day_title = document.createElement("h5");
     day_title.classList.add("fw-semibold", "text-center", "m-0");
+    if (date.isSame(dayjs(), "day")) {
+        day_title.classList.add("today");
+    }
     day_title.innerText = date.format("dd, DD.MM.YYYY");
     day_vstack.appendChild(day_title);
 
@@ -67,12 +86,11 @@ function getDayVStack(date, events, show_edit = false) {
             return dayjs(a.start).diff(dayjs(b.start));
         });
         for (let event of day_events) {
-            let card = getEventCard(event, show_edit);
+            let card = getEventCard(event, show_edit, edit_enabled);
             if(date.format("MM") != currentMonth){
                 card.style.backgroundColor = "#e1e6ea";
             }
             day_vstack.appendChild(card);
-            
         }
     } else {
         let card = getEmptyCard();

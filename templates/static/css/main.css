@@ -11,8 +11,14 @@ body {
 }
 
 .day-column > :first-child {
+    border: 2px solid var(--dhbw-red);
     background-color: var(--dhbw-red);
     color: var(--day-title-color);
+}
+
+.day-column > .today {
+    background-color: var(--day-title-color);
+    color: var(--dhbw-red);
 }
 
 .day-column > :last-child {
@@ -38,6 +44,11 @@ body {
     background-position: center;
     background-repeat: no-repeat;
     display: none;
+}
+
+.card .edit-button.disabled {
+    background-image: url("/static/media/edit_disabled.svg");
+    border-color: #cccccc;
 }
 
 .card:hover .edit-button {
