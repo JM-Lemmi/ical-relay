@@ -162,7 +162,10 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 					"id":   id,
 				},
 			},
-			Action: map[string]string{"overwrite": "true"},
+			Action: map[string]string{
+				"type":      "edit",
+				"overwrite": "true",
+			},
 		}
 
 		_, ok := entry["summary"]
