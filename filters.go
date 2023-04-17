@@ -49,11 +49,23 @@ func filterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
 
 			switch params["target"] {
 			case "summary":
-				target = event.GetProperty(ics.ComponentPropertySummary).Value
+				if event.GetProperty(ics.ComponentPropertySummary) != nil {
+					target = event.GetProperty(ics.ComponentPropertySummary).Value
+				} else {
+					continue
+				}
 			case "description":
-				target = event.GetProperty(ics.ComponentPropertyDescription).Value
+				if event.GetProperty(ics.ComponentPropertyDescription) != nil {
+					target = event.GetProperty(ics.ComponentPropertyDescription).Value
+				} else {
+					continue
+				}
 			case "location":
-				target = event.GetProperty(ics.ComponentPropertyLocation).Value
+				if event.GetProperty(ics.ComponentPropertyLocation) != nil {
+					target = event.GetProperty(ics.ComponentPropertyLocation).Value
+				} else {
+					continue
+				}
 			}
 
 			if regex.MatchString(target) {
