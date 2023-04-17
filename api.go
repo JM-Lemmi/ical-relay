@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
+	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
 
 	log "github.com/sirupsen/logrus"
@@ -214,6 +216,54 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 		conf.addRule(profileName, rule)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Added Rule to delete entry with id "+id+"\n")
+	}
+}
+
+// Path /api/profiles/{profile}/newentryjson
+func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	token := r.Header.Get("Authorization")
+	profileName := vars["profile"]
+
+	_, ok := conf.Profiles[profileName]
+	if !ok {
+		requestLogger.Infoln("Profile " + profileName + " not found!")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
+		return
+	}
+
+	if !checkAuthoriziation(token, profileName) {
+		requestLogger.Warnln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprint(w, "Wrong method!\n")
+	case http.MethodPost:
+		var cal ics.Calendar
+
+		// read json from body to calendar struct
+		body, _ := ioutil.ReadAll(r.Body)
+		err := json.Unmarshal(body, &cal)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// convert calendar to base64
+		source := "base64://" + base64.StdEncoding.EncodeToString([]byte(cal.Serialize()))
+
+		// create source
+		conf.addSource(profileName, source)
 	}
 }
 

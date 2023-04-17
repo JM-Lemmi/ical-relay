@@ -227,6 +227,16 @@ func (c Config) removeRuleFromProfile(profile string, index int) {
 	c.saveConfig(configPath)
 }
 
+func (c Config) addSource(profile string, src string) error {
+	if !c.profileExists(profile) {
+		return fmt.Errorf("profile " + profile + " does not exist")
+	}
+	p := c.Profiles[profile]
+	p.Sources = append(c.Profiles[profile].Sources, src)
+	c.Profiles[profile] = p
+	return c.saveConfig(configPath)
+}
+
 func (c Config) RunCleanup() {
 	for p := range c.Profiles {
 		for i, m := range c.Profiles[p].Rules {

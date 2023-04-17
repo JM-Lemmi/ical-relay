@@ -35,6 +35,7 @@ func initHandlers() {
 	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
 	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
 	router.HandleFunc("/api/profiles/{profile}/rules", rulesApiHandler).Name("rules")
+	router.HandleFunc("/api/profiles/{profile}/newentryjson", newentryjsonApiHandler).Name("newentryjson")
 }
 
 func getGlobalTemplateData() map[string]interface{} {
