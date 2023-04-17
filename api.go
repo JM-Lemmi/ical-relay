@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -244,9 +245,6 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch r.Method {
-	case http.MethodGet:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprint(w, "Wrong method!\n")
 	case http.MethodPost:
 		var cal ics.Calendar
 
@@ -264,6 +262,69 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 
 		// create source
 		conf.addSource(profileName, source)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprint(w, "Wrong method!\n")
+	}
+}
+
+// Path: /api/profiles/{profile}/newentryfile
+func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	token := r.Header.Get("Authorization")
+	profileName := vars["profile"]
+
+	_, ok := conf.Profiles[profileName]
+	if !ok {
+		requestLogger.Infoln("Profile " + profileName + " not found!")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
+		return
+	}
+
+	if !checkAuthoriziation(token, profileName) {
+		requestLogger.Warnln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodPost, http.MethodPut:
+
+		// read file from multipart form and convert to base64
+		err := r.ParseMultipartForm(32 << 20)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// read file into buffer and convert to base 64
+		for infile, _ := range r.MultipartForm.File {
+			file, err := r.MultipartForm.File[infile][0].Open()
+			if err != nil {
+				requestLogger.Errorln(err)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(file)
+			file.Close()
+			b64file := base64.StdEncoding.EncodeToString(buf.Bytes())
+
+			// create source
+			source := "base64://" + b64file
+			log.Debug("Adding source " + source)
+			conf.addSource(profileName, source)
+		}
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprint(w, "Wrong method!\n")
 	}
 }
 

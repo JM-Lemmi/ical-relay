@@ -174,6 +174,12 @@ Autorization is done in three levels:
 - Profile-Admin: Token for a specific profile, can use most endpoints for this profile, but not all module types.
 - Super-Admin: Rights for all profiles and can also use all modules. May include LFI or CSRF-capable config options. Should be used with caution.
 
+### Adding an Event from File via API:
+
+```
+curl -F eventfile=@./testfile.ics -H "Authorization: <token>" http://localhost/api/profiles/test/newentryfile
+```
+
 # Notifier
 
 The notifiers do not have to reference a local ical, you can also use this to only call external icals.

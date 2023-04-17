@@ -36,6 +36,7 @@ func initHandlers() {
 	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
 	router.HandleFunc("/api/profiles/{profile}/rules", rulesApiHandler).Name("rules")
 	router.HandleFunc("/api/profiles/{profile}/newentryjson", newentryjsonApiHandler).Name("newentryjson")
+	router.HandleFunc("/api/profiles/{profile}/newentryfile", newentryfileApiHandler).Name("newentryfile")
 }
 
 func getGlobalTemplateData() map[string]interface{} {
