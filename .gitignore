@@ -3,6 +3,8 @@ ical-relay
 rice-box.go
 .devcontainer
 addical.ics
+config.toml
+config.yml
 /tmp/
 .debpkg/
 calstore/

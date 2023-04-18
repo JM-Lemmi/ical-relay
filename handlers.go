@@ -172,25 +172,17 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 			log.Errorln(err)
 			continue
 		}
-		edit_url, err := router.Get("editView").URL("profile", profileName, "uid", event.Id())
+		edit_url, err := router.Get("editView").URL("profile", profileName, "uid", event.GetProperty("UID").Value)
 		if err != nil {
 			log.Errorln(err)
 		}
 		day := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
-		summaryvalue := ""
-		if event.GetProperty(ics.ComponentPropertySummary) != nil {
-			summaryvalue = event.GetProperty(ics.ComponentPropertySummary).Value
-		}
-		locationvalue := ""
-		if event.GetProperty(ics.ComponentPropertyLocation) != nil {
-			locationvalue = event.GetProperty(ics.ComponentPropertyLocation).Value
-		}
 		data := eventData{
-			"title":    summaryvalue,
-			"location": locationvalue,
+			"title":    event.GetProperty("SUMMARY").Value,
+			"location": event.GetProperty("LOCATION").Value,
 			"start":    startTime,
 			"end":      endTime,
-			"id":       event.Id(),
+			"id":       event.GetProperty("UID").Value,
 			"edit_url": edit_url.String(),
 		}
 		description := event.GetProperty("DESCRIPTION")

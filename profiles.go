@@ -184,7 +184,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 // Will delete events from the calendar either before or after now.
 // timeframes: "before": delete up till now, "after" delete everything after now
 func ImmutablePastDelete(cal *ics.Calendar, timeframe string) error {
-	indices, err := callFilter(filters["timeframe"], cal, map[string]string{timeframe: "now"})
+	indices, err := callFilter(filters["timeframe"], cal, map[string]string{"timeframe": timeframe})
 	if err != nil {
 		return err
 	}
