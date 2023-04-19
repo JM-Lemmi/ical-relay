@@ -43,6 +43,8 @@ func getGlobalTemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Profiles":          getProfilesMetadata(),
 		"Version":           version,
+		"ApplicationName":   conf.Server.Name,
+		"FaviconPath":       conf.Server.FaviconPath,
 		"ImprintLink":       conf.Server.Imprint,
 		"PrivacyPolicyLink": conf.Server.PrivacyPolicy,
 		"Router":            router,
@@ -179,7 +181,6 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 		day := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
 		data := eventData{
 			"title":    event.GetProperty("SUMMARY").Value,
-			"location": event.GetProperty("LOCATION").Value,
 			"start":    startTime,
 			"end":      endTime,
 			"id":       event.GetProperty("UID").Value,
@@ -188,6 +189,9 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 		description := event.GetProperty("DESCRIPTION")
 		if description != nil {
 			data["description"] = description.Value
+		}
+		if event.GetProperty("LOCATION") != nil {
+			data["location"] = event.GetProperty("LOCATION").Value
 		}
 		calendarDataByDay[day.Format("2006-01-02")] = append(calendarDataByDay[day.Format("2006-01-02")], data)
 	}

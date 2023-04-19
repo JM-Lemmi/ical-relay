@@ -5,6 +5,8 @@ server:
   loglevel: "info"
   url: "https://cal.julian-lemmerich.de"
   templatepath: /opt/ical-relay/templates
+  faviconpath: /static/media/favicon.svg
+  name: "Calendar"
   imprintlink: "https://your-imprint"
   privacypolicylink: "http://your-data-privacy-policy"
   mail:
