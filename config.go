@@ -94,6 +94,12 @@ func ParseConfig(path string) (Config, error) {
 	if !strings.HasSuffix(tmpConfig.Server.TemplatePath, "/") {
 		tmpConfig.Server.TemplatePath += "/"
 	}
+	if tmpConfig.Server.Name == "" {
+		tmpConfig.Server.Name = "Calendar"
+	}
+	if tmpConfig.Server.FaviconPath == "" {
+		tmpConfig.Server.Name = "/static/media/favicon.svg"
+	}
 
 	if !directoryExists(tmpConfig.Server.StoragePath + "notifystore/") {
 		log.Info("Creating notifystore directory")
