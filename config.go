@@ -13,21 +13,14 @@ import (
 )
 
 // STRUCTS
+// !! breaking changes need to keep the old version in legacyconfig.go !!
 
-type profile struct {
-	Source        string              `yaml:"source"`
-	Public        bool                `yaml:"public"`
-	ImmutablePast bool                `yaml:"immutable-past,omitempty"`
-	Tokens        []string            `yaml:"admin-tokens"`
-	Modules       []map[string]string `yaml:"modules,omitempty"`
-}
-
-type mailConfig struct {
-	SMTPServer string `yaml:"smtp_server"`
-	SMTPPort   int    `yaml:"smtp_port"`
-	Sender     string `yaml:"sender"`
-	SMTPUser   string `yaml:"smtp_user,omitempty"`
-	SMTPPass   string `yaml:"smtp_pass,omitempty"`
+// Config represents configuration for the application
+type Config struct {
+	Version   int                 `yaml:"version"`
+	Server    serverConfig        `yaml:"server"`
+	Profiles  map[string]profile  `yaml:"profiles,omitempty"`
+	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
 }
 
 type serverConfig struct {
@@ -44,17 +37,33 @@ type serverConfig struct {
 	SuperTokens   []string   `yaml:"super-tokens,omitempty"`
 }
 
+type mailConfig struct {
+	SMTPServer string `yaml:"smtp_server"`
+	SMTPPort   int    `yaml:"smtp_port"`
+	Sender     string `yaml:"sender"`
+	SMTPUser   string `yaml:"smtp_user,omitempty"`
+	SMTPPass   string `yaml:"smtp_pass,omitempty"`
+}
+
+type profile struct {
+	Sources       []string `yaml:"sources,omitempty"`
+	Public        bool     `yaml:"public"`
+	ImmutablePast bool     `yaml:"immutable-past,omitempty"`
+	Tokens        []string `yaml:"admin-tokens"`
+	Rules         []Rule   `yaml:"rules,omitempty"`
+}
+
+type Rule struct {
+	Filters  []map[string]string `yaml:"filters" json:"filters"`
+	Operator string              `yaml:"operator" json:"operator"`
+	Action   map[string]string   `yaml:"action" json:"action"`
+	Expiry   string              `yaml:"expiry,omitempty" json:"expiry,omitempty"`
+}
+
 type notifier struct {
 	Source     string   `yaml:"source"`
 	Interval   string   `yaml:"interval"`
 	Recipients []string `yaml:"recipients"`
-}
-
-// Config represents configuration for the application
-type Config struct {
-	Server    serverConfig        `yaml:"server"`
-	Profiles  map[string]profile  `yaml:"profiles,omitempty"`
-	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
 }
 
 // CONFIG MANAGEMENT FUNCTIONS
@@ -71,10 +80,29 @@ func ParseConfig(path string) (Config, error) {
 
 	err = yaml.Unmarshal(yamlFile, &tmpConfig)
 	if err != nil {
-		log.Fatalf("Error Unmarshalling Config: %v", err)
-		return tmpConfig, err
+		log.Warnf("Error Unmarshalling Config: %v; attempting to parse legacy config", err)
+		tmpConfig, err = LegacyParseConfig(path)
+		if err != nil {
+			log.Fatalf("Error Parsing Legacy Config: %v", err)
+			return tmpConfig, err
+			// parsing in legacy mode failed
+		}
+		// parsing in legacy mode succeeded, saving new config
+		tmpConfig.saveConfig(path)
 	}
 
+	// check if config is up to date, if not
+	if tmpConfig.Version < 2 {
+		log.Warn("Config is outdated, upgrading")
+		tmpConfig, err = LegacyParseConfig(path)
+		if err != nil {
+			log.Fatalf("Error Parsing Legacy Config: %v", err)
+			return tmpConfig, err
+		}
+		tmpConfig.saveConfig(path)
+	}
+
+	log.Trace("Read config, now setting defaults")
 	// defaults
 	if tmpConfig.Server.Addr == "" {
 		tmpConfig.Server.Addr = ":8080"
@@ -198,33 +226,52 @@ func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
 	}
 }
 
-func (c Config) addModule(profile string, module map[string]string) error {
+func (c Config) addRule(profile string, rule Rule) error {
 	if !c.profileExists(profile) {
 		return fmt.Errorf("profile " + profile + " does not exist")
 	}
 	p := c.Profiles[profile]
-	p.Modules = append(c.Profiles[profile].Modules, module)
+	p.Rules = append(c.Profiles[profile].Rules, rule)
 	c.Profiles[profile] = p
 	return c.saveConfig(configPath)
 }
 
-func (c Config) removeModuleFromProfile(profile string, index int) {
-	log.Info("Removing expired module at position " + fmt.Sprint(index+1) + " from profile " + profile)
-	removeFromMapString(c.Profiles[profile].Modules, index)
+func (c Config) removeRuleFromProfile(profile string, index int) {
+	log.Info("Removing rule at position " + fmt.Sprint(index+1) + " from profile " + profile)
+	p := c.Profiles[profile]
+	p.Rules = append(p.Rules[:index], p.Rules[index+1:]...)
+	c.Profiles[profile] = p
 	c.saveConfig(configPath)
+}
+
+func (c Config) addSource(profile string, src string) error {
+	if !c.profileExists(profile) {
+		return fmt.Errorf("profile " + profile + " does not exist")
+	}
+	p := c.Profiles[profile]
+	p.Sources = append(c.Profiles[profile].Sources, src)
+	c.Profiles[profile] = p
+	return c.saveConfig(configPath)
 }
 
 func (c Config) RunCleanup() {
 	for p := range c.Profiles {
-		for i, m := range c.Profiles[p].Modules {
-			if m["expires"] != "" {
-				exp, _ := time.Parse(time.RFC3339, m["expiration"])
+		for i, m := range c.Profiles[p].Rules {
+			if m.Expiry != "" {
+				exp, _ := time.Parse(time.RFC3339, m.Expiry)
 				if time.Now().After(exp) {
-					c.removeModuleFromProfile(p, i)
+					c.removeRuleFromProfile(p, i)
 				}
 			}
 		}
 	}
+}
+
+// checks if a rule is valid.
+// returns true if rule is valid, false if not
+func checkRuleIntegrity(rule Rule) bool {
+	// TODO implement!
+	return true
 }
 
 // starts a heartbeat notifier in a sub-routine

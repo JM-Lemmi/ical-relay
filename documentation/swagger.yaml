@@ -166,17 +166,17 @@ paths:
           description: Authentication successful
         '401':
           $ref: "#/components/responses/UnauthorizedError"
-  /api/profiles/{profile}/modules:
+  /api/profiles/{profile}/rules:
     get:
       tags:
         - admin
-      summary: Get all Modules of a Profile
-      description: Get all Modules of a Profile
-      operationId: getModules
+      summary: Get all Rules of a Profile
+      description: Get all Rules of a Profile
+      operationId: getRules
       parameters:
         - name: profile
           in: path
-          description: Name of Profile to get Modules for.
+          description: Name of Profile to get Rules for.
           required: true
           schema:
             type: string
@@ -184,7 +184,7 @@ paths:
         - tokenAuth: []
       responses:
         '200':
-          $ref: "#/components/responses/ModuleList"
+          $ref: "#/components/responses/RuleList"
         '401':
           $ref: "#/components/responses/UnauthorizedError"
         '404':
@@ -194,27 +194,27 @@ paths:
     post:
       tags:
         - admin
-      summary: Add a Module to a Profile
-      description: General add a Module to a Profile. token Auth allows access to the Modules edit-bysummary-regex and delete-bysummary-regex. Super Auth allows access to all Modules.
-      operationId: addModule
+      summary: Add a Rule to a Profile
+      description: General add a Rule to a Profile. token Auth allows access to the Modules edit-bysummary-regex and delete-bysummary-regex. Super Auth allows access to all Modules.
+      operationId: addRule
       parameters:
         - name: profile
           in: path
-          description: Name of Profile to add Module to.
+          description: Name of Profile to add Rule to.
           required: true
           schema:
             type: string
-        - name: module
+        - name: rule
           in: body
-          description: Module to add
+          description: Rule to add
           required: true
           schema:
-            $ref: "#/components/schemas/Module"
+            $ref: "#/components/schemas/Rule"
       security:
         - tokenAuth: []
       responses:
         '200':
-          $ref: "#/components/responses/ModuleList"
+          $ref: "#/components/responses/RuleList"
         '400':
           description: Module not found
         '401':
@@ -414,7 +414,7 @@ components:
           schema:
             type: string
             description: Error message
-    ModuleList:
+    RuleList:
       description: successful operation
       content:
         application/json:

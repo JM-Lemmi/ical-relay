@@ -22,7 +22,7 @@ func initHandlers() {
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.Server.TemplatePath+"static/"))))
 	router.HandleFunc("/view/{profile}/monthly", monthlyViewHandler).Name("monthlyView")
 	router.HandleFunc("/view/{profile}/edit/{uid}", editViewHandler).Name("editView")
-	router.HandleFunc("/view/{profile}/edit", modulesViewHandler).Name("modulesView")
+	router.HandleFunc("/view/{profile}/edit", rulesViewHandler).Name("rulesView")
 	router.HandleFunc("/notifier/{notifier}/subscribe", notifierSubscribeHandler).Name("notifierSubscribe")
 	router.HandleFunc("/notifier/{notifier}/unsubscribe", notifierUnsubscribeHandler).Name("notifierUnsubscribe")
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
@@ -34,7 +34,9 @@ func initHandlers() {
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
 	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
-	router.HandleFunc("/api/profiles/{profile}/modules", modulesApiHandler).Name("modules")
+	router.HandleFunc("/api/profiles/{profile}/rules", rulesApiHandler).Name("rules")
+	router.HandleFunc("/api/profiles/{profile}/newentryjson", newentryjsonApiHandler).Name("newentryjson")
+	router.HandleFunc("/api/profiles/{profile}/newentryfile", newentryfileApiHandler).Name("newentryfile")
 }
 
 func getGlobalTemplateData() map[string]interface{} {
@@ -118,10 +120,10 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	htmlTemplates.ExecuteTemplate(w, "edit.html", data)
 }
 
-func modulesViewHandler(w http.ResponseWriter, r *http.Request) {
+func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
-	requestLogger.Infoln("modules view request")
+	requestLogger.Infoln("rules view request")
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
 	if !ok {
@@ -130,9 +132,9 @@ func modulesViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := getGlobalTemplateData()
-	data["Modules"] = profile.Modules
+	data["Rules"] = profile.Rules
 	data["ProfileName"] = profileName
-	htmlTemplates.ExecuteTemplate(w, "modules.html", data)
+	htmlTemplates.ExecuteTemplate(w, "rules.html", data)
 }
 
 func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +213,15 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// load params
 	time := r.URL.Query().Get("reminder")
 	if time != "" {
-		profile.Modules = append(profile.Modules, map[string]string{"name": "add-reminder", "time": time})
+		profile.Rules = append(profile.Rules, Rule{
+			Filters: []map[string]string{
+				{"type": "all"},
+			},
+			Action: map[string]string{
+				"type": "reminder",
+				"time": time,
+			},
+		})
 	}
 
 	calendar, err := getProfileCalendar(profile, vars["profile"])

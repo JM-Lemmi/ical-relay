@@ -1,3 +1,5 @@
+version: 2
+
 server:
   addr: ":80"
   loglevel: "info"
@@ -12,7 +14,7 @@ server:
     smtp_port: 25
     sender: "calnotification@julian-lemmerich.de"
   super-tokens:
-  - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
+    - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
 
 profiles:
   relay:
@@ -20,16 +22,18 @@ profiles:
     public: true
     immutable-past: true
     admin-tokens:
-    - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
-    modules:
-    - name: "delete-bysummary-regex"
-      regex: "testentry"
-      from: "2021-12-02T00:00:00Z"
-      until: "2021-12-31T00:00:00Z"
-      expires: "2022-12-31T00:00:00Z"
-    - name: "add-url"
-      url: "https://othersource.com/othercalendar.ics"
-      header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+      - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+    rules:
+      - filters:
+          - type: "regex"
+            regex: "testentry"
+            target: "summary"
+          - type: "timeframe"
+            from: "2021-12-02T00:00:00Z"
+            until: "2021-12-31T00:00:00Z"
+        action:
+          type: "delete"
+        expires: "2022-12-31T00:00:00Z"
 
 notifiers:
   relay:
@@ -37,4 +41,4 @@ notifiers:
     interval: "15m"
     admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     recipients:
-    - "jm.lemmerich@gmail.com"
+      - "jm.lemmerich@gmail.com"
