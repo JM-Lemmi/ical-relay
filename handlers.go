@@ -41,6 +41,7 @@ func getGlobalTemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Profiles":          getProfilesMetadata(),
 		"Version":           version,
+		"ApplicationName":   conf.Server.Name,
 		"FaviconPath":       conf.Server.FaviconPath,
 		"ImprintLink":       conf.Server.Imprint,
 		"PrivacyPolicyLink": conf.Server.PrivacyPolicy,
