@@ -36,8 +36,8 @@ type serverConfig struct {
 	LogLevel      log.Level  `yaml:"loglevel"`
 	StoragePath   string     `yaml:"storagepath"`
 	TemplatePath  string     `yaml:"templatepath"`
-	FaviconPath	  string	 `yaml:"faviconpath,omitempty"`
-	Name          string     `yaml:name,omitempty`
+	FaviconPath   string     `yaml:"faviconpath,omitempty"`
+	Name          string     `yaml:"name,omitempty"`
 	Imprint       string     `yaml:"imprintlink"`
 	PrivacyPolicy string     `yaml:"privacypolicylink"`
 	Mail          mailConfig `yaml:"mail,omitempty"`
@@ -98,7 +98,7 @@ func ParseConfig(path string) (Config, error) {
 		tmpConfig.Server.Name = "Calendar"
 	}
 	if tmpConfig.Server.FaviconPath == "" {
-		tmpConfig.Server.Name = "/static/media/favicon.svg"
+		tmpConfig.Server.FaviconPath = "/static/media/favicon.svg"
 	}
 
 	if !directoryExists(tmpConfig.Server.StoragePath + "notifystore/") {
