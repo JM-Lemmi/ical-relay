@@ -211,8 +211,14 @@ func addEventsFile(cal *ics.Calendar, filename string) (int, error) {
 	if _, err := os.Stat(filename); err != nil {
 		return 0, fmt.Errorf("file %s not found", filename)
 	}
-	addicsfile, _ := os.Open(filename)
-	addics, _ := ics.ParseCalendar(addicsfile)
+	addicsfile, err := os.Open(filename)
+	if err != nil {
+		return 0, err
+	}
+	addics, err := ics.ParseCalendar(addicsfile)
+	if err != nil {
+		return 0, err
+	}
 	return addEvents(cal, addics), nil
 }
 
