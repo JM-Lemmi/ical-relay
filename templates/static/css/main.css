@@ -54,3 +54,7 @@ body {
 .card:hover .edit-button {
     display: block;
 }
+
+.navbar-brand img {
+    height: 2rem;
+}
