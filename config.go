@@ -36,6 +36,7 @@ type serverConfig struct {
 	LogLevel      log.Level  `yaml:"loglevel"`
 	StoragePath   string     `yaml:"storagepath"`
 	TemplatePath  string     `yaml:"templatepath"`
+	FaviconPath	  string	 `yaml:"faviconpath"`
 	Imprint       string     `yaml:"imprintlink"`
 	PrivacyPolicy string     `yaml:"privacypolicylink"`
 	Mail          mailConfig `yaml:"mail,omitempty"`
