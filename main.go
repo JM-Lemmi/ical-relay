@@ -23,7 +23,18 @@ func main() {
 	var notifier string
 	flag.StringVar(&notifier, "notifier", "", "Run notifier with given ID")
 	flag.StringVar(&configPath, "config", "config.yml", "Path to config file")
+	var verbose bool
+	flag.BoolVar(&verbose, "v", false, "Enables verbose debug output")
+	var superverbose bool
+	flag.BoolVar(&superverbose, "vv", false, "Enable super verbose trace output")
 	flag.Parse()
+
+	if verbose {
+		log.SetLevel(log.DebugLevel)
+	}
+	if superverbose {
+		log.SetLevel(log.TraceLevel)
+	}
 
 	// load config
 	var err error
@@ -32,8 +43,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.SetLevel(conf.Server.LogLevel)
+	if !verbose && !superverbose {
+		// only set the level from config, if not set by flags
+		log.SetLevel(conf.Server.LogLevel)
+	}
 	log.Debug("Debug log is enabled") // only shows if Debug is actually enabled
+	log.Trace("Trace log is enabled") // only shows if Trace is actually enabled
 
 	// run notifier if specified
 	if notifier != "" {
