@@ -1,5 +1,3 @@
-github.com/arran4/golang-ical v0.0.0-20230318005454-19abf92700cc h1:up1aDcTCZ3KrL2ukKxNqjMRx/CCaXyn9Wl6N7ea3EWc=
-github.com/arran4/golang-ical v0.0.0-20230318005454-19abf92700cc/go.mod h1:BSTTrYHuM12oAL8jDdcmPdw02SBThKYWNFHQlvEG6b0=
 github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 h1:DDGfHa7BWjL4YnC6+E63dPcxHo2sUxDIu8g3QgEJdRY=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
