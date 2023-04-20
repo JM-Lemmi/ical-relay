@@ -21,9 +21,13 @@ function getEventCard(event, show_edit = false, edit_enabled = true) {
     event_body.appendChild(event_title);
     let event_text = document.createElement("div");
     event_text.classList.add("card-text");
-    event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
+    if (!event.all_day) {
+        event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
+    }
     if (event.location) {
-        event_text.appendChild(document.createElement("br"));
+        if (!event.all_day) {
+            event_text.appendChild(document.createElement("br"));
+        }
         event_text.appendChild(locationToNode(event.location));
     }
     if (event.description) {

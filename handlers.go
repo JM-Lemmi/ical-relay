@@ -164,6 +164,7 @@ func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDay {
 	calendarDataByDay := make(calendarDataByDay)
 	for _, event := range calendar.Events() {
+		all_day := false
 		startTime, err := event.GetStartAt()
 		if err != nil {
 			log.Errorln(err)
@@ -172,7 +173,8 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 		endTime, err := event.GetEndAt()
 		if err != nil {
 			log.Errorln(err)
-			continue
+			endTime = startTime.AddDate(0, 0, 1)
+			all_day = true
 		}
 		edit_url, err := router.Get("editView").URL("profile", profileName, "uid", event.GetProperty("UID").Value)
 		if err != nil {
@@ -183,6 +185,7 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 			"title":    event.GetProperty("SUMMARY").Value,
 			"start":    startTime,
 			"end":      endTime,
+			"all_day":  all_day,
 			"id":       event.GetProperty("UID").Value,
 			"edit_url": edit_url.String(),
 		}
