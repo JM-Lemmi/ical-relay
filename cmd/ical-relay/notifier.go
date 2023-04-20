@@ -1,4 +1,4 @@
-package main
+package relay
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"gopkg.in/gomail.v2"
 
 	ics "github.com/arran4/golang-ical"
+	cmp "github.com/jm-lemmi/ical-relay/compare"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -48,7 +49,7 @@ func notifyChanges(id string, n *notifier) error {
 		return err
 	}
 
-	added, deleted, changed := compare(calendar1, calendar2)
+	added, deleted, changed := cmp.Compare(calendar1, calendar2)
 
 	if len(added)+len(deleted)+len(changed) == 0 {
 		log.Info("No changes detected.")

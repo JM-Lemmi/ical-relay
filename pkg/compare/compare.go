@@ -1,11 +1,11 @@
-package main
+package compare
 
 import (
 	ics "github.com/arran4/golang-ical"
 	log "github.com/sirupsen/logrus"
 )
 
-func compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent, []ics.VEvent) {
+func Compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent, []ics.VEvent) {
 	// Compare the two calendars
 	// Returns array of arrays. Added, Deleted, Changed Events
 

@@ -1,6 +1,6 @@
-module github.com/jm-lemmi/ical-relay
+module github.com/jm-lemmi/ical-relay/relay
 
-go 1.18
+go 1.19
 
 require (
 	github.com/arran4/golang-ical v0.0.0-20230318005454-19abf92700cc
@@ -12,6 +12,10 @@ require (
 )
 
 require (
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+)
+
+replace (
+	github.com/jm-lemmi/ical-relay/compare => ../../pkg/compare
 )
