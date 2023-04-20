@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"time"
 
@@ -79,7 +80,7 @@ func notifyChanges(id string, n *notifier) error {
 			m.SetHeader("To", recipient)
 			m.SetHeader("Subject", "Calendar Notification for "+id)
 
-			unsubscribeURL := conf.Server.URL + "/notifier/" + id + "/unsubscribe?mail=" + recipient
+			unsubscribeURL := conf.Server.URL + "/notifier/" + url.QueryEscape(id) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
 			m.SetHeader("List-Unsubscribe", unsubscribeURL)
 			bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
 			m.SetBody("text/plain", string(bodyunsubscribe))
