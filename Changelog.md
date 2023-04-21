@@ -1,3 +1,20 @@
+# v2.0.0-beta.5
+
+- Replace Modules with Filters and Actions
+  - Filters: Regex, Id, Timeframe, Duplicates, All, Duration
+  - Actions: Delete, Edit, AddReminder, StripInfo
+- Multiple Sources per Profile
+  - base64, profile, file and http/https
+- Configuration upgrade for legacy configurations
+- Module instances are now called "Rules"
+- Frontend:
+  - "Today" marker
+  - clickable location links
+  - Disabled Edit Button for past
+  - Copy ICS Link to Clipboard
+  - Configurable Name and Favicon
+- Api to add new Calendar Entries
+
 # v2.0.0-beta.4
 
 - Templates are now in `/opt/ical-relay/templates` by default and can be changed by config setting.
@@ -39,6 +56,14 @@
 - Add Frontend
   - Monthly view
   - Edit view for Single Entries
+
+# v1.3.1
+
+- basic RRULE handling in delete-timeframe Module
+  - waiting for upstream RRULE Handling in golang-ical
+  - cannot handle COUNT
+  - cannot handle when timeframe is inbetween or only in the beginning of the RRULE
+- fix "invalid start time" in delete-timeframe with only "before"-option
 
 # v1.3.0
 

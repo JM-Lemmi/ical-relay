@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<head lang="de">
+    <title>{{.ApplicationName}}</title>
+    {{template "head.html" .}}
+    <script>
+        // Because this is potentially a redirect, we run it as soon as possible
+        let stored_profile = window.localStorage.getItem('profile');
+        if (stored_profile !== null) {
+            let profile_url = ({{((.Router.Get "monthlyView").URL "profile" "%PROFILE%").Path}}).replace('%PROFILE%', encodeURIComponent(stored_profile));
+            window.location.href =  profile_url;
+        }
+    </script>
+</head>
+
+<body>
+    {{template "nav.html" .}}
+    <main class="container">
+        {{if .Profiles}}
+		<div class="w-50 mx-auto">
+        <select class="form-control" id="main-profile">
+			<option></option>
+            {{range .Profiles}}
+            <option label="{{.Name}}" value="{{.ViewURL}}"{{if eq .Name $.ProfileName}} selected{{end}}>{{.Name}}</option>
+            {{end}}
+        </select>
+        <input type="checkbox" class="form-check-input" id="main-profile-remember">
+        <label class="form-check-label" for="main-profile-remember">Kurs in meinen Einstellungen speichern</label>
+        <div class="text-end w-100"><button type="button" class="btn btn-primary ml-auto" id="main-profile-submit">Weiter</button></div>
+		</div>
+        <script>
+        document.querySelector("#main-profile-submit").addEventListener("click", (ev) => {
+            const select = document.querySelector("#main-profile");
+            const selected_profile = select.options[select.selectedIndex];
+			if (document.querySelector("#main-profile-remember").checked) {
+				window.localStorage.setItem('profile', selected_profile.label);
+			}
+            window.location.href = selected_profile.value;
+        });
+        </script>
+        {{end}}
+    </main>
+    {{template "footer.html" .}}
+    <script>
+		initSelect2('#main-profile', false);
+    </script>
+</body>

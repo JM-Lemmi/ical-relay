@@ -8,13 +8,24 @@ You can download an example configuration file from [here](https://raw.githubuse
 
 The edited ical can be accessed on `http://server/profiles/profilename`
 
-## Docker Container
+## Install from Apt Repository
 
-```
-docker run -d -p 8080:80 -v ~/ical-relay/:/etc/ical-relay/ ghcr.io/jm-lemmi/ical-relay
+If you're running a Debian based system, you can install the latest release from the my Package Repository.
+
+This allows automatic updates to the latest version with `apt upgrade`.
+
+```bash
+echo "deb [arch=amd64] http://pkg.julian-lemmerich.de/deb stable main" | tee /etc/apt/sources.list.d/jm-lemmi.list
+curl http://pkg.julian-lemmerich.de/deb/gpg.key | apt-key add -
+apt update
+apt install ical-relay
 ```
 
-You can mount mount templates from `/opt/ical-relay/templates` to edit them. Please be aware of updates to the templates when choosing this method.
+If you want to run the beta version, you can use the `testing` repository. Replace `stable` with `testing` in the above commands.
+
+This installs the ical-relay as a systemd service. Change the configuration in `/etc/ical-relay/config.yml` and start the service with `systemctl start ical-relay`.
+
+## Run standalone Binary
 
 ## Debian package
 
@@ -34,7 +45,15 @@ Run a notifier manually:
 /usr/bin/ical-relay --notifier <name> --config config.yml
 ```
 
-## Build
+## Docker Container
+
+```
+docker run -d -p 8080:80 -v ~/ical-relay/:/etc/ical-relay/ ghcr.io/jm-lemmi/ical-relay
+```
+
+## Build from Source
+
+Clone this repo then either:
 
 * Run from source: `go run .`
 * Build and run: `go build . && ./ical-relay`
@@ -42,124 +61,135 @@ Run a notifier manually:
 # Config
 
 ```yaml
+version: 2
+
 server:
   addr: ":80"
   loglevel: "info"
-  storagepath: "/etc/ical-relay/"
+  url: "https://cal.julian-lemmerich.de"
+  templatepath: /opt/ical-relay/templates
+  imprintlink: "https://your-imprint"
+  privacypolicylink: "http://your-data-privacy-policy"
+  mail:
+    smtp_server: "mailout.julian-lemmerich.de"
+    smtp_port: 25
+    sender: "calnotification@julian-lemmerich.de"
+  super-tokens:
+    - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
 
 profiles:
   relay:
     source: "https://example.com/calendar.ics"
     public: true
     immutable-past: true
-    modules:
-    - name: "delete-bysummary-regex"
-      regex: "testentry"
-      from: "2021-12-02T00:00:00Z"
-      until: "2021-12-31T00:00:00Z"
-      expires: "2022-12-06T00:00:00Z"
-    - name: "add-url"
-      url: "https://othersource.com/othercalendar.ics"
-      header-Cookie: "MY_AUTH_COOKIE=abcdefgh"
+    admin-tokens:
+      - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+    rules:
+      - filters:
+          - type: "regex"
+            regex: "testentry"
+            target: "summary"
+          - type: "timeframe"
+            from: "2021-12-02T00:00:00Z"
+            until: "2021-12-31T00:00:00Z"
+        action:
+          type: "delete"
+        expires: "2022-12-31T00:00:00Z"
 
 notifiers:
   relay:
     source: "http://localhost/relay"
     interval: "15m"
-    smtp_server: "mailout.julian-lemmerich.de"
-    smtp_port: "25"
-    sender: "calnotification@julian-lemmerich.de"
+    admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     recipients:
-    - email: "jm.lemmerich@gmail.com"
+      - "jm.lemmerich@gmail.com"
 ```
 
 The `server` section contains the configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
 You can list as many profiles as you want. Each profile has to have a source.
-You can then add as many modules as you want. They are identified by the `name:`. All other fields are dependent on the module.
-The modules are executed in the order they are listed and you can call a module multiple times.
+You can then add as many rules as you want. The `name:` filed specifies the module, the rule references. All other fields are dependent on the module.
+The rule are executed in the order they are listed. You can create multiple rules from one module.
 
-# Modules
+## config versioning
 
-Feel free do open a PR with modules of your own.
-
-Adding `expires: <RFC3339>` to any module will remove it on the next cleanup cycle after the date has passed. Currently the Cleanup runs every 1h.
+| ical-relay version | config version |
+|--------------------|----------------|
+| 2.0.0-beta.5       | 2              |
 
 ## immutable-past
-
-Even though immutable past is not really a module, it is listed here, cause it fits.
 
 Add `immutable-past: true` in the profile to enable it.
 
 If you enable immutable past, the relay will save all events that have already happened in a file called `<profile>-past.ics` in the storage path. Next time the profile is called, the past events will be added to the ical.
 
-## delete-bysummary-regex
+## Rules
 
-* `regex`: The regex to match the summary against
-* `from`, optional: Beginning of timeframe that should be deleted in, in RFC3339 format
-* `until`, optional: End of timeframe that should be deleted in, in RFC3339 format
+A Rule contains one or more filters and one action. The filters determine which events will be edited. The action then determines, what changes for the events.
 
-## delete-byid
+Feel free do open a PR with filters and actions of your own.
 
-* `id`: The id of the event to delete
+Adding `expires: <RFC3339>` to any rule will remove it on the next cleanup cycle after the date has passed. Currently the Cleanup runs every 1h.
 
-## add-url
+### Filters
 
-* `url`: Adds all events from the specified url.
-* `header-<headername>`, optional: Adds a header to the request. Can be used to pass authentication cookies or X-Forwarded-Host headers.
+Currently the Filters can not handle Repeating Events. See Issue #77
 
-## add-file
+#### regex
 
-* `file`: Adds all events from the specified local file.
+* `regex`: The regex to match against
+* `target`: Parameter to match against the regex. Default Summary, options: Summary, Description, Location
 
-## delete-timeframe
+#### id
 
-Deletes all events in the specified timeframe.
+* `id`: Event ID.
 
-* `after`:  Start of the timeframe to be deleted in RFC3339 format or "now" for current time as value. If only after is specified, all events after the date are deleted.
-* `before`: End of the timeframe to be deleted in RFC3339 format or "now" for current time as value. If only before is specified, all events before the date are deleted.
+This can match multiple events, for example with repeating events.
 
-## delete-duplicates
+#### timeframe
 
-Deletes events, if there already is an event with the same start, end and summary.
+* `after`, `before`. At least one is mandatory. Uses max time, if none is given. Can also be set to "now".
 
-No parameters.
+#### duplicates
 
-## edit-byid
+No parameters. Filters the second and following events that are identified as duplicate. Looks at start, end, summary. If all three are equal, the Event is deemed duplicate.
 
-Edits an Event with the passed id.
-Parameters:
-* `id`: the id of the event to edit
-* `overwrite`, default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
+#### all
+
+No parameters. Filters all.
+
+#### duration
+
+* `duration` in timeDuration format (most relevant: `m`, `h`)´
+* `operator`. Either "longer" or "shorter", default "longer".
+
+### Actions
+
+#### delete
+
+No parameters. Deletes the Filtered Events.
+
+#### edit
+
 * `new-summary`, optional: the new summary
 * `new-description`, optional: the new description
 * `new-start`, optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z"
 * `new-end`, optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z"
 * `new-location`, optional: the new location
-
-## edit-bysummary-regex
-
-Edits all Events with the matching regex title.
-Parameters:
-* `id`, mandatory: the id of the event to edit
 * `overwrite`, default true: Possible values are 'true', 'false' and 'fillempty'. True: Overwrite the property if it already exists; False: Append, Fillempty: Only fills empty properties.  Does not apply to 'new-start' and 'new-end'.
-* `after`, optional: beginning of search timeframe
-* `before`, optional: end of search timeframe
-* `new-summary`, optional: the new summary
-* `new-description`, optional: the new description
-* `new-start`, optional: the new start time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
-* `new-end`, optional: the new end time in RFC3339 format "2006-01-02T15:04:05Z" or "now"
-* `new-location`, optional: the new location
 * `move-time`, optional, not together with 'new-start' or 'new-end': add time to the whole entry, to move entry. uses Go ParseDuration: most useful units are "m", "h"
+  * when the original time does not have a timezone, sets the timezone to UTC, so it needs to be adjusted for that.
 
-#### known issues:
+#### add-reminder
 
-`move-time`, when the original time does not have a timezone, sets the timezone to UTC, so it needs to be adjusted for that.
+* `time`: time in timeDuration Format the alarm will go off before the event.
 
-## save-to-file
+This usually doesnt work when used in server mode. Most Calendar Applications ignore reminders of external calendars.
 
-This module saves the current calendar to a local file.
+#### strip-info
 
-* `file`: full path of file to save
+* `mode`: "availibility" (puts busy status as summary, and removes all other information), or "limited" (only keeps summary and busy status)
+
+Inspired by Outlooks export options.
 
 # API
 
@@ -171,6 +201,12 @@ Autorization is done in three levels:
 - Profile-Admin: Token for a specific profile, can use most endpoints for this profile, but not all module types.
 - Super-Admin: Rights for all profiles and can also use all modules. May include LFI or CSRF-capable config options. Should be used with caution.
 
+### Adding an Event from File via API:
+
+```
+curl -F eventfile=@./testfile.ics -H "Authorization: <token>" http://localhost/api/profiles/test/newentryfile
+```
+
 # Notifier
 
 The notifiers do not have to reference a local ical, you can also use this to only call external icals.
@@ -178,6 +214,12 @@ The notifiers do not have to reference a local ical, you can also use this to on
 You can configure SMTP with authentication or without to use an external mailserver, or something local like boky/postfix.
 
 If you start the calendar with the `--notifier` flag, it will start the notifier from config. This allows setting up cronjobs to run the notifier.
+
+# Development
+
+I am happy for PRs of any features, like new Actions, Filters or Bug Fixes.
+
+See some more information for development at [development.md](./development.md)
 
 # Support
 
