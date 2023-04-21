@@ -11,47 +11,51 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - uses: actions/setup-go@v3
         with:
           go-version: '1.18.0' # The Go version to download (if necessary) and use.
-      - run: go build . && strip ical-relay
+      - run: go build -o ./bin/ical-relay ./cmd/ical-relay/ && strip ./bin/ical-relay
       - uses: actions/upload-artifact@v3
         with:
           name: ical-relay
-          path: ./ical-relay
+          path: ./bin/ical-relay
 
   Package:
     needs: Compile
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Create debpkg structure
         run: |
-          mkdir -p .debpkg/etc/ical-relay
-          mkdir -p .debpkg/opt/ical-relay
-          cp config.yml.example .debpkg/etc/ical-relay/
-          cp -r templates .debpkg/opt/ical-relay/templates/
-          mkdir -p .debpkg/etc/systemd/system/
-          cp misc/ical-relay.service .debpkg/etc/systemd/system/
+          mkdir -p cmd/ical-relay/.debpkg/etc/ical-relay
+          mkdir -p cmd/ical-relay/.debpkg/opt/ical-relay
+          cp cmd/ical-relay/config.yml.example cmd/ical-relay/.debpkg/etc/ical-relay/
+          cp -r cmd/ical-relay/templates cmd/ical-relay/.debpkg/opt/ical-relay/templates/
+          mkdir -p cmd/ical-relay/.debpkg/etc/systemd/system/
+          cp cmd/ical-relay/misc/ical-relay.service cmd/ical-relay/.debpkg/etc/systemd/system/
 
-          mkdir -p .debpkg/DEBIAN
-          cp misc/postinstall.sh .debpkg/DEBIAN/postinst
-          chmod +x .debpkg/DEBIAN/postinst
+          mkdir -p cmd/ical-relay/.debpkg/DEBIAN
+          cp cmd/ical-relay/misc/postinstall.sh cmd/ical-relay/.debpkg/DEBIAN/postinst
+          chmod +x cmd/ical-relay/.debpkg/DEBIAN/postinst
       - name: Download binary
         uses: actions/download-artifact@v3
         id: download
         with:
           name: ical-relay
       - run: |
-          mkdir -p .debpkg/usr/bin
-          cp ${{steps.download.outputs.download-path}}/ical-relay .debpkg/usr/bin/
-          chmod +x .debpkg/usr/bin/ical-relay
+          mkdir -p cmd/ical-relay/.debpkg/usr/bin
+          cp ${{steps.download.outputs.download-path}}/ical-relay cmd/ical-relay/.debpkg/usr/bin/
+          chmod +x cmd/ical-relay/.debpkg/usr/bin/ical-relay
       - uses: jiro4989/build-deb-action@v2
         id: package
         with:
           package: ical-relay
-          package_root: .debpkg
+          package_root: ./cmd/ical-relay/.debpkg
           maintainer: Julian Lemmerich <mail@julian-lemmerich.de>
           version: ${{ github.ref }} # refs/tags/v*.*.*
           arch: 'amd64'
@@ -59,4 +63,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: ical-relay.deb
-          path: ./${{steps.package.outputs.file_name}}
+          path: ./cmd/ical-relay/${{steps.package.outputs.file_name}}
