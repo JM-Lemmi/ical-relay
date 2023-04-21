@@ -107,7 +107,7 @@ func notifyChanges(id string, n *notifier) error {
 }
 
 // runs a heartbeat loop with specified sleep duration
-func NotifierTiming(id string, n *notifier) {
+func NotifierTiming(id string, n notifier) {
 	interval, _ := time.ParseDuration(n.Interval)
 	if interval == 0 {
 		// failsave for 0s interval, to make machine still responsive
@@ -117,7 +117,7 @@ func NotifierTiming(id string, n *notifier) {
 	// endless loop
 	for {
 		time.Sleep(interval)
-		notifyChanges(id, n)
+		notifyChanges(id, &n)
 	}
 }
 
@@ -125,7 +125,7 @@ func NotifierTiming(id string, n *notifier) {
 func NotifierStartup() {
 	log.Info("Starting Notifiers")
 	for id, n := range conf.Notifiers {
-		go NotifierTiming(id, &n)
+		go NotifierTiming(id, n)
 	}
 }
 
