@@ -1,4 +1,4 @@
-package main
+package modules
 
 import (
 	"fmt"
@@ -8,22 +8,24 @@ import (
 
 	ics "github.com/arran4/golang-ical"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/jm-lemmi/ical-relay/helpers"
 )
 
 // list of all filters
-var filters = map[string]func(*ics.Calendar, map[string]string) ([]int, error){
-	"regex":      filterRegex,
-	"id":         filterId,
-	"timeframe":  filterTimeframe,
-	"duplicates": filterDuplicates,
-	"all":        filterAll,
-	"duration":   filterDuration,
+var Filters = map[string]func(*ics.Calendar, map[string]string) ([]int, error){
+	"regex":      FilterRegex,
+	"id":         FilterId,
+	"timeframe":  FilterTimeframe,
+	"duplicates": FilterDuplicates,
+	"all":        FilterAll,
+	"duration":   FilterDuration,
 }
 
 // This wrappter gets a function from the above filters map and calls it with the parameters and the passed calendar.
 // parameters can be any dictionary. The function will then choose how to handle the parameters.
 // Returns an array of indices of the events that are filtered out.
-func callFilter(filter func(*ics.Calendar, map[string]string) ([]int, error), cal *ics.Calendar, params map[string]string) ([]int, error) {
+func CallFilter(filter func(*ics.Calendar, map[string]string) ([]int, error), cal *ics.Calendar, params map[string]string) ([]int, error) {
 	return filter(cal, params)
 }
 
@@ -31,7 +33,7 @@ func callFilter(filter func(*ics.Calendar, map[string]string) ([]int, error), ca
 // Params: 'regex'
 // 'target' is the property to search in. Default is 'summary'
 // Returns the number of added entries. negative, if it removed entries.
-func filterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
+func FilterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	var indices []int
 	if params["regex"] == "" {
 		return indices, fmt.Errorf("missing mandatory Parameter 'regex'")
@@ -85,7 +87,7 @@ func filterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
 // Params: 'id'
 // An ID is not unique in the calendar. Repeating events can have duplicate IDs.
 // Returns an Array of indices of the events that match the id.
-func filterId(cal *ics.Calendar, params map[string]string) ([]int, error) {
+func FilterId(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	var indices []int
 	if params["id"] == "" {
 		return indices, fmt.Errorf("missing mandatory Parameter 'id'")
@@ -112,7 +114,7 @@ func filterId(cal *ics.Calendar, params map[string]string) ([]int, error) {
 // Format is RFC3339: "2006-01-02T15:04:05Z"
 // or "now" for current time
 // TODO: implement RRULE compatibility from v1.3.1
-func filterTimeframe(cal *ics.Calendar, params map[string]string) ([]int, error) {
+func FilterTimeframe(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	var indices []int
 
 	// parsing time parameters
@@ -172,7 +174,7 @@ func filterTimeframe(cal *ics.Calendar, params map[string]string) ([]int, error)
 
 // Looks for duplicate events and returns the indices of duplicate events.
 // Only the second and following events are returned, the first is not.
-func filterDuplicates(cal *ics.Calendar, params map[string]string) ([]int, error) {
+func FilterDuplicates(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	var indices []int
 	var uniques []string
 	for i, component := range cal.Components { // iterate over events
@@ -182,7 +184,7 @@ func filterDuplicates(cal *ics.Calendar, params map[string]string) ([]int, error
 			start, _ := event.GetStartAt()
 			end, _ := event.GetEndAt()
 			identifier := start.String() + end.String() + event.GetProperty(ics.ComponentPropertySummary).Value
-			if stringInSlice(identifier, uniques) {
+			if helpers.StringInSlice(identifier, uniques) {
 				indices = append(indices, i)
 				log.Debug("Filter event with id " + event.Id() + "\n")
 			} else {
@@ -197,7 +199,7 @@ func filterDuplicates(cal *ics.Calendar, params map[string]string) ([]int, error
 }
 
 // This function filters all events, so returns a list of all indices
-func filterAll(cal *ics.Calendar, params map[string]string) ([]int, error) {
+func FilterAll(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	var indices []int
 	for i := range cal.Events() {
 		indices = append(indices, i)
@@ -208,7 +210,7 @@ func filterAll(cal *ics.Calendar, params map[string]string) ([]int, error) {
 // This function filters events by duration.
 // Parameters: "duration" in timeDuration format
 // "operator" longer/shorter (default: longer). Longer filters events longer than the given duration.
-func filterDuration(cal *ics.Calendar, params map[string]string) ([]int, error) {
+func FilterDuration(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	var indices []int
 
 	// param duration (mandatory)

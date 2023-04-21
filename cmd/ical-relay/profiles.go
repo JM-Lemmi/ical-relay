@@ -1,4 +1,4 @@
-package main
+package relay
 
 import (
 	"bytes"
@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/jm-lemmi/ical-relay/helpers"
+	"github.com/jm-lemmi/ical-relay/modules"
 	"github.com/juliangruber/go-intersect/v2" // requires go1.18
 	log "github.com/sirupsen/logrus"
 )
@@ -77,7 +79,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 				if err != nil {
 					return nil, err
 				}
-				addEvents(calendar, ncalendar)
+				helpers.AddEvents(calendar, ncalendar)
 			}
 		}
 	}
@@ -90,11 +92,11 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 
 		// run filters
 		for _, filter := range rule.Filters {
-			filter_name, ok := filters[filter["type"]]
+			filter_name, ok := modules.Filters[filter["type"]]
 			if !ok {
 				return nil, fmt.Errorf("filter type '%s' doesn't exist", filter["type"])
 			}
-			local_indices, err := callFilter(filter_name, calendar, filter)
+			local_indices, err := modules.CallFilter(filter_name, calendar, filter)
 			if err != nil {
 				return nil, err
 			}
@@ -111,11 +113,11 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		log.Trace("Indices after all filters: ", indices)
 
 		// run action
-		action_name, ok := actions[rule.Action["type"]]
+		action_name, ok := modules.Actions[rule.Action["type"]]
 		if !ok {
 			return nil, fmt.Errorf("action type '%s' doesn't exist", rule.Action["type"])
 		}
-		err := callAction(action_name, calendar, indices, rule.Action)
+		err := modules.CallAction(action_name, calendar, indices, rule.Action)
 		if err != nil {
 			return nil, err
 		}
@@ -134,12 +136,12 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 				log.Errorln(err)
 				return calendar, fmt.Errorf("Error executing immutable past (first-run): %s", err.Error())
 			}
-			writeCalFile(calendar, historyFilename)
+			helpers.WriteCalFile(calendar, historyFilename)
 		}
 
 		// load history file
 		log.Debug("Loading history file")
-		historyCal, err := loadCalFile(historyFilename)
+		historyCal, err := helpers.LoadCalFile(historyFilename)
 		if err != nil {
 			log.Errorln(err)
 			return calendar, fmt.Errorf("Error loading history file: %s", err.Error())
@@ -161,7 +163,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 		// combine calendars
 		log.Debug("Combining calendars")
-		addEvents(calendar, historyCal)
+		helpers.AddEvents(calendar, historyCal)
 		if err != nil {
 			log.Errorln(err)
 			return calendar, fmt.Errorf("Error executing immutable past (adding): %s", err.Error())
@@ -169,7 +171,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 
 		//saving history file
 		log.Debug("Saving history file")
-		err = writeCalFile(calendar, historyFilename)
+		err = helpers.WriteCalFile(calendar, historyFilename)
 		if err != nil {
 			log.Errorln(err)
 			return calendar, fmt.Errorf("Error saving history file: %s", err.Error())
@@ -184,11 +186,11 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 // Will delete events from the calendar either before or after now.
 // timeframes: "before": delete up till now, "after" delete everything after now
 func ImmutablePastDelete(cal *ics.Calendar, timeframe string) error {
-	indices, err := callFilter(filters["timeframe"], cal, map[string]string{timeframe: "now"})
+	indices, err := modules.CallFilter(modules.Filters["timeframe"], cal, map[string]string{timeframe: "now"})
 	if err != nil {
 		return err
 	}
-	err = callAction(actions["delete"], cal, indices, map[string]string{})
+	err = modules.CallAction(modules.Actions["delete"], cal, indices, map[string]string{})
 	if err != nil {
 		return err
 	}
@@ -216,7 +218,7 @@ func getSource(source string) (*ics.Calendar, error) {
 			return nil, err
 		}
 	case "file":
-		calendar, err = loadCalFile(strings.Split(source, "://")[1])
+		calendar, err = helpers.LoadCalFile(strings.Split(source, "://")[1])
 		if err != nil {
 			return nil, err
 		}

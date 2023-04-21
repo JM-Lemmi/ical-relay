@@ -1,4 +1,4 @@
-package main
+package relay
 
 import (
 	"fmt"
@@ -9,6 +9,8 @@ import (
 	"gopkg.in/gomail.v2"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/jm-lemmi/ical-relay/compare"
+	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,13 +23,13 @@ func notifyChanges(id string, n *notifier) error {
 	// check if file exists, if not download for the first time
 	if _, err := os.Stat(notifystore + id + ".ics"); os.IsNotExist(err) {
 		log.Info("File does not exist, downloading for the first time")
-		calendar, err := readCalURL(n.Source)
+		calendar, err := helpers.ReadCalURL(n.Source)
 		if err != nil {
 			requestLogger.Errorln(err)
 			return err
 		}
 		// save file
-		writeCalFile(calendar, notifystore+id+".ics")
+		helpers.WriteCalFile(calendar, notifystore+id+".ics")
 	}
 
 	// read files
@@ -42,13 +44,13 @@ func notifyChanges(id string, n *notifier) error {
 		return err
 	}
 
-	calendar2, err := readCalURL(n.Source)
+	calendar2, err := helpers.ReadCalURL(n.Source)
 	if err != nil {
 		requestLogger.Errorln("error parsing calendar2 file: " + err.Error())
 		return err
 	}
 
-	added, deleted, changed := compare(calendar1, calendar2)
+	added, deleted, changed := compare.Compare(calendar1, calendar2)
 
 	if len(added)+len(deleted)+len(changed) == 0 {
 		log.Info("No changes detected.")
@@ -60,17 +62,17 @@ func notifyChanges(id string, n *notifier) error {
 
 		if len(added) > 0 {
 			for _, event := range added {
-				body += "Added:\n\n" + prettyPrint(event) + "\n\n"
+				body += "Added:\n\n" + helpers.PrettyPrint(event) + "\n\n"
 			}
 		}
 		if len(deleted) > 0 {
 			for _, event := range deleted {
-				body += "Deleted:\n\n" + prettyPrint(event) + "\n\n"
+				body += "Deleted:\n\n" + helpers.PrettyPrint(event) + "\n\n"
 			}
 		}
 		if len(changed) > 0 {
 			for _, event := range changed {
-				body += "Changed (displaying new version):\n\n" + prettyPrint(event) + "\n\n"
+				body += "Changed (displaying new version):\n\n" + helpers.PrettyPrint(event) + "\n\n"
 			}
 		}
 
@@ -99,7 +101,7 @@ func notifyChanges(id string, n *notifier) error {
 		}
 
 		// save updated calendar
-		writeCalFile(calendar2, notifystore+id+".ics")
+		helpers.WriteCalFile(calendar2, notifystore+id+".ics")
 		return nil
 	}
 }

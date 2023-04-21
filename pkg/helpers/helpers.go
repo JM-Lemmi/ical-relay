@@ -1,4 +1,4 @@
-package main
+package helpers
 
 import (
 	"io/ioutil"
@@ -9,7 +9,7 @@ import (
 	ics "github.com/arran4/golang-ical"
 )
 
-func readCalURL(url string) (*ics.Calendar, error) {
+func ReadCalURL(url string) (*ics.Calendar, error) {
 	// download file
 	response, err := http.Get(url)
 	if err != nil {
@@ -19,12 +19,12 @@ func readCalURL(url string) (*ics.Calendar, error) {
 	return ics.ParseCalendar(response.Body)
 }
 
-func writeCalFile(cal *ics.Calendar, filename string) error {
+func WriteCalFile(cal *ics.Calendar, filename string) error {
 	// write file
 	return ioutil.WriteFile(filename, []byte(cal.Serialize()), 0600)
 }
 
-func loadCalFile(filename string) (*ics.Calendar, error) {
+func LoadCalFile(filename string) (*ics.Calendar, error) {
 	var cal *ics.Calendar
 	// read file
 	file, err := os.Open(filename)
@@ -39,7 +39,7 @@ func loadCalFile(filename string) (*ics.Calendar, error) {
 	return cal, nil
 }
 
-func directoryExists(filename string) bool {
+func DirectoryExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false
@@ -48,7 +48,7 @@ func directoryExists(filename string) bool {
 	return info.IsDir()
 }
 
-func prettyPrint(e ics.VEvent) string {
+func PrettyPrint(e ics.VEvent) string {
 	var output string
 	output += e.GetProperty(ics.ComponentPropertySummary).Value + "\n"
 
@@ -77,7 +77,7 @@ func prettyPrint(e ics.VEvent) string {
 	return output
 }
 
-func contains(s []string, str string) bool {
+func Contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
 			return true
@@ -88,13 +88,13 @@ func contains(s []string, str string) bool {
 }
 
 // https://stackoverflow.com/a/66624104
-func validMail(email string) bool {
+func ValidMail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil
 }
 
 // returns true, if a is in list b
-func stringInSlice(a string, list []string) bool {
+func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
 			return true
@@ -106,24 +106,24 @@ func stringInSlice(a string, list []string) bool {
 // https://stackoverflow.com/a/37335777/9397749
 // removes the element at index i from ics.Component slice
 // warning: if you iterate over []ics.Component forward, this removeFromICS will lead to mistakes. Iterate backwards instead!
-func remove(slice []interface{}, s int) []interface{} {
+func Remove(slice []interface{}, s int) []interface{} {
 	return append(slice[:s], slice[s+1:]...)
 }
-func removeFromICS(slice []ics.Component, s int) []ics.Component {
+func RemoveFromICS(slice []ics.Component, s int) []ics.Component {
 	return append(slice[:s], slice[s+1:]...)
 }
-func removeFromMapString(slice []map[string]string, s int) []map[string]string {
+func RemoveFromMapString(slice []map[string]string, s int) []map[string]string {
 	return append(slice[:s], slice[s+1:]...)
 }
 
 // warning: if you iterate over []ics.IANAProperty forward, this remove will lead to mistakes. Iterate backwards instead!
-func removeProperty(slice []ics.IANAProperty, s int) []ics.IANAProperty {
+func RemoveProperty(slice []ics.IANAProperty, s int) []ics.IANAProperty {
 	return append(slice[:s], slice[s+1:]...)
 }
 
 // This function adds all events from cal2 to cal1.
 // All other properties, such as TZ are retained from cal1.
-func addEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
+func AddEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 	var count int
 	for _, event := range cal2.Events() {
 		cal1.AddVEvent(event)

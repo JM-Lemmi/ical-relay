@@ -1,4 +1,4 @@
-package main
+package relay
 
 import (
 	"bytes"
@@ -11,12 +11,13 @@ import (
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
+	"github.com/jm-lemmi/ical-relay/helpers"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func checkAuthoriziation(token string, profileName string) bool {
-	if contains(conf.Profiles[profileName].Tokens, token) || checkSuperAuthorization(token) {
+	if helpers.Contains(conf.Profiles[profileName].Tokens, token) || checkSuperAuthorization(token) {
 		return true
 	} else {
 		return false
@@ -24,7 +25,7 @@ func checkAuthoriziation(token string, profileName string) bool {
 }
 
 func checkSuperAuthorization(token string) bool {
-	if contains(conf.Server.SuperTokens, token) {
+	if helpers.Contains(conf.Server.SuperTokens, token) {
 		return true
 	} else {
 		return false
@@ -171,7 +172,7 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mail := r.URL.Query().Get("mail")
-	if !validMail(mail) {
+	if !helpers.ValidMail(mail) {
 		requestLogger.Errorln("Invalid mail address")
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "Error: Invalid mail address\n")
