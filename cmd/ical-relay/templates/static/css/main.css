@@ -1,0 +1,60 @@
+:root {
+    --dhbw-red: #E3001B;
+    --day-title-color: white;
+    --shadow-color: rgba(0, 0, 0, 0.07);
+}
+
+body {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+}
+
+.day-column > :first-child {
+    border: 2px solid var(--dhbw-red);
+    background-color: var(--dhbw-red);
+    color: var(--day-title-color);
+}
+
+.day-column > .today {
+    background-color: var(--day-title-color);
+    color: var(--dhbw-red);
+}
+
+.day-column > :last-child {
+    border-radius: 0 0 5px 5px !important;
+}
+
+.day-column > * {
+    box-shadow: 0 1px 1px var(--shadow-color), 
+    0 2px 2px var(--shadow-color), 
+    0 4px 4px var(--shadow-color), 
+    0 8px 8px var(--shadow-color),
+    0 16px 16px var(--shadow-color);
+}
+
+.card .edit-button {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+    width: 3em;
+    height: 3em;
+    background-image: url("/static/media/edit.svg");
+    background-size: 2em 2em;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: none;
+}
+
+.card .edit-button.disabled {
+    background-image: url("/static/media/edit_disabled.svg");
+    border-color: #cccccc;
+}
+
+.card:hover .edit-button {
+    display: block;
+}
+
+.navbar-brand img {
+    height: 2rem;
+}

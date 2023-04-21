@@ -1,0 +1,62 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-2">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <img src="{{.FaviconPath}}" alt="favicon">
+            {{.ApplicationName}}
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{(.Router.Get "settings").URL }}">Einstellungen</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{(.Router.Get "howtoUsers").URL }}">How-To</a>
+                </li>
+                {{ if .ProfileName }}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{((.Router.Get "notifierSubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="copy_ical_link" onclick="copy_ical_link();" style="cursor: pointer">iCal Link kopieren</a>
+                    <script>
+                        function copy_ical_link(){
+                            try{
+                                const ical_url = new URL(encodeURI("{{((.Router.Get "profile").URL "profile" .ProfileName).Path}}"), document.location);
+                                navigator.clipboard.writeText(ical_url.href);
+                                const old_text = document.getElementById("copy_ical_link").innerText;
+                                document.getElementById("copy_ical_link").innerText = "Kopiert!";
+                                setTimeout(() => {
+                                    document.getElementById("copy_ical_link").innerText = old_text;
+                                }, 2000);
+                            } catch (err){
+                                console.error("Couldn't copy to clipboard:", err);
+                                alert("Copying to clipboard is not supported in this browser!");
+                            }
+                        }
+                    </script>
+                </li>
+                {{ end }}
+                <li class="nav-item d-none" id="nav-admin-link">
+                    <a class="nav-link" href="{{((.Router.Get "admin").URL).Path}}">Admin</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">BETA!</a>
+                </li>
+            </ul>
+            {{if .Profiles}}
+			<form class="d-flex">
+   			<select class="form-select" id="nav-profile">
+                <option></option>
+                {{range .Profiles}}
+                <option value="{{.ViewURL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
+                {{end}}
+            </select>
+			</form>
+            {{end}}
+        </div>
+    </div>
+</nav>
