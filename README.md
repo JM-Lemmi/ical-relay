@@ -215,6 +215,12 @@ You can configure SMTP with authentication or without to use an external mailser
 
 If you start the calendar with the `--notifier` flag, it will start the notifier from config. This allows setting up cronjobs to run the notifier.
 
+# Development
+
+I am happy for PRs of any features, like new Actions, Filters or Bug Fixes.
+
+See some more information for development at [development.md](./development.md)
+
 # Support
 
 This Project was developed for my own use, and I do not offer support for this at all.

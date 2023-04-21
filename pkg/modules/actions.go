@@ -1,4 +1,4 @@
-package main
+package modules
 
 import (
 	"fmt"
@@ -8,29 +8,31 @@ import (
 
 	ics "github.com/arran4/golang-ical"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/jm-lemmi/ical-relay/helpers"
 )
 
 // list of all actions
-var actions = map[string]func(*ics.Calendar, []int, map[string]string) error{
-	"delete":       actionDelete,
-	"edit":         actionEdit,
-	"add-reminder": actionAddReminder,
-	"strip-info":   actionStripInfo,
+var Actions = map[string]func(*ics.Calendar, []int, map[string]string) error{
+	"delete":       ActionDelete,
+	"edit":         ActionEdit,
+	"add-reminder": ActionAddReminder,
+	"strip-info":   ActionStripInfo,
 }
 
 // This wrappter gets a function from the above action map and calls it with the indices and the passed calendar.
-func callAction(action func(*ics.Calendar, []int, map[string]string) error, cal *ics.Calendar, indices []int, params map[string]string) error {
+func CallAction(action func(*ics.Calendar, []int, map[string]string) error, cal *ics.Calendar, indices []int, params map[string]string) error {
 	return action(cal, indices, params)
 }
 
 // Deletes events from the calendar.
-func actionDelete(cal *ics.Calendar, indices []int, params map[string]string) error {
+func ActionDelete(cal *ics.Calendar, indices []int, params map[string]string) error {
 	// sort indices in descending order, so that we can delete them without messing up the indices
 	sort.Sort(sort.Reverse(sort.IntSlice(indices)))
 	log.Trace("Indices to delete: " + fmt.Sprint(indices))
 	// delete events
 	for _, i := range indices {
-		cal.Components = removeFromICS(cal.Components, i)
+		cal.Components = helpers.RemoveFromICS(cal.Components, i)
 	}
 	return nil
 }
@@ -38,7 +40,7 @@ func actionDelete(cal *ics.Calendar, indices []int, params map[string]string) er
 // Edits events in the calendar.
 // Params: 'overwrite': 'true' (default), 'false', 'fillempty'
 // 'new-summary', 'new-description', 'new-location', 'new-start', 'new-end'
-func actionEdit(cal *ics.Calendar, indices []int, params map[string]string) error {
+func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) error {
 	// param defaults
 	if params["overwrite"] == "" {
 		params["overwrite"] = "true"
@@ -147,7 +149,7 @@ func actionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 	return nil
 }
 
-func actionAddReminder(cal *ics.Calendar, indices []int, params map[string]string) error {
+func ActionAddReminder(cal *ics.Calendar, indices []int, params map[string]string) error {
 	// add reminder to events
 	for _, i := range indices {
 		switch cal.Components[i].(type) {
@@ -165,7 +167,7 @@ func actionAddReminder(cal *ics.Calendar, indices []int, params map[string]strin
 
 // Strips information from events, similar to Outlooks export feature.
 // Params: 'mode': 'availibility' (only show freebusy availibility), 'limited' (show only summary)
-func actionStripInfo(cal *ics.Calendar, indices []int, params map[string]string) error {
+func ActionStripInfo(cal *ics.Calendar, indices []int, params map[string]string) error {
 	// strip info from events
 	for _, i := range indices {
 		switch cal.Components[i].(type) {

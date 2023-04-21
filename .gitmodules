@@ -1,0 +1,3 @@
+[submodule "pkg/golang-ical"]
+	path = pkg/golang-ical
+	url = https://github.com/jm-lemmi/golang-ical/
