@@ -43,7 +43,7 @@
             document.getElementById("token").value = localStorage.getItem("token");
         }
         function redirect_to_profile(profile_name) {
-            let profile_url = ({{((.Router.Get "monthlyView").URL "profile" "%PROFILE%").Path}}).replace('%PROFILE%', encodeURIComponent(profile_name));
+            let profile_url = ({{((.Router.Get "calendarView").URL "profile" "%PROFILE%").Path}}).replace('%PROFILE%', encodeURIComponent(profile_name));
             window.location.href =  profile_url;
         }
         function handleSaveSettings(e) {

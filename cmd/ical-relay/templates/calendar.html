@@ -15,22 +15,22 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </div>
-        <!-- next and previous month buttons -->
+        <!-- next and previous buttons -->
         <div class="row sticky-top bg-white">
             <div class="col text-center">
                 <div class="d-inline-block h-75 align-bottom">
-                    <a class="btn btn-primary btn-sm" id="btn-prev-month">Previous Month</a>
+                    <a class="btn btn-primary btn-sm" id="btn-prev">&lt;</a>
                 </div>
                 <div class="d-inline-block vstack">
                     <div>
-                        <span class="h5 text-center fw-bold m-0" id="current-month"></span>
+                        <span class="h5 text-center fw-bold m-0" id="current-date"></span>
                     </div>
                     <div>
                         <span class="h6">{{.ProfileName}}</span>
                     </div>
                 </div>
                 <div class="d-inline-block h-75 align-bottom">
-                    <a class="btn btn-primary btn-sm" id="btn-next-month">Next Month</a>
+                    <a class="btn btn-primary btn-sm" id="btn-next">&gt;</a>
                 </div>
             </div>
         </div>
@@ -58,17 +58,30 @@
                 document.getElementById("error-message-wrapper").classList.remove("d-none");
             }
         }
+
+        let currentType = "month"; //month or week
+
         function updateCalendar(date) {
+            let calendarStart;
+            let calendarEnd;
+            if(currentType === "month"){
+                document.getElementById("current-date").innerHTML = currentDate.format("MMMM YYYY");
 
-            document.getElementById("current-month").innerHTML = currentMonth.format("MMMM YYYY");
+                calendarStart = date.day(0);
+                calendarEnd = date.add(4, "week").day(6);
+            }else{
+                document.getElementById("current-date").innerHTML = "KW"+currentDate.format(" w MMMM");
 
-            let calendar_start = date.day(0);
-            let calendar_end = date.add(4, "week").day(6);
+                calendarStart = date.startOf("week").subtract(1, "day");
+                calendarEnd = calendarStart.add(1, "week");
+            }
+            console.log(calendarStart);
+            console.log(calendarEnd);
             let calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
             let row;
-            for (let date = calendar_start; date <= calendar_end; date = date.add(1, "day")) {
-                if (date.day() == 0) {
+            for (let date = calendarStart; date <= calendarEnd; date = date.add(1, "day")) {
+                if (date.day() === 0) {
                     row = document.createElement("div");
                     row.classList.add("row");
                     calendar.appendChild(row);
@@ -79,20 +92,28 @@
             }
         }
 
-        function setSelectedMonth(date) {
-            currentMonth = date;
-            window.location.hash = currentMonth.format("YYYY-MM");
+        let currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
+        if(location.hash.length > 8){
+            currentType = "week";
+            console.log("Enabling week view");
+        }
+        updateCalendar(currentDate);
+
+        function setSelectedDate(date) {
+            currentDate = date;
+            if(currentType === "month"){
+                window.location.hash = date.format("YYYY-MM");
+            }else{
+                window.location.hash = date.format("YYYY-MM-DD");
+            }
             updateCalendar(date);
         }
 
-        let currentMonth = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf("month");
-        updateCalendar(currentMonth);
-
-        document.getElementById("btn-prev-month").addEventListener("click", () => {
-            setSelectedMonth(currentMonth.subtract(1, "month").startOf("month"));
+        document.getElementById("btn-prev").addEventListener("click", () => {
+            setSelectedDate(currentDate.subtract(1, currentType).startOf(currentType));
         });
-        document.getElementById("btn-next-month").addEventListener("click", () => {
-            setSelectedMonth(currentMonth.add(1, "month").startOf("month"));
+        document.getElementById("btn-next").addEventListener("click", () => {
+            setSelectedDate(currentDate.add(1, currentType).startOf(currentType));
         });
     </script>
 </body>
