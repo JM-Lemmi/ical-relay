@@ -29,6 +29,7 @@ func initHandlers() {
 	router.HandleFunc("/howto-users", howtoUsersHandler).Name("howtoUsers")
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
+	router.HandleFunc("/api/profile", profileApiHandler)
 	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
 	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler).Name("apiCheckAuth")
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
