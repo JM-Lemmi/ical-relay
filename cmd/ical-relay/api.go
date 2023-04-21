@@ -250,7 +250,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		var cal ics.Calendar
 
 		// read json from body to calendar struct
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		err := json.Unmarshal(body, &cal)
 		if err != nil {
 			requestLogger.Errorln(err)
