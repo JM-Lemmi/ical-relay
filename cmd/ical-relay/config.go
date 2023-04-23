@@ -88,7 +88,7 @@ type notifier struct {
 // CONFIG MANAGEMENT FUNCTIONS
 
 // ParseConfig reads config from path and returns a Config struct
-func ParseConfig(path string, importData bool) (Config, error) {
+func ParseConfig(path string) (Config, error) {
 	var tmpConfig Config
 
 	yamlFile, err := ioutil.ReadFile(path)
@@ -176,13 +176,16 @@ func (c Config) importToDB() {
 		// Write the profile to the db, adding tokens and modules afterwards
 		log.Debug("Importing profile " + name)
 		dbWriteProfile(profile)
+		for _, source := range profile.Sources {
+			dbAddProfileSource(profile, source)
+		}
 		for _, token := range profile.Tokens {
 			dbWriteProfileToken(profile, token, nil)
 		}
-		for _, module := range profile.Modules {
-			if !dbProfileModuleExists(profile, module) {
-				log.Debug("Adding module " + module["name"])
-				dbAddProfileModule(profile, module)
+		for _, rule := range profile.Rules {
+			if !dbProfileRuleExists(profile, rule) {
+				log.Debug("Adding rule " + rule.Action["type"])
+				dbAddProfileRule(profile, rule)
 			}
 		}
 	}
@@ -201,10 +204,11 @@ func (c Config) importToDB() {
 func reloadConfig() error {
 	// load config
 	var err error
-	conf, err = ParseConfig(configPath, false)
+	conf, err = ParseConfig(configPath)
 	if err != nil {
 		return err
 	} else {
+		conf.importToDB()
 		log.Info("Config reloaded")
 		return nil
 	}
