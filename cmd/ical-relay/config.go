@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -129,7 +130,7 @@ func ParseConfig(path string) (Config, error) {
 		tmpConfig.Server.FaviconPath = "/static/media/favicon.svg"
 	}
 
-	if !directoryExists(tmpConfig.Server.StoragePath + "notifystore/") {
+	if !helpers.DirectoryExists(tmpConfig.Server.StoragePath + "notifystore/") {
 		log.Info("Creating notifystore directory")
 		err = os.MkdirAll(tmpConfig.Server.StoragePath+"notifystore/", 0750)
 		if err != nil {
@@ -137,7 +138,7 @@ func ParseConfig(path string) (Config, error) {
 			return tmpConfig, err
 		}
 	}
-	if !directoryExists(tmpConfig.Server.StoragePath + "calstore/") {
+	if !helpers.DirectoryExists(tmpConfig.Server.StoragePath + "calstore/") {
 		log.Info("Creating calstore directory")
 		err = os.MkdirAll(tmpConfig.Server.StoragePath+"calstore/", 0750)
 		if err != nil {
