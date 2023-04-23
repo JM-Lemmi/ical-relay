@@ -230,8 +230,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
@@ -278,8 +277,7 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
