@@ -1,6 +1,7 @@
-package relay
+package main
 
 import (
+	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -13,7 +14,7 @@ import (
 
 var db sqlx.DB
 
-const CurrentDbVersion = 2
+const CurrentDbVersion = 3
 
 func connect() {
 	userStr := ""
@@ -66,6 +67,20 @@ func doDbUpgrade(fromDbVersion int) {
 		}
 		setDbVersion(2)
 	}
+	if fromDbVersion < 3 {
+		// We don't support a lossless upgrade from this db version due to no releases with versions older than 3
+		log.Error("Unsupported db version, dropping module data")
+		_, err := db.Exec("DROP TABLE module")
+		if err != nil {
+			panic("Failed to upgrade db")
+		}
+		_, err = db.Exec("ALTER TABLE profile DROP COLUMN source")
+		if err != nil {
+			panic("Failed to upgrade db")
+		}
+		initTables() //create new tables
+		setDbVersion(3)
+	}
 }
 
 func setDbVersion(dbVersion int) {
@@ -78,9 +93,21 @@ func setDbVersion(dbVersion int) {
 	}
 }
 
-// only used for reading
-type dbModule struct {
-	Name       string `db:"name"`
+// these structs are only used for reading
+type dbRule struct {
+	Id       int64      `db:"id"`
+	Operator string     `db:"operator"`
+	Action   int64      `db:"action"`
+	Expiry   *time.Time `db:"expiry"`
+}
+
+type dbAction struct {
+	ActionType string `db:"type"`
+	Parameters string `db:"parameters"`
+}
+
+type dbFilter struct {
+	FilterType string `db:"type"`
 	Parameters string `db:"parameters"`
 }
 
@@ -121,10 +148,18 @@ func dbListProfiles() []string {
 
 func dbReadProfile(profileName string) *profile {
 	profile := new(profile)
-	err := db.Get(profile, "SELECT name, source, public, immutable_past FROM profile WHERE name = $1", profileName)
+	err := db.Get(profile, "SELECT name, public, immutable_past FROM profile WHERE name = $1", profileName)
 	if err != nil {
-		return nil
-	} //profile does not exist
+		log.Fatal(err)
+	}
+	err = db.Select(
+		&profile.Sources,
+		`SELECT url FROM source
+JOIN profile_sources ps ON url = ps.source WHERE ps.profile = $1`,
+		profileName)
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = db.Select(&profile.Tokens, "SELECT token FROM admin_tokens WHERE profile = $1", profileName)
 	if err != nil {
 		log.Fatal(err)
@@ -133,34 +168,83 @@ func dbReadProfile(profileName string) *profile {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%#v\n", profile)
 
-	var dbModules []dbModule
-	err = db.Select(&dbModules, "SELECT name, parameters FROM module WHERE profile = $1", profileName)
-	fmt.Printf("%#v\n", dbModules)
+	var dbRules []dbRule
+	err = db.Select(&dbRules, "SELECT id, operator, action, expiry FROM rule WHERE profile = $1", profileName)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
-	for _, dbModule := range dbModules {
-		moduleParameters := map[string]string{}
-		err = json.Unmarshal([]byte(dbModule.Parameters), &moduleParameters)
+	fmt.Printf("%#v\n", dbRules)
+	for _, dbRule := range dbRules {
+		rule := new(Rule)
+		rule.Operator = dbRule.Operator
+		if dbRule.Expiry != nil {
+			rule.Expiry = dbRule.Expiry.Format(time.RFC3339)
+		} else {
+			rule.Expiry = ""
+		}
+		dbAction := new(dbAction)
+		err = db.Get(dbAction, "SELECT type, parameters FROM action WHERE id = $1", dbRule.Action)
+		if err != nil {
+			log.Panic(err)
+		}
+		actionParameters := map[string]string{}
+		err = json.Unmarshal([]byte(dbAction.Parameters), &actionParameters)
 		if err != nil {
 			log.Fatal(err)
 		}
-		moduleParameters["name"] = dbModule.Name
-		profile.Modules = append(profile.Modules, moduleParameters)
+		actionParameters["type"] = dbAction.ActionType
+		rule.Action = actionParameters
+
+		var dbFilters []dbFilter
+		err = db.Select(&dbFilters, "SELECT type, parameters FROM filter WHERE id = $1", dbRule.Id)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, dbFilter := range dbFilters {
+			filterParameters := map[string]string{}
+			err = json.Unmarshal([]byte(dbFilter.Parameters), &filterParameters)
+			if err != nil {
+				log.Fatal(err)
+			}
+			filterParameters["type"] = dbFilter.FilterType
+			rule.Filters = append(rule.Filters, filterParameters)
+		}
+		profile.Rules = append(profile.Rules, *rule)
 	}
-	fmt.Printf("%#v\n", profile.Modules)
+	fmt.Printf("%#v\n", profile.Rules)
 	return profile
 }
 
 // dbWriteProfile writes the profile to the db, silently overwriting if a profile with the same name exists.
 func dbWriteProfile(profile profile) {
 	_, err := db.NamedExec(
-		`INSERT INTO profile (name, source, public, immutable_past) VALUES (:name, :source, :public, :immutable_past)
-ON CONFLICT (name) DO UPDATE SET source = excluded.source, public = excluded.public,
-immutable_past = excluded.immutable_past`,
+		`INSERT INTO profile (name, public, immutable_past) VALUES (:name, :public, :immutable_past)
+ON CONFLICT (name) DO UPDATE SET public = excluded.public, immutable_past = excluded.immutable_past`,
 		profile)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func dbAddProfileSource(profile profile, source string) {
+	_, err := db.Exec(`INSERT INTO source (url) VALUES ($1) ON CONFLICT (url) DO NOTHING`, source)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	_, err = db.Exec(
+		`INSERT INTO profile_sources (profile, source) VALUES ($1, $2) ON CONFLICT (profile, source) DO NOTHING`,
+		profile.Name, source)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
+
+func dbRemoveProfileSource(profile profile, source string) {
+	_, err := db.Exec(`DELETE FROM profile_sources WHERE profile = $1 AND source = $2`,
+		profile.Name, source)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -168,46 +252,126 @@ immutable_past = excluded.immutable_past`,
 }
 
 // used for importing
-func dbProfileModuleExists(profile profile, module map[string]string) bool {
-	moduleCopy := make(map[string]string)
-	for k, v := range module {
-		moduleCopy[k] = v
+func dbProfileRuleExists(profile profile, rule Rule) bool {
+	var expiry any
+	expiry = rule.Expiry
+	if expiry == "" {
+		expiry = nil
 	}
 
-	name := moduleCopy["name"]
-	delete(moduleCopy, "name")
-	parametersJson, err := json.Marshal(moduleCopy)
+	var ruleExists bool
+	err := db.Get(
+		&ruleExists, `SELECT EXISTS (SELECT id FROM rule WHERE profile = $1 AND operator = $2 AND expiry = $3)`,
+		profile.Name, rule.Operator, expiry)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
+	}
+	if !ruleExists {
+		return false
 	}
 
-	var moduleExists bool
+	var ruleId int64
 	err = db.Get(
-		&moduleExists, `SELECT EXISTS (SELECT * FROM module WHERE profile = $1 AND name = $2 AND parameters = $3)`,
-		profile.Name, name, parametersJson)
-	fmt.Printf("%#v\n", moduleExists)
+		&ruleId, `SELECT id FROM rule WHERE profile = $1 AND operator = $2 AND expiry = $3`,
+		profile.Name, rule.Operator, expiry)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	actionCopy := make(map[string]string)
+	for k, v := range rule.Action {
+		actionCopy[k] = v
+	}
+	actionType := actionCopy["type"]
+	delete(actionCopy, "type")
+	parametersJson, err := json.Marshal(actionCopy)
 	if err != nil {
 		panic(err)
 	}
 
-	return moduleExists
+	var actionIsSame bool
+	err = db.Get(
+		&actionIsSame, `SELECT EXISTS (SELECT * FROM action WHERE type = $1 AND parameters = $2)`,
+		actionType, parametersJson)
+	if err != nil {
+		log.Panic(err)
+	}
+	if !actionIsSame {
+		return false
+	}
+
+	for _, filter := range rule.Filters {
+		filterCopy := make(map[string]string)
+		for k, v := range filter {
+			filterCopy[k] = v
+		}
+		filterType := filterCopy["type"]
+		delete(filterCopy, "type")
+		parametersJson, err := json.Marshal(filterCopy)
+		if err != nil {
+			panic(err)
+		}
+
+		var filterIsSame bool
+		err = db.Get(
+			&filterIsSame, `SELECT EXISTS (SELECT * FROM filter WHERE rule = $1 AND type = $2 AND parameters = $3)`,
+			ruleId, filterType, parametersJson)
+		if err != nil {
+			log.Panic(err)
+		}
+		if !filterIsSame {
+			return false
+		}
+	}
+	return true
 }
 
-func dbAddProfileModule(profile profile, module map[string]string) {
-	name := module["name"]
-	delete(module, "name")
-	parametersJson, err := json.Marshal(module)
+func dbAddProfileRule(profile profile, rule Rule) {
+	actionType := rule.Action["type"]
+	delete(rule.Action, "type") //TODO: possibly deep-copy
+	parametersJson, err := json.Marshal(rule.Action)
+	if err != nil {
+		panic(err)
+	}
+	var actionId int64
+	err = db.QueryRow(
+		`INSERT INTO action (type, parameters) VALUES ($1, $2) RETURNING id`,
+		actionType, parametersJson).Scan(&actionId)
+	if err != nil {
+		panic(err)
+	}
+
+	var expiry sql.NullString
+	expiry.String = rule.Expiry
+	var ruleId int64
+	err = db.QueryRow(
+		`INSERT INTO rule (profile, operator, action, expiry) VALUES ($1, $2, $3, $4) RETURNING id`,
+		profile.Name, rule.Operator, actionId, expiry).Scan(&ruleId)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	for _, filter := range rule.Filters {
+		dbAddRuleFilter(ruleId, filter)
+	}
+}
+
+func dbAddRuleFilter(ruleId int64, filter map[string]string) {
+	filterType := filter["type"]
+	delete(filter, "type") //TODO: possibly deep-copy
+	parametersJson, err := json.Marshal(filter)
 	if err != nil {
 		panic(err)
 	}
 	_, err = db.Exec(
-		`INSERT INTO module (profile, name, parameters) VALUES ($1, $2, $3)`,
-		profile.Name, name, parametersJson)
+		`INSERT INTO filter (rule, type, parameters) VALUES ($1, $2, $3) RETURNING id`,
+		ruleId, filterType, parametersJson)
 	if err != nil {
 		panic(err)
 	}
 }
 
+// TODO: replace with dbRemoveRule (by id only)
 // this is currently somewhat expensive, since we need to find the module by the full parameters
 func dbRemoveProfileModule(profile profile, module map[string]string) {
 	name := module["name"]

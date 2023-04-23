@@ -339,7 +339,7 @@ func (c Config) addRule(profileName string, rule Rule) error {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	if db.DB != nil {
-		dbAddProfileModule(profile{Name: profileName}, module)
+		dbAddProfileRule(profile{Name: profileName}, rule)
 		return nil
 	}
 	p := c.Profiles[profileName]
@@ -350,7 +350,7 @@ func (c Config) addRule(profileName string, rule Rule) error {
 
 func (c Config) removeRuleFromProfile(profile string, index int) {
 	if db.DB != nil {
-		log.Error("removeModuleFromProfile currently not supported on db")
+		log.Error("removeRuleFromProfile currently not supported on db")
 		return
 	}
 	log.Info("Removing rule at position " + fmt.Sprint(index+1) + " from profile " + profile)
