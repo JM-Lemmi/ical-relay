@@ -20,7 +20,7 @@ type calendarDataByDay map[string][]eventData
 func initHandlers() {
 	router.HandleFunc("/", indexHandler)
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.Server.TemplatePath+"static/"))))
-	router.HandleFunc("/view/{profile}/monthly", monthlyViewHandler).Name("monthlyView")
+	router.HandleFunc("/view/{profile}", calendarViewHandler).Name("calendarView")
 	router.HandleFunc("/view/{profile}/edit/{uid}", editViewHandler).Name("editView")
 	router.HandleFunc("/view/{profile}/edit", rulesViewHandler).Name("rulesView")
 	router.HandleFunc("/notifier/{notifier}/subscribe", notifierSubscribeHandler).Name("notifierSubscribe")
@@ -137,10 +137,10 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	htmlTemplates.ExecuteTemplate(w, "rules.html", data)
 }
 
-func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
+func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
-	requestLogger.Infoln("monthly view request")
+	requestLogger.Infoln("calendar view request")
 	profileName := vars["profile"]
 	profile, ok := conf.Profiles[profileName]
 	if !ok {
@@ -158,7 +158,7 @@ func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 	data["ProfileName"] = profileName
 	data["Events"] = allEvents
 	data["ImmutablePast"] = profile.ImmutablePast
-	htmlTemplates.ExecuteTemplate(w, "monthly.html", data)
+	htmlTemplates.ExecuteTemplate(w, "calendar.html", data)
 }
 
 func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDay {

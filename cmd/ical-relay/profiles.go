@@ -27,7 +27,7 @@ func getProfilesMetadata() []profileMetadata {
 	for name, this_profile := range conf.Profiles {
 		if this_profile.Public {
 			// FIXME: any name with "/" will break the URL
-			viewUrl, err := router.Get("monthlyView").URL("profile", name)
+			viewUrl, err := router.Get("calendarView").URL("profile", name)
 			if err != nil {
 				log.Errorln(err)
 				continue

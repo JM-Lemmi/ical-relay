@@ -81,6 +81,13 @@ function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
     day_vstack.classList.add("vstack", "col-md-4", "col-xl-2", "pt-2", "day-column", "mb-3");
     let day_title = document.createElement("h5");
     day_title.classList.add("fw-semibold", "text-center", "m-0");
+    if(currentType === "month"){
+        day_title.role = "button";
+        day_title.onclick = function(){
+            currentType = "week";
+            setSelectedDate(date);
+        }
+    }
     if (date.isSame(dayjs(), "day")) {
         day_title.classList.add("today");
     }
@@ -95,14 +102,14 @@ function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
         });
         for (let event of day_events) {
             let card = getEventCard(event, show_edit, edit_enabled);
-            if(date.format("MM") != currentMonth){
+            if(currentType === "month" && date.format("MM") != currentMonth){
                 card.style.backgroundColor = "#e1e6ea";
             }
             day_vstack.appendChild(card);
         }
     } else {
         let card = getEmptyCard();
-        if(date.format("MM") != currentMonth){
+        if(currentType === "month" && date.format("MM") != currentMonth){
             card.style.backgroundColor = "#e1e6ea";
         }else{
             card.classList.add("bg-light");
