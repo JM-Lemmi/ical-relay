@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS schema_upgrades (
 );
 
 CREATE TABLE IF NOT EXISTS source (
-    url text NOT NULL PRIMARY KEY
+    id  integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    url text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS profile (
@@ -14,8 +15,8 @@ CREATE TABLE IF NOT EXISTS profile (
 );
 
 CREATE TABLE IF NOT EXISTS profile_sources (
-    profile text REFERENCES profile(name) ON DELETE CASCADE NOT NULL,
-    source  text REFERENCES source(url) ON DELETE CASCADE NOT NULL,
+    profile text    REFERENCES profile(name) ON DELETE CASCADE NOT NULL,
+    source  integer REFERENCES source(id) ON DELETE CASCADE NOT NULL,
     UNIQUE  (profile, source)
 );
 

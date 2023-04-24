@@ -14,7 +14,7 @@ import (
 
 var db sqlx.DB
 
-const CurrentDbVersion = 3
+const CurrentDbVersion = 4
 
 func connect() {
 	userStr := ""
@@ -54,7 +54,7 @@ var dbInitScript string
 func initTables() {
 	_, err := db.Exec(dbInitScript)
 	if err != nil {
-		panic("Failed to execute db init script")
+		log.Panic("Failed to execute db init script", err)
 	}
 }
 
@@ -80,6 +80,19 @@ func doDbUpgrade(fromDbVersion int) {
 		}
 		initTables() //create new tables
 		setDbVersion(3)
+	}
+	if fromDbVersion < 4 {
+		log.Error("Unsupported db version, dropping profile source data")
+		_, err := db.Exec("DROP TABLE source")
+		if err != nil {
+			panic("Failed to upgrade db")
+		}
+		_, err = db.Exec("DROP TABLE profile_sources")
+		if err != nil {
+			panic("Failed to upgrade db")
+		}
+		initTables()
+		setDbVersion(4)
 	}
 }
 
@@ -155,7 +168,7 @@ func dbReadProfile(profileName string) *profile {
 	err = db.Select(
 		&profile.Sources,
 		`SELECT url FROM source
-JOIN profile_sources ps ON url = ps.source WHERE ps.profile = $1`,
+JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 		profileName)
 	if err != nil {
 		log.Fatal(err)
@@ -227,24 +240,37 @@ ON CONFLICT (name) DO UPDATE SET public = excluded.public, immutable_past = excl
 	}
 }
 
+func dbProfileSourceExists(profile profile, source string) bool {
+	var profileSourceExists bool
+
+	err := db.Get(&profileSourceExists, `SELECT EXISTS (SELECT * FROM source
+JOIN profile_sources ps ON id = ps.source WHERE profile = $1 AND url = $2)`, profile.Name, source)
+	if err != nil {
+		panic(err)
+	}
+
+	return profileSourceExists
+}
+
 func dbAddProfileSource(profile profile, source string) {
-	_, err := db.Exec(`INSERT INTO source (url) VALUES ($1) ON CONFLICT (url) DO NOTHING`, source)
+	var sourceId int64
+	err := db.Get(&sourceId, `INSERT INTO source (url) VALUES ($1) RETURNING id`, source)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 	_, err = db.Exec(
 		`INSERT INTO profile_sources (profile, source) VALUES ($1, $2) ON CONFLICT (profile, source) DO NOTHING`,
-		profile.Name, source)
+		profile.Name, sourceId)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 }
 
-func dbRemoveProfileSource(profile profile, source string) {
+func dbRemoveProfileSource(profile profile, sourceId int64) {
 	_, err := db.Exec(`DELETE FROM profile_sources WHERE profile = $1 AND source = $2`,
-		profile.Name, source)
+		profile.Name, sourceId)
 	if err != nil {
 		log.Fatal(err)
 		return

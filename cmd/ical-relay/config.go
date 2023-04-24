@@ -177,7 +177,9 @@ func (c Config) importToDB() {
 		log.Debug("Importing profile " + name)
 		dbWriteProfile(profile)
 		for _, source := range profile.Sources {
-			dbAddProfileSource(profile, source)
+			if !dbProfileSourceExists(profile, source) {
+				dbAddProfileSource(profile, source)
+			}
 		}
 		for _, token := range profile.Tokens {
 			dbWriteProfileToken(profile, token, nil)
