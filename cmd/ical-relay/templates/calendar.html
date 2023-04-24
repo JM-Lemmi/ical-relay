@@ -64,7 +64,7 @@
             }
         }
 
-        let currentType = "month"; //month or week
+        let currentType = "week"; //month or week
 
         function today(){
             setSelectedDate(dayjs());
@@ -122,12 +122,14 @@
 
         let currentDate;
         function onHashChange(){
-            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
-            if(location.hash.length > 8){
-                currentType = "week";
-            }else{
-                currentType = "month";
+            if(location.hash){
+                if(location.hash.length > 8){
+                    currentType = "week";
+                }else{
+                    currentType = "month";
+                }
             }
+            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
             updateCalendar(currentDate);
         }
         addEventListener("hashchange", onHashChange)
