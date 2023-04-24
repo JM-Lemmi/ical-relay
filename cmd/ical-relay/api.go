@@ -91,7 +91,9 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Created new profile: "+newProfile.Name+"\n")
 
-	case http.MethodPatch:
+	// TODO MethodPatch, to only edit singe aspects
+
+	case http.MethodPut:
 		// Update profile
 		var newProfile profileJson
 
