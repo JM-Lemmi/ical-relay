@@ -132,8 +132,8 @@ func LegacyParseConfig(path string) (Config, error) {
 			case "edit-bysummary-regex":
 				r = Rule{
 					Filters: []map[string]string{{
-						"type": "regex",
-						"id":   m["regex"],
+						"type":  "regex",
+						"regex": m["regex"],
 					}},
 					Action: map[string]string{
 						"type":            "edit",
