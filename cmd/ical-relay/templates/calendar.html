@@ -4,7 +4,6 @@
     {{template "head.html" .}}
     <script src="/static/js/calendar.js"></script>
 </head>
-
 <body>
     {{template "nav.html" .}}
     <main class="container">
@@ -43,13 +42,17 @@
         </div>
     </main>
     {{template "footer.html" .}}
-    <script type="module">
+    <script>
         const events = {{ .Events }};
 
-        let show_edit = window.localStorage.getItem("token") !== null;
         let immutable_past = {{ .ImmutablePast }};
         let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};
-        if (show_edit) {
+
+        let show_edit = window.localStorage.getItem("token") !== null;
+        if(show_edit){
+            initEdit();
+        }
+        async function initEdit(){
             let response = await fetch(check_auth_url, {
                 method: "POST",
                 headers: {
@@ -61,6 +64,7 @@
                 // We have a token, but it's not valid anymore.
                 document.getElementById("error-message").innerHTML = "Der gespeicherte Token ist ungültig. Bearbeitung ist deaktiviert.";
                 document.getElementById("error-message-wrapper").classList.remove("d-none");
+                updateCalendar(currentDate);
             }
         }
 
