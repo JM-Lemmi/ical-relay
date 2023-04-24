@@ -82,14 +82,14 @@ func doDbUpgrade(fromDbVersion int) {
 		setDbVersion(3)
 	}
 	if fromDbVersion < 4 {
-		log.Error("Unsupported db version, dropping profile source data")
-		_, err := db.Exec("DROP TABLE source")
+		log.Error("Unsupported db version, dropping profile source data and rules")
+		_, err := db.Exec("DROP TABLE profile_sources; DROP TABLE source")
 		if err != nil {
-			panic("Failed to upgrade db")
+			//log.Panic("Failed to upgrade db", err)
 		}
-		_, err = db.Exec("DROP TABLE profile_sources")
+		_, err = db.Exec("DROP TABLE filter; DROP TABLE rule; DROP TABLE action")
 		if err != nil {
-			panic("Failed to upgrade db")
+			log.Panic("Failed to upgrade db", err)
 		}
 		initTables()
 		setDbVersion(4)
