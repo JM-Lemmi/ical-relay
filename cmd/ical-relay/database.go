@@ -108,15 +108,11 @@ func setDbVersion(dbVersion int) {
 
 // these structs are only used for reading
 type dbRule struct {
-	Id       int64      `db:"id"`
-	Operator string     `db:"operator"`
-	Action   int64      `db:"action"`
-	Expiry   *time.Time `db:"expiry"`
-}
-
-type dbAction struct {
-	ActionType string `db:"type"`
-	Parameters string `db:"parameters"`
+	Id               int64      `db:"id"`
+	Operator         string     `db:"operator"`
+	ActionType       string     `db:"action_type"`
+	ActionParameters string     `db:"action_parameters"`
+	Expiry           *time.Time `db:"expiry"`
 }
 
 type dbFilter struct {
@@ -183,7 +179,9 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	}
 
 	var dbRules []dbRule
-	err = db.Select(&dbRules, "SELECT id, operator, action, expiry FROM rule WHERE profile = $1", profileName)
+	err = db.Select(
+		&dbRules, "SELECT id, operator, action_type, action_parameters, expiry FROM rule WHERE profile = $1",
+		profileName)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -196,17 +194,12 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 		} else {
 			rule.Expiry = ""
 		}
-		dbAction := new(dbAction)
-		err = db.Get(dbAction, "SELECT type, parameters FROM action WHERE id = $1", dbRule.Action)
-		if err != nil {
-			log.Panic(err)
-		}
 		actionParameters := map[string]string{}
-		err = json.Unmarshal([]byte(dbAction.Parameters), &actionParameters)
+		err = json.Unmarshal([]byte(dbRule.ActionParameters), &actionParameters)
 		if err != nil {
 			log.Fatal(err)
 		}
-		actionParameters["type"] = dbAction.ActionType
+		actionParameters["type"] = dbRule.ActionType
 		rule.Action = actionParameters
 
 		var dbFilters []dbFilter
@@ -279,25 +272,6 @@ func dbRemoveProfileSource(profile profile, sourceId int64) {
 
 // used for importing
 func dbProfileRuleExists(profile profile, rule Rule) bool {
-	var err error
-	var ruleIds []int64
-	if rule.Expiry != "" { // stored as true NULL in db
-		err = db.Select(
-			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2 AND expiry = $3`,
-			profile.Name, rule.Operator, rule.Expiry)
-	} else {
-		err = db.Select(
-			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2 AND expiry IS NULL`,
-			profile.Name, rule.Operator)
-	}
-	if len(ruleIds) == 0 {
-		log.Trace("rule not found with pN:'", profile.Name, "' rOp:'", rule.Operator, "' rE:'", rule.Expiry, "'")
-		return false
-	}
-	if err != nil {
-		log.Panic(err)
-	}
-
 	actionCopy := make(map[string]string)
 	for k, v := range rule.Action {
 		actionCopy[k] = v
@@ -309,16 +283,25 @@ func dbProfileRuleExists(profile profile, rule Rule) bool {
 		panic(err)
 	}
 
-	var actionIsSame bool
-	err = db.Get(
-		&actionIsSame, `SELECT EXISTS (SELECT * FROM action WHERE type = $1 AND parameters = $2)`,
-		actionType, parametersJson)
+	var ruleIds []int64
+	if rule.Expiry != "" { // stored as true NULL in db
+		err = db.Select(
+			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2
+AND action_type = $3 AND action_parameters = $4 AND expiry = $5`,
+			profile.Name, rule.Operator, actionType, parametersJson, rule.Expiry)
+	} else {
+		err = db.Select(
+			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2
+AND action_type = $3 AND action_parameters = $4 AND expiry IS NULL`,
+			profile.Name, rule.Operator, actionType, parametersJson)
+	}
+	if len(ruleIds) == 0 {
+		log.Trace("rule not found with pN:'", profile.Name, "' rOp:'", rule.Operator,
+			" 'aT:'", actionType, "' aP:", string(parametersJson), " rE:'", rule.Expiry, "'")
+		return false
+	}
 	if err != nil {
 		log.Panic(err)
-	}
-	if !actionIsSame {
-		log.Trace("no matching action found")
-		return false
 	}
 
 	for _, ruleId := range ruleIds {
@@ -361,20 +344,13 @@ func dbAddProfileRule(profile profile, rule Rule) {
 	if err != nil {
 		panic(err)
 	}
-	var actionId int64
-	err = db.QueryRow(
-		`INSERT INTO action (type, parameters) VALUES ($1, $2) RETURNING id`,
-		actionType, parametersJson).Scan(&actionId)
-	if err != nil {
-		panic(err)
-	}
 
 	var expiry sql.NullString
 	expiry.String = rule.Expiry
 	var ruleId int64
 	err = db.QueryRow(
-		`INSERT INTO rule (profile, operator, action, expiry) VALUES ($1, $2, $3, $4) RETURNING id`,
-		profile.Name, rule.Operator, actionId, expiry).Scan(&ruleId)
+		`INSERT INTO rule (profile, operator, action_type, action_parameters, expiry) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		profile.Name, rule.Operator, actionType, parametersJson, expiry).Scan(&ruleId)
 	if err != nil {
 		log.Panic(err)
 	}
