@@ -413,6 +413,8 @@ func dbRemoveProfileToken(profile profile, token string) {
 	}
 }
 
+// Notifier
+
 func dbNotifierExists(notifierName string) bool {
 	var notifierExists bool
 

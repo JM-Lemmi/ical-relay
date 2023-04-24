@@ -42,7 +42,7 @@ func main() {
 
 	// load config
 	var err error
-	conf, err = ParseConfig(configPath, *importData)
+	conf, err = ParseConfig(configPath)
 	if err != nil {
 		os.Exit(1)
 	}

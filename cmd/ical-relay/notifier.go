@@ -125,7 +125,7 @@ func NotifierTiming(id string, interval time.Duration) {
 // starts a heartbeat notifier in a sub-routine
 func NotifierStartup() {
 	log.Info("Starting Notifiers")
-	for id, n := range conf.Notifiers {
+	for id, n := range conf.getNotifiers() {
 		interval, err := time.ParseDuration(n.Interval)
 		if err != nil {
 			log.Error("Failed to parse duration for notifier " + id + ": " + n.Interval)

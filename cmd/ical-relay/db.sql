@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS profile_sources (
     UNIQUE  (profile, source)
 );
 
+/* TODO: merge into rule */
 CREATE TABLE IF NOT EXISTS action (
     id         integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     type       text NOT NULL,
@@ -44,7 +45,7 @@ CREATE TABLE IF NOT EXISTS filter (
 CREATE TABLE IF NOT EXISTS admin_tokens (
     profile text REFERENCES profile(name) ON DELETE CASCADE NOT NULL,
     token   char(64) PRIMARY KEY,
-    note    text
+    note    text /* TODO: Possibly add NOT NULL and just save an empty string? */
 );
 
 CREATE TABLE IF NOT EXISTS notifier (
