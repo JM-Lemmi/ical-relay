@@ -253,27 +253,21 @@ func dbRemoveProfileSource(profile profile, source string) {
 
 // used for importing
 func dbProfileRuleExists(profile profile, rule Rule) bool {
-	var expiry any
-	expiry = rule.Expiry
-	if expiry == "" {
-		expiry = nil
+	var err error
+	var ruleIds []int64
+	if rule.Expiry != "" { // stored as true NULL in db
+		err = db.Select(
+			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2 AND expiry = $3`,
+			profile.Name, rule.Operator, rule.Expiry)
+	} else {
+		err = db.Select(
+			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2 AND expiry IS NULL`,
+			profile.Name, rule.Operator)
 	}
-
-	var ruleExists bool
-	err := db.Get(
-		&ruleExists, `SELECT EXISTS (SELECT id FROM rule WHERE profile = $1 AND operator = $2 AND expiry = $3)`,
-		profile.Name, rule.Operator, expiry)
-	if err != nil {
-		log.Panic(err)
-	}
-	if !ruleExists {
+	if len(ruleIds) == 0 {
+		log.Trace("rule not found with pN:'", profile.Name, "' rOp:'", rule.Operator, "' rE:'", rule.Expiry, "'")
 		return false
 	}
-
-	var ruleId int64
-	err = db.Get(
-		&ruleId, `SELECT id FROM rule WHERE profile = $1 AND operator = $2 AND expiry = $3`,
-		profile.Name, rule.Operator, expiry)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -297,33 +291,41 @@ func dbProfileRuleExists(profile profile, rule Rule) bool {
 		log.Panic(err)
 	}
 	if !actionIsSame {
+		log.Trace("no matching action found")
 		return false
 	}
 
-	for _, filter := range rule.Filters {
-		filterCopy := make(map[string]string)
-		for k, v := range filter {
-			filterCopy[k] = v
-		}
-		filterType := filterCopy["type"]
-		delete(filterCopy, "type")
-		parametersJson, err := json.Marshal(filterCopy)
-		if err != nil {
-			panic(err)
-		}
+	for _, ruleId := range ruleIds {
+		ok := true
+		for _, filter := range rule.Filters {
+			filterCopy := make(map[string]string)
+			for k, v := range filter {
+				filterCopy[k] = v
+			}
+			filterType := filterCopy["type"]
+			delete(filterCopy, "type")
+			parametersJson, err := json.Marshal(filterCopy)
+			if err != nil {
+				panic(err)
+			}
 
-		var filterIsSame bool
-		err = db.Get(
-			&filterIsSame, `SELECT EXISTS (SELECT * FROM filter WHERE rule = $1 AND type = $2 AND parameters = $3)`,
-			ruleId, filterType, parametersJson)
-		if err != nil {
-			log.Panic(err)
+			var filterIsSame bool
+			err = db.Get(
+				&filterIsSame, `SELECT EXISTS (SELECT * FROM filter WHERE rule = $1 AND type = $2 AND parameters = $3)`,
+				ruleId, filterType, parametersJson)
+			if err != nil {
+				log.Panic(err)
+			}
+			if !filterIsSame {
+				log.Trace("filter does not match rId:", ruleId, " fT:'", filterType, "' pJ:", string(parametersJson))
+				ok = false
+			}
 		}
-		if !filterIsSame {
-			return false
+		if ok {
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func dbAddProfileRule(profile profile, rule Rule) {
