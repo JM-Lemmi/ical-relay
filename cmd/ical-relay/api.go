@@ -44,7 +44,7 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(caljson)+"\n")
 }
 
-// Path: /api/profiles
+// Path: /api/profiles/{profile}
 func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
@@ -57,8 +57,9 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	profileName := mux.Vars(r)["profile"]
+
 	type profileJson struct {
-		Name          string   `json:"name"`
 		Sources       []string `json:"sources"`
 		Public        bool     `json:"public"`
 		ImmutablePast bool     `json:"immutable_past"`
@@ -78,18 +79,18 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if conf.profileExists(newProfile.Name) {
+		if conf.profileExists(profileName) {
 			requestLogger.Errorln("Profile already exists!")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Error: Profile already exists!\n")
 			return
 		}
 
-		conf.addProfile(newProfile.Name, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+		conf.addProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
 
-		requestLogger.Infoln("Created new profile: " + newProfile.Name)
+		requestLogger.Infoln("Created new profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Created new profile: "+newProfile.Name+"\n")
+		fmt.Fprint(w, "Created new profile: "+profileName+"\n")
 
 	// TODO MethodPatch, to only edit singe aspects
 
@@ -106,22 +107,21 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !conf.profileExists(newProfile.Name) {
-			requestLogger.Errorln("Profile doenst exist!")
+		if !conf.profileExists(profileName) {
+			requestLogger.Errorln("Profile doesnt exist!")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
 			return
 		}
 
-		conf.editProfile(newProfile.Name, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+		conf.editProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
 
-		requestLogger.Infoln("Edited new profile: " + newProfile.Name)
+		requestLogger.Infoln("Edited new profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Edited new profile: "+newProfile.Name+"\n")
+		fmt.Fprint(w, "Edited new profile: "+profileName+"\n")
 
 	case http.MethodDelete:
 		// Delete profile
-		profileName := r.URL.Query().Get("name")
 		if !conf.profileExists(profileName) {
 			requestLogger.Errorln("Profile does not exist!")
 			w.WriteHeader(http.StatusBadRequest)
