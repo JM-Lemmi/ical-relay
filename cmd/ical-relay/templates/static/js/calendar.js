@@ -21,7 +21,15 @@ function getEventCard(event, show_edit = false, edit_enabled = true) {
     event_body.appendChild(event_title);
     let event_text = document.createElement("div");
     event_text.classList.add("card-text");
-    event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
+    if (event.show_start && event.show_end) {
+        event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
+    } else if (event.show_start) {
+        event_text.innerText = "Ab " + dayjs(event.start).format("HH:mm");
+    } else if (event.show_end) {
+        event_text.innerText = "Bis " + dayjs(event.end).format("HH:mm");
+    } else {
+        event_text.innerText = "Ganztägig";
+    }
     if (event.location) {
         event_text.appendChild(document.createElement("br"));
         event_text.appendChild(locationToNode(event.location));
