@@ -94,14 +94,14 @@ function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
         });
         for (let event of day_events) {
             let card = getEventCard(event, show_edit, edit_enabled);
-            if(date.format("MM") != currentMonth){
+            if(currentType === "month" && date.format("MM") != currentMonth){
                 card.style.backgroundColor = "#e1e6ea";
             }
             day_vstack.appendChild(card);
         }
     } else {
         let card = getEmptyCard();
-        if(date.format("MM") != currentMonth){
+        if(currentType === "month" && date.format("MM") != currentMonth){
             card.style.backgroundColor = "#e1e6ea";
         }else{
             card.classList.add("bg-light");
