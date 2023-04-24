@@ -70,7 +70,7 @@ func LegacyParseConfig(path string) (Config, error) {
 					},
 					Expiry: m["expiry"],
 				}
-				rules = append(tmpConfig.Profiles[p].Rules, r)
+				rules = append(rules, r)
 			case "delete-byid":
 				r = Rule{
 					Filters: []map[string]string{{
@@ -82,7 +82,7 @@ func LegacyParseConfig(path string) (Config, error) {
 					},
 					Expiry: m["expiry"],
 				}
-				rules = append(tmpConfig.Profiles[p].Rules, r)
+				rules = append(rules, r)
 			case "add-url":
 				sources = append(sources, m["url"])
 			case "add-file":
@@ -99,7 +99,7 @@ func LegacyParseConfig(path string) (Config, error) {
 					},
 					Expiry: m["expiry"],
 				}
-				rules = append(tmpConfig.Profiles[p].Rules, r)
+				rules = append(rules, r)
 			case "delete-duplicates":
 				r = Rule{
 					Filters: []map[string]string{{
@@ -110,7 +110,7 @@ func LegacyParseConfig(path string) (Config, error) {
 					},
 					Expiry: m["expiry"],
 				}
-				rules = append(tmpConfig.Profiles[p].Rules, r)
+				rules = append(rules, r)
 			case "edit-byid":
 				r = Rule{
 					Filters: []map[string]string{{
@@ -128,7 +128,7 @@ func LegacyParseConfig(path string) (Config, error) {
 					},
 					Expiry: m["expiry"],
 				}
-				rules = append(tmpConfig.Profiles[p].Rules, r)
+				rules = append(rules, r)
 			case "edit-bysummary-regex":
 				r = Rule{
 					Filters: []map[string]string{{
@@ -147,7 +147,7 @@ func LegacyParseConfig(path string) (Config, error) {
 					},
 					Expiry: m["expiry"],
 				}
-				rules = append(tmpConfig.Profiles[p].Rules, r)
+				rules = append(rules, r)
 			case "save-to-file":
 				log.Warn("'save-to-file' module is deprecated and will be removed from the config.")
 			default:
