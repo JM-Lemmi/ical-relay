@@ -17,20 +17,25 @@
         </div>
         <!-- next and previous buttons -->
         <div class="row sticky-top bg-white">
-            <div class="col text-center">
-                <div class="d-inline-block h-75 align-bottom">
-                    <a class="btn btn-primary btn-sm" id="btn-prev">&lt;</a>
+            <div class="d-flex flex-row justify-content-between align-items-center">
+                <div>
+                    <a class="btn btn-primary btn-sm" id="btn-today">Heute</a>
                 </div>
-                <div class="d-inline-block vstack">
-                    <div>
-                        <span class="h5 text-center fw-bold m-0" id="current-date"></span>
+                <div class="d-flex align-items-center">
+                    <div class="d-inline-block">
+                        <a class="btn btn-primary btn-sm" id="btn-prev">&lt;</a>
                     </div>
-                    <div>
-                        <span class="h6">{{.ProfileName}}</span>
+                    <div class="d-inline-block vstack px-2">
+                        <div class="h5 text-center fw-bold m-0" id="current-date"></div>
+                        <div class="h6 text-center">{{.ProfileName}}</div>
+                    </div>
+                    <div class="d-inline-block">
+                        <a class="btn btn-primary btn-sm" id="btn-next">&gt;</a>
                     </div>
                 </div>
-                <div class="d-inline-block h-75 align-bottom">
-                    <a class="btn btn-primary btn-sm" id="btn-next">&gt;</a>
+                <div>
+                    <a class="btn btn-primary btn-sm" id="btn-week">Woche</a>
+                    <a class="btn btn-primary btn-sm" id="btn-month">Monat</a>
                 </div>
             </div>
         </div>
@@ -61,7 +66,30 @@
 
         let currentType = "month"; //month or week
 
+        function today(){
+            setSelectedDate(dayjs());
+        }
+        document.getElementById("btn-today").onclick = today;
+
+        function switchToWeek(){
+            currentType = "week";
+            if(currentDate.format("MM") === dayjs().format("MM")){
+                setSelectedDate(dayjs());
+            }else{
+                setSelectedDate(currentDate);
+            }
+        }
+        document.getElementById("btn-week").onclick = switchToWeek;
+
+        function switchToMonth(){
+            currentType = "month";
+            setSelectedDate(currentDate);
+        }
+        document.getElementById("btn-month").onclick = switchToMonth;
+
         function updateCalendar(date) {
+            document.getElementById("btn-week").hidden = currentType === "week";
+            document.getElementById("btn-month").hidden = currentType === "month";
             let calendarStart;
             let calendarEnd;
             if(currentType === "month"){
@@ -92,21 +120,25 @@
             }
         }
 
-        let currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
-        if(location.hash.length > 8){
-            currentType = "week";
-            console.log("Enabling week view");
+        let currentDate;
+        function onHashChange(){
+            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
+            if(location.hash.length > 8){
+                currentType = "week";
+            }else{
+                currentType = "month";
+            }
+            updateCalendar(currentDate);
         }
-        updateCalendar(currentDate);
+        addEventListener("hashchange", onHashChange)
+        onHashChange();
 
         function setSelectedDate(date) {
-            currentDate = date;
             if(currentType === "month"){
                 window.location.hash = date.format("YYYY-MM");
             }else{
                 window.location.hash = date.format("YYYY-MM-DD");
             }
-            updateCalendar(date);
         }
 
         document.getElementById("btn-prev").addEventListener("click", () => {
