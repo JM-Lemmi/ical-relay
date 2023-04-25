@@ -248,6 +248,35 @@ func (c Config) profileExists(name string) bool {
 	return ok
 }
 
+// add a profile without tokens and without rules
+func (c Config) addProfile(name string, sources []string, public bool, immutablepast bool) {
+	c.Profiles[name] = profile{
+		Sources:       sources,
+		Public:        public,
+		ImmutablePast: immutablepast,
+		Tokens:        []string{},
+		Rules:         []Rule{},
+	}
+	c.saveConfig(configPath)
+}
+
+// edit a profile, keeping tokens and rules
+func (c Config) editProfile(name string, sources []string, public bool, immutablepast bool) {
+	c.Profiles[name] = profile{
+		Sources:       sources,
+		Public:        public,
+		ImmutablePast: immutablepast,
+		Tokens:        c.Profiles[name].Tokens,
+		Rules:         c.Profiles[name].Rules,
+	}
+	c.saveConfig(configPath)
+}
+
+func (c Config) deleteProfile(name string) {
+	delete(c.Profiles, name)
+	c.saveConfig(configPath)
+}
+
 func (c Config) notifierExists(name string) bool {
 	if db.DB != nil {
 		return dbNotifierExists(name)

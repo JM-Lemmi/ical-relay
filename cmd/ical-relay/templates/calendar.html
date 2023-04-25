@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<head lang="de">
+    <title>{{.ProfileName }} - {{.ApplicationName }}</title>
+    {{template "head.html" .}}
+    <script src="/static/js/calendar.js"></script>
+</head>
+<body>
+    {{template "nav.html" .}}
+    <main class="container">
+        <!-- Error Message with a close button -->
+        <div class="row d-none" id="error-message-wrapper">
+            <div class="text-center alert alert-danger alert-dismissible" role="alert">
+                <span id="error-message"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        <!-- next and previous buttons -->
+        <div class="row sticky-top bg-white">
+            <div class="d-flex flex-row justify-content-between align-items-center">
+                <div>
+                    <a class="btn btn-primary btn-sm" id="btn-today">Heute</a>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="d-inline-block">
+                        <a class="btn btn-primary btn-sm" id="btn-prev">&lt;</a>
+                    </div>
+                    <div class="d-inline-block vstack px-2">
+                        <div class="h5 text-center fw-bold m-0" id="current-date"></div>
+                        <div class="h6 text-center">{{.ProfileName}}</div>
+                    </div>
+                    <div class="d-inline-block">
+                        <a class="btn btn-primary btn-sm" id="btn-next">&gt;</a>
+                    </div>
+                </div>
+                <div>
+                    <a class="btn btn-primary btn-sm" id="btn-week">Woche</a>
+                    <a class="btn btn-primary btn-sm" id="btn-month">Monat</a>
+                </div>
+            </div>
+        </div>
+        <div id="calendar">
+        </div>
+    </main>
+    {{template "footer.html" .}}
+    <script>
+        const events = {{ .Events }};
+
+        let immutable_past = {{ .ImmutablePast }};
+        let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};
+
+        let show_edit = window.localStorage.getItem("token") !== null;
+        if(show_edit){
+            initEdit();
+        }
+        async function initEdit(){
+            let response = await fetch(check_auth_url, {
+                method: "POST",
+                headers: {
+                    "Authorization": window.localStorage.getItem("token")
+                }
+            })
+            if (!response.ok) {
+                show_edit = false;
+                // We have a token, but it's not valid anymore.
+                document.getElementById("error-message").innerHTML = "Der gespeicherte Token ist ungültig. Bearbeitung ist deaktiviert.";
+                document.getElementById("error-message-wrapper").classList.remove("d-none");
+                updateCalendar(currentDate);
+            }
+        }
+
+        //month or week
+        let currentType = localStorage.getItem("viewType") == null ? "week" : localStorage.getItem("viewType");
+
+        function today(){
+            setSelectedDate(dayjs());
+        }
+        document.getElementById("btn-today").onclick = today;
+
+        function switchToWeek(){
+            currentType = "week";
+            if(currentDate.format("MM") === dayjs().format("MM")){
+                setSelectedDate(dayjs());
+            }else{
+                setSelectedDate(currentDate);
+            }
+        }
+        document.getElementById("btn-week").onclick = switchToWeek;
+
+        function switchToMonth(){
+            currentType = "month";
+            setSelectedDate(currentDate);
+        }
+        document.getElementById("btn-month").onclick = switchToMonth;
+
+        function updateCalendar(date) {
+            localStorage.setItem("viewType", currentType);
+            document.getElementById("btn-week").hidden = currentType === "week";
+            document.getElementById("btn-month").hidden = currentType === "month";
+            let calendarStart;
+            let calendarEnd;
+            if(currentType === "month"){
+                document.getElementById("current-date").innerHTML = currentDate.format("MMMM YYYY");
+
+                calendarStart = date.day(0);
+                calendarEnd = date.add(4, "week").day(6);
+            }else{
+                document.getElementById("current-date").innerHTML = "KW"+currentDate.format(" w MMMM");
+
+                calendarStart = date.startOf("week").subtract(1, "day");
+                calendarEnd = calendarStart.add(1, "week");
+            }
+            console.log(calendarStart);
+            console.log(calendarEnd);
+            let calendar = document.getElementById("calendar");
+            calendar.innerHTML = "";
+            let row;
+            for (let date = calendarStart; date <= calendarEnd; date = date.add(1, "day")) {
+                if (date.day() === 0) {
+                    row = document.createElement("div");
+                    row.classList.add("row");
+                    calendar.appendChild(row);
+                    continue;
+                }
+                let day_vstack = getDayVStack(date, events, show_edit, !immutable_past || date >= dayjs());
+                row.appendChild(day_vstack);
+            }
+        }
+
+        let currentDate;
+        function onHashChange(){
+            if(location.hash){
+                if(location.hash.length > 8){
+                    currentType = "week";
+                }else{
+                    currentType = "month";
+                }
+            }
+            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
+            updateCalendar(currentDate);
+        }
+        addEventListener("hashchange", onHashChange)
+        onHashChange();
+
+        function setSelectedDate(date) {
+            if(currentType === "month"){
+                window.location.hash = date.format("YYYY-MM");
+            }else{
+                window.location.hash = date.format("YYYY-MM-DD");
+            }
+        }
+
+        document.getElementById("btn-prev").addEventListener("click", () => {
+            setSelectedDate(currentDate.subtract(1, currentType).startOf(currentType));
+        });
+        document.getElementById("btn-next").addEventListener("click", () => {
+            setSelectedDate(currentDate.add(1, currentType).startOf(currentType));
+        });
+    </script>
+</body>

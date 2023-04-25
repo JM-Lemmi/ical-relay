@@ -21,7 +21,15 @@ function getEventCard(event, show_edit = false, edit_enabled = true) {
     event_body.appendChild(event_title);
     let event_text = document.createElement("div");
     event_text.classList.add("card-text");
-    event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
+    if (event.show_start && event.show_end) {
+        event_text.innerText = dayjs(event.start).format("HH:mm") + " - " + dayjs(event.end).format("HH:mm");
+    } else if (event.show_start) {
+        event_text.innerText = "Ab " + dayjs(event.start).format("HH:mm");
+    } else if (event.show_end) {
+        event_text.innerText = "Bis " + dayjs(event.end).format("HH:mm");
+    } else {
+        event_text.innerText = "Ganztägig";
+    }
     if (event.location) {
         event_text.appendChild(document.createElement("br"));
         event_text.appendChild(locationToNode(event.location));
@@ -73,6 +81,13 @@ function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
     day_vstack.classList.add("vstack", "col-md-4", "col-xl-2", "pt-2", "day-column", "mb-3");
     let day_title = document.createElement("h5");
     day_title.classList.add("fw-semibold", "text-center", "m-0");
+    if(currentType === "month"){
+        day_title.role = "button";
+        day_title.onclick = function(){
+            currentType = "week";
+            setSelectedDate(date);
+        }
+    }
     if (date.isSame(dayjs(), "day")) {
         day_title.classList.add("today");
     }
@@ -87,14 +102,14 @@ function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
         });
         for (let event of day_events) {
             let card = getEventCard(event, show_edit, edit_enabled);
-            if(date.format("MM") != currentMonth){
+            if(currentType === "month" && date.format("MM") != currentMonth){
                 card.style.backgroundColor = "#e1e6ea";
             }
             day_vstack.appendChild(card);
         }
     } else {
         let card = getEmptyCard();
-        if(date.format("MM") != currentMonth){
+        if(currentType === "month" && date.format("MM") != currentMonth){
             card.style.backgroundColor = "#e1e6ea";
         }else{
             card.classList.add("bg-light");

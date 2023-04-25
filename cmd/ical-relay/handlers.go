@@ -20,7 +20,7 @@ type calendarDataByDay map[string][]eventData
 func initHandlers() {
 	router.HandleFunc("/", indexHandler)
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.Server.TemplatePath+"static/"))))
-	router.HandleFunc("/view/{profile}/monthly", monthlyViewHandler).Name("monthlyView")
+	router.HandleFunc("/view/{profile}", calendarViewHandler).Name("calendarView")
 	router.HandleFunc("/view/{profile}/edit/{uid}", editViewHandler).Name("editView")
 	router.HandleFunc("/view/{profile}/edit", rulesViewHandler).Name("rulesView")
 	router.HandleFunc("/notifier/{notifier}/subscribe", notifierSubscribeHandler).Name("notifierSubscribe")
@@ -32,6 +32,7 @@ func initHandlers() {
 
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
+	router.HandleFunc("/api/profiles/{profile}", profileApiHandler)
 	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
 	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
 	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler).Name("apiCheckAuth")
@@ -155,10 +156,10 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	htmlTemplates.ExecuteTemplate(w, "rules.html", data)
 }
 
-func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
+func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
-	requestLogger.Infoln("monthly view request")
+	requestLogger.Infoln("calendar view request")
 	profileName := vars["profile"]
 	if !conf.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
@@ -177,33 +178,38 @@ func monthlyViewHandler(w http.ResponseWriter, r *http.Request) {
 	data["ProfileName"] = profileName
 	data["Events"] = allEvents
 	data["ImmutablePast"] = profile.ImmutablePast
-	htmlTemplates.ExecuteTemplate(w, "monthly.html", data)
+	htmlTemplates.ExecuteTemplate(w, "calendar.html", data)
 }
 
 func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDay {
 	calendarDataByDay := make(calendarDataByDay)
 	for _, event := range calendar.Events() {
 		startTime, err := event.GetStartAt()
+		showStart := true
 		if err != nil {
 			log.Errorln(err)
 			continue
 		}
 		endTime, err := event.GetEndAt()
+		showEnd := true
 		if err != nil {
 			log.Errorln(err)
-			continue
+			endTime = startTime.AddDate(0, 0, 1)
+			showStart = false
+			showEnd = false
 		}
 		edit_url, err := router.Get("editView").URL("profile", profileName, "uid", event.GetProperty("UID").Value)
 		if err != nil {
 			log.Errorln(err)
 		}
-		day := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
 		data := eventData{
-			"title":    event.GetProperty("SUMMARY").Value,
-			"start":    startTime,
-			"end":      endTime,
-			"id":       event.GetProperty("UID").Value,
-			"edit_url": edit_url.String(),
+			"title":      event.GetProperty("SUMMARY").Value,
+			"start":      startTime,
+			"show_start": showStart,
+			"end":        endTime,
+			"show_end":   showEnd,
+			"id":         event.GetProperty("UID").Value,
+			"edit_url":   edit_url.String(),
 		}
 		description := event.GetProperty("DESCRIPTION")
 		if description != nil {
@@ -212,7 +218,22 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 		if event.GetProperty("LOCATION") != nil {
 			data["location"] = event.GetProperty("LOCATION").Value
 		}
-		calendarDataByDay[day.Format("2006-01-02")] = append(calendarDataByDay[day.Format("2006-01-02")], data)
+		startDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
+		endDay := time.Date(endTime.Year(), endTime.Month(), endTime.Day(), 0, 0, 0, 0, time.UTC)
+		if startDay == endDay {
+			calendarDataByDay[startDay.Format("2006-01-02")] = append(calendarDataByDay[startDay.Format("2006-01-02")], data)
+		} else {
+			for day := startDay; day.Before(endTime); day = day.AddDate(0, 0, 1) {
+				data["show_start"] = day.Equal(startDay)
+				data["show_end"] = day.Equal(endDay)
+				// make a copy of the data
+				data_copy := make(eventData)
+				for k, v := range data {
+					data_copy[k] = v
+				}
+				calendarDataByDay[day.Format("2006-01-02")] = append(calendarDataByDay[day.Format("2006-01-02")], data_copy)
+			}
+		}
 	}
 	return calendarDataByDay
 }
