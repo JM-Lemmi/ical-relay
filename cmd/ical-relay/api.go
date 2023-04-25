@@ -44,6 +44,99 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(caljson)+"\n")
 }
 
+// Path: /api/profiles/{profile}
+func profileApiHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	token := r.Header.Get("Authorization")
+	if !checkSuperAuthorization(token) {
+		requestLogger.Warnln("Authorization not successful!")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "Unauthorized!\n")
+		return
+	}
+
+	profileName := mux.Vars(r)["profile"]
+
+	type profileJson struct {
+		Sources       []string `json:"sources"`
+		Public        bool     `json:"public"`
+		ImmutablePast bool     `json:"immutable_past"`
+	}
+
+	switch r.Method {
+	case http.MethodPost:
+		// Create new profile
+		var newProfile profileJson
+
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&newProfile)
+		if err != nil {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error decoding json: "+err.Error()+"\n")
+			return
+		}
+
+		if conf.profileExists(profileName) {
+			requestLogger.Errorln("Profile already exists!")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error: Profile already exists!\n")
+			return
+		}
+
+		conf.addProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+
+		requestLogger.Infoln("Created new profile: " + profileName)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Created new profile: "+profileName+"\n")
+
+	// TODO MethodPatch, to only edit singe aspects
+
+	case http.MethodPut:
+		// Update profile
+		var newProfile profileJson
+
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&newProfile)
+		if err != nil {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error decoding json: "+err.Error()+"\n")
+			return
+		}
+
+		if !conf.profileExists(profileName) {
+			requestLogger.Errorln("Profile doesnt exist!")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
+			return
+		}
+
+		conf.editProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+
+		requestLogger.Infoln("Edited new profile: " + profileName)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Edited new profile: "+profileName+"\n")
+
+	case http.MethodDelete:
+		// Delete profile
+		if !conf.profileExists(profileName) {
+			requestLogger.Errorln("Profile does not exist!")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error: Profile does not exist!\n")
+			return
+		}
+
+		conf.deleteProfile(profileName)
+
+		requestLogger.Infoln("Deleted profile: " + profileName)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Deleted profile: "+profileName+"\n")
+	}
+}
+
 // Path: /api/reloadconfig
 func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
