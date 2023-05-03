@@ -63,4 +63,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: ical-relay.deb
-          path: ./cmd/ical-relay/${{steps.package.outputs.file_name}}
+          path: ${{steps.package.outputs.file_name}}
