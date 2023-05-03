@@ -23,6 +23,7 @@ func initHandlers() {
 	router.HandleFunc("/view/{profile}", calendarViewHandler).Name("calendarView")
 	router.HandleFunc("/view/{profile}/edit/{uid}", editViewHandler).Name("editView")
 	router.HandleFunc("/view/{profile}/edit", rulesViewHandler).Name("rulesView")
+	router.HandleFunc("/view/{profile}/newentry", newEntryHandler).Name("newEntryView")
 	router.HandleFunc("/notifier/{notifier}/subscribe", notifierSubscribeHandler).Name("notifierSubscribe")
 	router.HandleFunc("/notifier/{notifier}/unsubscribe", notifierUnsubscribeHandler).Name("notifierUnsubscribe")
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
@@ -154,6 +155,23 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	data["Rules"] = profile.Rules
 	data["ProfileName"] = profileName
 	htmlTemplates.ExecuteTemplate(w, "rules.html", data)
+}
+
+func newEntryHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
+	requestLogger.Infoln("Create Event request")
+	profileName := vars["profile"]
+	profile, ok := conf.Profiles[profileName]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
+		return
+	}
+	data := getGlobalTemplateData()
+	data["ProfileName"] = profileName
+	data["Profile"] = profile
+	htmlTemplates.ExecuteTemplate(w, "newevent.html", data)
 }
 
 func calendarViewHandler(w http.ResponseWriter, r *http.Request) {

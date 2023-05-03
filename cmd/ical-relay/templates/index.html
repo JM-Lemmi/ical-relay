@@ -5,7 +5,8 @@
     <script>
         // Because this is potentially a redirect, we run it as soon as possible
         let stored_profile = window.localStorage.getItem('profile');
-        if (stored_profile !== null) {
+        let available_profiles = {{ .Profiles }};
+        if (stored_profile !== null && available_profiles.filter((val) => val.Name == stored_profile).length !== 0) {
             let profile_url = ({{((.Router.Get "calendarView").URL "profile" "%PROFILE%").Path}}).replace('%PROFILE%', encodeURIComponent(stored_profile));
             window.location.href =  profile_url;
         }

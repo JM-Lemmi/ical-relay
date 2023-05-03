@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jm-lemmi/ical-relay/helpers"
 
@@ -339,16 +341,66 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		var cal ics.Calendar
+		var eventjson map[string]string
 
 		// read json from body to calendar struct
 		body, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(body, &cal)
+		err := json.Unmarshal(body, &eventjson)
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		// create event
+		urlarr := strings.Split(conf.Server.URL, "://")
+		var url string
+		if len(url) < 2 { // failsafe, if Server.URL is does not contain URIdentifier
+			url = "localhost"
+		} else {
+			url = urlarr[1]
+		}
+		event := ics.NewEvent(uuid.New().String() + "@" + url)
+
+		if eventjson["summary"] != "" {
+			event.SetSummary(eventjson["summary"])
+		}
+		if eventjson["location"] != "" {
+			event.SetLocation(eventjson["location"])
+		}
+		if eventjson["start"] != "" {
+			start, err := time.Parse(time.RFC3339, eventjson["start"])
+			if err != nil {
+				requestLogger.Errorln(err)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			event.SetStartAt(start)
+		} else {
+			requestLogger.Errorln("No start time given!")
+			http.Error(w, "No start time given!", http.StatusBadRequest)
+			return
+		}
+		if eventjson["end"] != "" {
+			end, err := time.Parse(time.RFC3339, eventjson["end"])
+			if err != nil {
+				requestLogger.Errorln(err)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			event.SetEndAt(end)
+		} else {
+			requestLogger.Errorln("No end time given!")
+			http.Error(w, "No end time given!", http.StatusBadRequest)
+			return
+		}
+		if eventjson["description"] != "" {
+			event.SetDescription(eventjson["description"])
+		}
+
+		// create calendar
+		cal := ics.NewCalendar()
+		cal.AddVEvent(event)
 
 		// convert calendar to base64
 		source := "base64://" + base64.StdEncoding.EncodeToString([]byte(cal.Serialize()))
