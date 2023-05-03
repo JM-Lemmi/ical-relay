@@ -3,17 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/fergusstrange/embedded-postgres"
-	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
-var version = "2.0.0-beta.5"
+var version = "2.0.0-beta.6"
 
 var configPath string
 var conf Config

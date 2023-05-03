@@ -1,3 +1,15 @@
+# v2.0.0-beta.6
+
+- Database as Configuration Backend
+  - Importing config.yml
+  - Use external or integrated Database
+- Restructure Repository into multiple packages
+- Frontend: Weekly View
+- Frontend: All Day Events
+- API: Ability to add new Profiles
+- Ability to add new Events (API and Frontend, Files and Single Events)
+- Small Quality of Life fixes in Frontend and Notifier-Mails
+
 # v2.0.0-beta.5
 
 - Replace Modules with Filters and Actions
