@@ -6,7 +6,7 @@
 </head>
 <body>
     {{template "nav.html" .}}
-    <main class="container">
+    <main class="container" style="position: relative">
         <!-- Error Message with a close button -->
         <div class="row d-none" id="error-message-wrapper">
             <div class="text-center alert alert-danger alert-dismissible" role="alert">
@@ -40,6 +40,10 @@
         </div>
         <div id="calendar">
         </div>
+        <div class="sticky-bottom p-3 float-end d-none" id="add-event-button">
+            <a type="add-button" class="btn btn-primary btn-floating rounded-circle" style="background-image: url('/static/media/plus.svg'); background-size: 2em 2em; background-position: center; background-repeat: no-repeat; width: 3em; height: 3em;" href='{{((.Router.Get "newEntryView").URL "profile" .ProfileName).Path}}'>
+            </a>
+        </div>
     </main>
     {{template "footer.html" .}}
     <script>
@@ -53,6 +57,7 @@
             initEdit();
         }
         async function initEdit(){
+            document.getElementById("add-event-button").classList.remove("d-none");
             let response = await fetch(check_auth_url, {
                 method: "POST",
                 headers: {
@@ -62,6 +67,7 @@
             if (!response.ok) {
                 show_edit = false;
                 // We have a token, but it's not valid anymore.
+                document.getElementById("add-event-button").classList.add("d-none");
                 document.getElementById("error-message").innerHTML = "Der gespeicherte Token ist ungültig. Bearbeitung ist deaktiviert.";
                 document.getElementById("error-message-wrapper").classList.remove("d-none");
                 updateCalendar(currentDate);
