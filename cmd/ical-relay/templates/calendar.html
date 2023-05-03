@@ -6,7 +6,7 @@
 </head>
 <body>
     {{template "nav.html" .}}
-    <main class="container">
+    <main class="container" style="position: relative">
         <!-- Error Message with a close button -->
         <div class="row d-none" id="error-message-wrapper">
             <div class="text-center alert alert-danger alert-dismissible" role="alert">
@@ -39,6 +39,10 @@
             </div>
         </div>
         <div id="calendar">
+        </div>
+        <div style ="position: absolute; bottom: 3%; right: 3%;">
+            <a type="add-button" class="btn btn-primary btn-floating rounded-circle" style="background-image: url('/static/media/plus.svg'); background-size: 2em 2em; background-position: center; background-repeat: no-repeat; width: 3em; height: 3em;" href='{{((.Router.Get "newEntryView").URL "profile" .ProfileName).Path}}'>
+            </a>
         </div>
     </main>
     {{template "footer.html" .}}
