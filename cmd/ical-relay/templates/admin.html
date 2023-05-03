@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<head lang="de">
+    <title>Calendar</title>
+    <style>
+        .table th, .table td {
+            vertical-align: middle;
+        }
+    </style>
+    {{template "head.html" .}}
+</head>
+<body>
+{{template "nav.html" .}}
+<main class="container">
+    <div class="modal fade" id="noteEditModal" tabindex="-1" aria-labelledby="noteEditTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="noteEditTitle">Edit Note</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="token-change-value" class="col-form-label">Token:</label>
+                            <input type="text" class="form-control font-monospace" id="token-change-value" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="token-change-notes" class="col-form-label">Note:</label>
+                            <textarea class="form-control" id="token-change-notes"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abort</button>
+                    <button type="button" id="note-save" class="btn btn-primary" data-bs-dismiss="modal">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h1>Token-Administration</h1>
+    <div class="mb-3">
+        <label for="profile" class="form-label"><h3>Profile</h3></label>
+        <select class="form-select" id="profile" name="profile">
+            <option></option>
+            {{range .Profiles}}
+            <option value="{{.Name}}">{{.Name}}</option>
+            {{end}}
+        </select>
+    </div>
+    <h3>Vorhandene Tokens</h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Token</th>
+            <th scope="col">Note</th>
+        </tr>
+        </thead>
+        <tbody id="token-table-body">
+        <template id="token-row">
+            <tr>
+                <th id="token-id" scope="row">TID</th>
+                <td id="token-value" class="font-monospace">MY_TOKEN</td>
+                <td class="py-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span id="token-notes">Given to x by x on x because x</span>
+                        <div class="ms-2">
+                            <button type="button" id="token-edit-button" data-bs-toggle="modal"
+                                    data-bs-target="#noteEditModal" class="btn icn-btn btn-secondary">
+                                <img src="static/media/edit.svg" style="filter: invert(1)" title="Edit">
+                            </button>
+                            <button type="button" id="token-delete-button" class="btn icn-btn btn-danger">
+                                <img src="static/media/delete.svg" style="filter: invert(1)" title="Delete">
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </template>
+        </tbody>
+    </table>
+    <h3>Token hinzufügen</h3>
+    <form id="token-add-form">
+        <div class="mb-3">
+            <label for="token-add-notes" class="form-label">Notiz</label>
+            <input type="text" class="form-control" id="token-add-notes" name="token-add-notes">
+        </div>
+        <button type="submit" class="btn btn-success">Neuen token generieren</button>
+    </form>
+    <hr>
+    Wichtig: Tokens haben keine gespeicherte Reihenfolge. Die Reihenfolge in der Liste ist nicht deterministisch.
+</main>
+{{template "footer.html" .}}
+<script>
+    async function deleteToken(profile, token) {
+        await API.delete("profiles/"+profile+"/tokens", {token: token});
+        await loadTokens(profile);
+    }
+
+    const tokenRowTemplate = document.querySelector('#token-row');
+    const tokenTableBody = document.querySelector("#token-table-body");
+    async function loadTokens(profile){
+        console.log("loadTokens("+profile+")")
+        for(const child of tokenTableBody.querySelectorAll("tr")){
+            tokenTableBody.removeChild(child);
+        }
+        let tokens = await API.get("profiles/"+profile+"/tokens");
+        if(tokens === null){
+            return;
+        }
+        let tId = 0;
+        console.log(tokens);
+        for(const token of tokens){
+            let newTokenRow = tokenRowTemplate.content.cloneNode(true);
+            newTokenRow.querySelector("#token-delete-button").addEventListener('click', function(){
+                deleteToken(profile, token.Token);
+            });
+            newTokenRow.querySelector("#token-id").innerText = tId++;
+            newTokenRow.querySelector("#token-value").innerText = token.Token;
+            newTokenRow.querySelector("#token-notes").innerText = token.Note;
+            tokenTableBody.appendChild(newTokenRow);
+        }
+    }
+
+    if (localStorage.getItem("profile") !== null) {
+        document.getElementById("profile").value = localStorage.getItem("profile");
+        loadTokens(document.getElementById("profile").value);
+    }
+    initSelect2('#profile', false, event => loadTokens(event.params.data.id));
+
+    document.querySelector("#token-add-form").addEventListener("submit", async function(event){
+        event.preventDefault();
+        await API.put(
+            "profiles/"+document.getElementById("profile").value+"/tokens",
+            {note: event.target.querySelector("#token-add-notes").value}
+        )
+        await loadTokens(document.getElementById("profile").value);
+    })
+
+    async function editToken(token, notes) {
+        await API.patch("profiles/"+document.getElementById("profile").value+"/tokens", {
+            token: token,
+            note: notes
+        });
+        await loadTokens(document.getElementById("profile").value);
+    }
+    document.querySelector("#noteEditModal").addEventListener('show.bs.modal', event => {
+        let tokenEntry = event.relatedTarget.parentNode.parentNode.parentNode.parentNode;
+        let token = tokenEntry.querySelector("#token-value").innerText;
+        event.target.querySelector("#token-change-value").value = token;
+        event.target.querySelector("#token-change-notes").value =
+            tokenEntry.querySelector("#token-notes").innerText;
+    });
+    document.querySelector("#note-save").addEventListener('click', function(){
+        editToken(
+            document.querySelector("#token-change-value").value,
+            document.querySelector("#token-change-notes").value
+        );
+    });
+</script>
+</body>

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/thanhpk/randstr"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,6 +17,7 @@ import (
 // STRUCTS
 // !! breaking changes need to keep the old version in legacyconfig.go !!
 
+// Config TODO: Eventually split into two parts: Config (possibly directly serverConfig) and Data (Profiles, Notifiers)
 // Config represents configuration for the application
 type Config struct {
 	Version   int                 `yaml:"version"`
@@ -34,8 +36,16 @@ type serverConfig struct {
 	Name          string     `yaml:"name,omitempty"`
 	Imprint       string     `yaml:"imprintlink"`
 	PrivacyPolicy string     `yaml:"privacypolicylink"`
+	DB            dbConfig   `yaml:"db,omitempty"`
 	Mail          mailConfig `yaml:"mail,omitempty"`
 	SuperTokens   []string   `yaml:"super-tokens,omitempty"`
+}
+
+type dbConfig struct {
+	Host     string `yaml:"host"`
+	DbName   string `yaml:"db-name"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password,omitempty"`
 }
 
 type mailConfig struct {
@@ -46,11 +56,18 @@ type mailConfig struct {
 	SMTPPass   string `yaml:"smtp_pass,omitempty"`
 }
 
+type token struct {
+	Token string  `db:"token"`
+	Note  *string `db:"note"`
+}
+
 type profile struct {
+	Name          string   `db:"name"`
 	Sources       []string `yaml:"sources,omitempty"`
-	Public        bool     `yaml:"public"`
-	ImmutablePast bool     `yaml:"immutable-past,omitempty"`
+	Public        bool     `yaml:"public" db:"public"`
+	ImmutablePast bool     `yaml:"immutable-past,omitempty" db:"immutable_past"`
 	Tokens        []string `yaml:"admin-tokens"`
+	NTokens       []token  `yaml:"admin-tokens-storage-v2,omitempty"`
 	Rules         []Rule   `yaml:"rules,omitempty"`
 }
 
@@ -62,8 +79,9 @@ type Rule struct {
 }
 
 type notifier struct {
-	Source     string   `yaml:"source"`
-	Interval   string   `yaml:"interval"`
+	Name       string   `db:"name"`
+	Source     string   `yaml:"source" db:"source"`
+	Interval   string   `yaml:"interval" db:"interval"`
 	Recipients []string `yaml:"recipients"`
 }
 
@@ -150,6 +168,41 @@ func ParseConfig(path string) (Config, error) {
 	return tmpConfig, nil
 }
 
+func (c Config) importToDB() {
+	// import data into db
+	for name, profile := range c.Profiles {
+		// Write profile name into object
+		profile.Name = name
+		// Write the profile to the db, adding tokens and modules afterwards
+		log.Debug("Importing profile " + name)
+		dbWriteProfile(profile)
+		for _, source := range profile.Sources {
+			if !dbProfileSourceExists(profile, source) {
+				dbAddProfileSource(profile, source)
+			}
+		}
+		for _, token := range profile.Tokens {
+			dbWriteProfileToken(profile, token, nil)
+		}
+		for _, rule := range profile.Rules {
+			if !dbProfileRuleExists(profile, rule) {
+				log.Debug("Adding rule " + rule.Action["type"])
+				dbAddProfileRule(profile, rule)
+			}
+		}
+	}
+	for name, notifier := range c.Notifiers {
+		// Write notifier name into object
+		notifier.Name = name
+		log.Debug("Importing notifier " + name)
+		// Write the notifier to the db, adding recipients afterwards
+		dbWriteNotifier(notifier)
+		for _, recipient := range notifier.Recipients {
+			dbAddNotifierRecipient(notifier, recipient)
+		}
+	}
+}
+
 func reloadConfig() error {
 	// load config
 	var err error
@@ -157,9 +210,11 @@ func reloadConfig() error {
 	if err != nil {
 		return err
 	} else {
+		conf.importToDB()
 		log.Info("Config reloaded")
 		return nil
 	}
+	//TODO: clear caches
 }
 
 func (c Config) saveConfig(path string) error {
@@ -173,6 +228,9 @@ func (c Config) saveConfig(path string) error {
 // CONFIG EDITING FUNCTIONS
 
 func (c Config) getPublicCalendars() []string {
+	if db.DB != nil {
+		return dbListPublicProfiles()
+	}
 	var cal []string
 	for p := range c.Profiles {
 		if c.Profiles[p].Public {
@@ -183,6 +241,9 @@ func (c Config) getPublicCalendars() []string {
 }
 
 func (c Config) profileExists(name string) bool {
+	if db.DB != nil {
+		return dbProfileExists(name)
+	}
 	_, ok := c.Profiles[name]
 	return ok
 }
@@ -217,58 +278,116 @@ func (c Config) deleteProfile(name string) {
 }
 
 func (c Config) notifierExists(name string) bool {
+	if db.DB != nil {
+		return dbNotifierExists(name)
+	}
 	_, ok := c.Notifiers[name]
 	return ok
 }
 
+// This is the hack that makes everything work currently
+// TODO: remove
+func (c Config) ensureProfileLoaded(name string) {
+	if db.DB == nil {
+		return
+	}
+	profile := dbReadProfile(name)
+	if profile == nil {
+		log.Fatal("Attempted to ensureProfileLoaded on an nonexistent profile")
+	}
+	c.Profiles[profile.Name] = *profile
+}
+
 func (c Config) addNotifierFromProfile(name string) {
-	c.Notifiers[name] = notifier{
+	c.addNotifier(notifier{
+		Name:       name,
 		Source:     c.Server.URL + "/profiles/" + name,
 		Interval:   "1h",
 		Recipients: []string{},
-	}
-
-	c.saveConfig(configPath)
+	})
 }
 
-func (c Config) addNotifyRecipient(notifier string, recipient string) error {
-	if _, ok := c.Notifiers[notifier]; ok {
-		n := c.Notifiers[notifier]
-		n.Recipients = append(n.Recipients, recipient)
-		c.Notifiers[notifier] = n
-		return c.saveConfig(configPath)
-	} else {
-		return fmt.Errorf("notifier does not exist")
+func (c Config) addNotifier(notifier notifier) {
+	if db.DB != nil {
+		dbWriteNotifier(notifier)
+		return
 	}
+	c.Notifiers[notifier.Name] = notifier
 }
 
-func (c Config) removeNotifyRecipient(notifier string, recipient string) error {
-	if _, ok := c.Notifiers[notifier]; ok {
-		n := c.Notifiers[notifier]
-		for i, r := range n.Recipients {
-			if r == recipient {
-				n.Recipients = append(n.Recipients[:i], n.Recipients[i+1:]...)
-				c.Notifiers[notifier] = n
-				return c.saveConfig(configPath)
-			}
+// getNotifiers returns the a map of notifier WITHOUT the recipients populated
+func (c Config) getNotifiers() map[string]notifier {
+	if db.DB != nil {
+		var notifiers map[string]notifier
+		for _, notifierName := range dbListNotifiers() {
+			notifier, _ := dbReadNotifier(notifierName, false)
+			notifiers[notifierName] = *notifier
 		}
-		return fmt.Errorf("recipient not found")
-	} else {
-		return fmt.Errorf("notifier does not exist")
+		return notifiers
 	}
+	return c.Notifiers
 }
 
-func (c Config) addRule(profile string, rule Rule) error {
-	if !c.profileExists(profile) {
-		return fmt.Errorf("profile " + profile + " does not exist")
+func (c Config) getNotifier(notifierName string) notifier {
+	if db.DB != nil {
+		notifier, _ := dbReadNotifier(notifierName, true)
+		return *notifier
 	}
-	p := c.Profiles[profile]
-	p.Rules = append(c.Profiles[profile].Rules, rule)
-	c.Profiles[profile] = p
+	return c.Notifiers[notifierName]
+}
+
+func (c Config) addNotifyRecipient(notifierName string, recipient string) error {
+	if !c.notifierExists(notifierName) {
+		return fmt.Errorf("notifier does not exist")
+	}
+	if db.DB != nil {
+		dbAddNotifierRecipient(notifier{Name: notifierName}, recipient)
+		return nil
+	}
+	n := c.Notifiers[notifierName]
+	n.Recipients = append(n.Recipients, recipient)
+	c.Notifiers[notifierName] = n
+	return c.saveConfig(configPath)
+}
+
+func (c Config) removeNotifyRecipient(notifierName string, recipient string) error {
+	if !c.notifierExists(notifierName) {
+		return fmt.Errorf("notifier does not exist")
+	}
+	if db.DB != nil {
+		dbRemoveNotifierRecipient(notifier{Name: notifierName}, recipient)
+		return nil
+	}
+	n := c.Notifiers[notifierName]
+	for i, r := range n.Recipients {
+		if r == recipient {
+			n.Recipients = append(n.Recipients[:i], n.Recipients[i+1:]...)
+			c.Notifiers[notifierName] = n
+			return c.saveConfig(configPath)
+		}
+	}
+	return fmt.Errorf("recipient not found") //TODO: not supported on db
+}
+
+func (c Config) addRule(profileName string, rule Rule) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	if db.DB != nil {
+		dbAddProfileRule(profile{Name: profileName}, rule)
+		return nil
+	}
+	p := c.Profiles[profileName]
+	p.Rules = append(c.Profiles[profileName].Rules, rule)
+	c.Profiles[profileName] = p
 	return c.saveConfig(configPath)
 }
 
 func (c Config) removeRuleFromProfile(profile string, index int) {
+	if db.DB != nil {
+		log.Error("removeRuleFromProfile currently not supported on db")
+		return
+	}
 	log.Info("Removing rule at position " + fmt.Sprint(index+1) + " from profile " + profile)
 	p := c.Profiles[profile]
 	p.Rules = append(p.Rules[:index], p.Rules[index+1:]...)
@@ -276,13 +395,61 @@ func (c Config) removeRuleFromProfile(profile string, index int) {
 	c.saveConfig(configPath)
 }
 
-func (c Config) addSource(profile string, src string) error {
-	if !c.profileExists(profile) {
-		return fmt.Errorf("profile " + profile + " does not exist")
+func (c Config) createToken(profileName string, note string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	p := c.Profiles[profile]
-	p.Sources = append(c.Profiles[profile].Sources, src)
-	c.Profiles[profile] = p
+	token := randstr.Base62(64)
+	if db.DB != nil {
+		dbWriteProfileToken(profile{Name: profileName}, token, &note)
+		return nil
+	}
+	p := c.Profiles[profileName]
+	p.Tokens = append(c.Profiles[profileName].Tokens, token)
+	c.Profiles[profileName] = p
+	return c.saveConfig(configPath)
+}
+
+func (c Config) modifyTokenNote(profileName string, token string, note string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	if db.DB != nil {
+		dbWriteProfileToken(profile{Name: profileName}, token, &note)
+	}
+	return nil
+}
+
+func (c Config) deleteToken(profileName string, token string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	if db.DB != nil {
+		dbRemoveProfileToken(profile{Name: profileName}, token)
+		return nil
+	}
+	p := c.Profiles[profileName]
+	for i, cToken := range p.Tokens {
+		if cToken == token {
+			p.Tokens = append(p.Tokens[:i], p.Tokens[i+1:]...)
+			break
+		}
+	}
+	c.Profiles[profileName] = p
+	return c.saveConfig(configPath)
+}
+
+func (c Config) addSource(profileName string, src string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	if db.DB != nil {
+		dbAddProfileSource(profile{Name: profileName}, src)
+		return nil
+	}
+	p := c.Profiles[profileName]
+	p.Sources = append(c.Profiles[profileName].Sources, src)
+	c.Profiles[profileName] = p
 	return c.saveConfig(configPath)
 }
 

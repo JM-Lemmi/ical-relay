@@ -70,6 +70,11 @@ server:
   templatepath: /opt/ical-relay/templates
   imprintlink: "https://your-imprint"
   privacypolicylink: "http://your-data-privacy-policy"
+  db:
+    host: localhost
+    db-name: ical_relay
+    user: dbuser
+    password: "optional-password"
   mail:
     smtp_server: "mailout.julian-lemmerich.de"
     smtp_port: 25
@@ -109,6 +114,7 @@ The `server` section contains the configuration for the HTTP server. You can cha
 You can list as many profiles as you want. Each profile has to have a source.
 You can then add as many rules as you want. The `name:` filed specifies the module, the rule references. All other fields are dependent on the module.
 The rule are executed in the order they are listed. You can create multiple rules from one module.
+The entire db block is optional.
 
 ## config versioning
 

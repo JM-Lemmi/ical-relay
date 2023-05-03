@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,6 +20,7 @@ import (
 )
 
 func checkAuthoriziation(token string, profileName string) bool {
+	conf.ensureProfileLoaded(profileName)
 	if helpers.Contains(conf.Profiles[profileName].Tokens, token) || checkSuperAuthorization(token) {
 		return true
 	} else {
@@ -44,7 +45,7 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	caljson, _ := json.Marshal(callist)
-	fmt.Fprint(w, string(caljson)+"\n")
+	w.Write(caljson)
 }
 
 // Path: /api/profiles/{profile}
@@ -153,8 +154,7 @@ func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "Config reloaded!\n")
+	ok(w, requestLogger)
 }
 
 // Path: /api/notifier/{notifier}/recipient
@@ -223,8 +223,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
@@ -248,7 +247,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var entry map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		err := json.Unmarshal(body, &entry)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -326,8 +325,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
@@ -346,7 +344,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		var eventjson map[string]string
 
 		// read json from body to calendar struct
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		err := json.Unmarshal(body, &eventjson)
 		if err != nil {
 			requestLogger.Errorln(err)
@@ -424,8 +422,7 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
@@ -484,8 +481,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
@@ -507,7 +503,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var rule Rule
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		err := json.Unmarshal(body, &rule)
 		if err != nil {
 			requestLogger.Errorln(err)
@@ -552,8 +548,7 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	_, ok := conf.Profiles[profileName]
-	if !ok {
+	if !conf.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
@@ -562,8 +557,7 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	if checkAuthoriziation(token, profileName) {
 		requestLogger.Infoln("Authorization successful!")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Authorized!\n")
+		ok(w, requestLogger)
 	} else {
 		requestLogger.Infoln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -580,12 +574,92 @@ func checkSuperAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	if checkSuperAuthorization(token) {
 		requestLogger.Infoln("Authorization successful!")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Authorized!\n")
+		ok(w, requestLogger)
 	} else {
 		requestLogger.Infoln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
 		return
+	}
+}
+
+func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})
+	requestLogger.Infoln("New API-Request!")
+
+	if !checkSuperAuthorization(r.Header.Get("Authorization")) {
+		requestLogger.Warnln("Attempted to open admin interface without being admin.")
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, "Forbidden!\n")
+		return
+	}
+
+	vars := mux.Vars(r)
+
+	profileName := vars["profile"]
+
+	if !conf.profileExists(profileName) {
+		requestLogger.Infoln("Profile " + profileName + " not found!")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
+		return
+	}
+	conf.ensureProfileLoaded(profileName)
+
+	var bodyData map[string]interface{}
+	if r.Method != http.MethodGet {
+		body, _ := io.ReadAll(r.Body)
+		err := json.Unmarshal(body, &bodyData)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("Content-Type", "application/json")
+		tokens, _ := json.Marshal(conf.Profiles[profileName].NTokens)
+		w.Write(tokens)
+	case http.MethodPut:
+		err := conf.createToken(profileName, bodyData["note"].(string))
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			ok(w, requestLogger)
+		}
+	case http.MethodPatch:
+		err := conf.modifyTokenNote(profileName, bodyData["token"].(string), bodyData["note"].(string))
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			ok(w, requestLogger)
+		}
+	case http.MethodDelete:
+		err := conf.deleteToken(profileName, bodyData["token"].(string))
+		if err != nil {
+			requestLogger.Errorln(err)
+			if strings.Contains(err.Error(), "does not exist") {
+				http.Error(w, err.Error(), http.StatusNotFound)
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		} else {
+			ok(w, requestLogger)
+		}
+	default:
+		requestLogger.Errorln("Invalid request Method")
+		http.Error(w, "Invalid request Method", http.StatusBadRequest)
+	}
+}
+
+func ok(w http.ResponseWriter, requestLogger *log.Entry) {
+	ok, _ := json.Marshal("ok")
+	_, err := w.Write(ok)
+	if err != nil {
+		requestLogger.Error("Failed to send data to client!")
 	}
 }

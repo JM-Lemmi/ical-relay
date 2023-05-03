@@ -72,6 +72,7 @@
                     localStorage.setItem("token", document.getElementById("token").value);
                     document.getElementById("save-success").style.display = "block";
                     document.getElementById("token-error").style.display = "none";
+                    displayAdminIfSuperAuth();
                     setTimeout(redirect_to_profile, 1000, document.getElementById("profile").value);
                 } else {
                     document.getElementById("token-error").style.display = "block";

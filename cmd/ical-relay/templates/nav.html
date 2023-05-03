@@ -39,8 +39,10 @@
                         }
                     </script>
                 </li>
-                </li>
                 {{ end }}
+                <li class="nav-item d-none" id="nav-admin-link">
+                    <a class="nav-link" href="{{((.Router.Get "admin").URL).Path}}">Admin</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#">BETA!</a>
                 </li>
@@ -53,14 +55,6 @@
                 <option value="{{.ViewURL}}" {{if eq .Name $.ProfileName}}selected{{end}}>{{.Name}}</option>
                 {{end}}
             </select>
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    var profileSelect = document.querySelector('#nav-profile');
-                    profileSelect.addEventListener('change', function () {
-                        window.location.href = profileSelect.value;
-                    });
-                });
-            </script>
 			</form>
             {{end}}
         </div>

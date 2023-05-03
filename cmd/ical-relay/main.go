@@ -2,12 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"github.com/fergusstrange/embedded-postgres"
+	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"os"
-
-	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
+	"os/signal"
+	"syscall"
 )
 
 var version = "2.0.0-beta.5"
@@ -27,6 +30,7 @@ func main() {
 	flag.BoolVar(&verbose, "v", false, "Enables verbose debug output")
 	var superverbose bool
 	flag.BoolVar(&superverbose, "vv", false, "Enable super verbose trace output")
+	importData := flag.Bool("import-data", false, "Whether to import data")
 	flag.Parse()
 
 	if verbose {
@@ -64,6 +68,51 @@ func main() {
 		}
 	} else {
 		log.Debug("Server mode.")
+	}
+
+	if len(conf.Server.DB.Host) > 0 {
+		// connect to DB
+		if conf.Server.DB.Host == "Special:EMBEDDED" {
+			log.Info("Starting embedded postgres server (this will take a while on the first run)...")
+			if conf.Server.DB.User == "" {
+				conf.Server.DB.User = "postgres"
+			}
+			if conf.Server.DB.Password == "" {
+				conf.Server.DB.Password = "postgres"
+			}
+			postgres := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
+				Username(conf.Server.DB.User).
+				Password(conf.Server.DB.Password).
+				Database(conf.Server.DB.DbName).
+				Version(embeddedpostgres.V15).
+				Logger(log.StandardLogger().Writer()).
+				BinariesPath(conf.Server.StoragePath + "db/runtime").
+				DataPath(conf.Server.StoragePath + "db/data").
+				Locale("C").
+				Port(5432)) //todo: support non default port
+			sigs := make(chan os.Signal, 1)
+			signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+			go func() {
+				sigs := <-sigs
+				log.Info("Caught ", sigs)
+				err := postgres.Stop()
+				if err != nil {
+					log.Fatal("Could not properly shutdown embedded postgres server: ", err)
+				}
+				os.Exit(0)
+			}()
+			err := postgres.Start()
+			if err != nil {
+				log.Fatal("Could not start embedded postgres server: ", err)
+			}
+			conf.Server.DB.Host = "localhost"
+		}
+		connect()
+		fmt.Printf("%#v\n", db)
+
+		if *importData {
+			conf.importToDB()
+		}
 	}
 
 	// setup template path

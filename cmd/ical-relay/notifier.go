@@ -14,9 +14,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func notifyChanges(id string, n *notifier) error {
+func notifyChanges(id string) error {
 	requestLogger := log.WithFields(log.Fields{"notifier": id})
 	requestLogger.Infoln("Running Notifier!")
+
+	n := conf.getNotifier(id)
 
 	notifystore := conf.Server.StoragePath + "notifystore/"
 
@@ -107,8 +109,7 @@ func notifyChanges(id string, n *notifier) error {
 }
 
 // runs a heartbeat loop with specified sleep duration
-func NotifierTiming(id string, n *notifier) {
-	interval, _ := time.ParseDuration(n.Interval)
+func NotifierTiming(id string, interval time.Duration) {
 	if interval == 0 {
 		// failsave for 0s interval, to make machine still responsive
 		interval = 1 * time.Second
@@ -117,22 +118,25 @@ func NotifierTiming(id string, n *notifier) {
 	// endless loop
 	for {
 		time.Sleep(interval)
-		notifyChanges(id, n)
+		notifyChanges(id)
 	}
 }
 
 // starts a heartbeat notifier in a sub-routine
 func NotifierStartup() {
 	log.Info("Starting Notifiers")
-	for id, n := range conf.Notifiers {
-		go NotifierTiming(id, &n)
+	for id, n := range conf.getNotifiers() {
+		interval, err := time.ParseDuration(n.Interval)
+		if err != nil {
+			log.Error("Failed to parse duration for notifier " + id + ": " + n.Interval)
+		}
+		go NotifierTiming(id, interval)
 	}
 }
 
 func RunNotifier(id string) error {
-	n, ok := conf.Notifiers[id]
-	if !ok {
+	if !conf.notifierExists(id) {
 		return fmt.Errorf("notifier not found")
 	}
-	return notifyChanges(id, &n)
+	return notifyChanges(id)
 }

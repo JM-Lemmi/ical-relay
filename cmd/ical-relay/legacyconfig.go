@@ -8,7 +8,8 @@ import (
 )
 
 // STRUCTS
-// these structs only include the fileds that differ in the legacy config, otherwise reuses the original config. This also means that if something breaking is changed in the new config, the old version must be preserved here.
+// These structs only include the fields that differ in the legacy config, otherwise reuses the original config.
+// This also means that if something breaking is changed in the new config, the old version must be preserved here.
 
 type legacyProfile struct {
 	Source        string              `yaml:"source"`

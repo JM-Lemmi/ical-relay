@@ -1,10 +1,11 @@
-function initSelect2(selectorId, enableRedirection = true){
+function initSelect2(selectorId, enableRedirection = true, customOnSelect = function(event){}){
     if(enableRedirection){
     	$(selectorId).on('select2:select', function (event){
     		console.log(event.params.data.id);
     		window.location.href = event.params.data.id;
     	});
     }
+	$(selectorId).on('select2:select', customOnSelect);
 	$(selectorId).select2({
 		placeholder: "Profil auswählen",
 		theme: 'bootstrap4',
