@@ -439,13 +439,17 @@ func (c Config) deleteToken(profileName string, token string) error {
 	return c.saveConfig(configPath)
 }
 
-func (c Config) addSource(profile string, src string) error {
-	if !c.profileExists(profile) {
-		return fmt.Errorf("profile " + profile + " does not exist")
+func (c Config) addSource(profileName string, src string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	p := c.Profiles[profile]
-	p.Sources = append(c.Profiles[profile].Sources, src)
-	c.Profiles[profile] = p
+	if db.DB != nil {
+		dbAddProfileSource(profile{Name: profileName}, src)
+		return nil
+	}
+	p := c.Profiles[profileName]
+	p.Sources = append(c.Profiles[profileName].Sources, src)
+	c.Profiles[profileName] = p
 	return c.saveConfig(configPath)
 }
 
