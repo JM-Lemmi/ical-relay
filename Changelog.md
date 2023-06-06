@@ -1,3 +1,7 @@
+# v2.0.0-beta.6.1
+
+- Fix Edit view crashing for events without a `SUMMARY` or `LOCATION` property
+
 # v2.0.0-beta.6
 
 - Database as Configuration Backend

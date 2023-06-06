@@ -7,7 +7,7 @@
 <body>
     {{template "nav.html" .}}
     <main class="container">
-        <h1 class="mb-3">{{(.Event.GetProperty "SUMMARY").Value}} bearbeiten</h1>
+        <h1 class="mb-3">{{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty "SUMMARY").Value}}{{ end }} bearbeiten</h1>
         <div class="alert alert-danger" id="edit-error" style="display: none;">
             Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
         </div>
@@ -15,13 +15,13 @@
             <div class="row mb-3">
                 <label for="summary" class="col-sm-1 col-form-label">Titel</label>
                 <div class="col-sm-11">
-                    <input type="text" class="form-control" id="summary" name="summary" value="{{(.Event.GetProperty "SUMMARY").Value}}">
+                    <input type="text" class="form-control" id="summary" name="summary" value="{{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty "SUMMARY").Value}}{{ end }}">
                 </div>
             </div>
             <div class="row mb-3">
                 <label for="location" class="col-sm-1 col-form-label">Ort</label>
                 <div class="col-sm-11">
-                    <input type="text" class="form-control" id="location" name="location" value="{{(.Event.GetProperty "LOCATION").Value}}">
+                    <input type="text" class="form-control" id="location" name="location" value="{{ if .Event.GetProperty "LOCATION" }}{{(.Event.GetProperty "LOCATION").Value}}{{ end }}">
                 </div>
             </div>
             <div class="row mb-3">
