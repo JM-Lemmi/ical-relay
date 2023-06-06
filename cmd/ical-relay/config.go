@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/thanhpk/randstr"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/thanhpk/randstr"
 
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
@@ -318,7 +319,7 @@ func (c Config) addNotifier(notifier notifier) {
 // getNotifiers returns the a map of notifier WITHOUT the recipients populated
 func (c Config) getNotifiers() map[string]notifier {
 	if db.DB != nil {
-		var notifiers map[string]notifier
+		notifiers := make(map[string]notifier)
 		for _, notifierName := range dbListNotifiers() {
 			notifier, _ := dbReadNotifier(notifierName, false)
 			notifiers[notifierName] = *notifier
