@@ -1,3 +1,7 @@
+# v2.0.0-beta.6.3
+
+- Fix Edit view crashing for events without a `SUMMARY` or `LOCATION` property
+
 # v2.0.0-beta.6.2
 
 - Fix config.go getNotifier(): Starting with existing DB assigned notifiers to nil map

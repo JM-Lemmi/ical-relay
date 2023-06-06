@@ -51,8 +51,8 @@
     <script>
         const profileName = {{.ProfileName }};
         const uid = {{(.Event.GetProperty "UID").Value}};
-        const originalSummary = {{(.Event.GetProperty "SUMMARY").Value}};
-        const originalLocation = {{(.Event.GetProperty "LOCATION").Value}};
+        const originalSummary = {{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty "SUMMARY").Value}}{{ else }} ""{{ end }};
+        const originalLocation = {{ if .Event.GetProperty "LOCATION" }}{{(.Event.GetProperty "LOCATION").Value}}{{ else }} ""{{ end }};
         const originalStart = dayjs({{(.Event.GetStartAt).Format "2006-01-02T15:04:05Z07:00"}});
         const originalEnd = dayjs({{(.Event.GetEndAt).Format "2006-01-02T15:04:05Z07:00"}});
         const originalDescription = {{ if .Event.GetProperty "DESCRIPTION" }}{{ (.Event.GetProperty "DESCRIPTION").Value }}{{ else }} ""{{ end }};
