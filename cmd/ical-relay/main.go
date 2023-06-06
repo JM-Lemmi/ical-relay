@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "2.0.0-beta.6"
+var version = "2.0.0-beta.6.1"
 
 var configPath string
 var conf Config
