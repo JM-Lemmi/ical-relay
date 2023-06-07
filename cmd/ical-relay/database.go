@@ -31,6 +31,7 @@ func connect() {
 
 	dbConn, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
+		log.Fatalf("Connection to db failed: %s", err)
 		panic(err)
 	}
 	log.Debug("Connected to db")

@@ -107,8 +107,7 @@ func ParseConfig(path string) (Config, error) {
 			return tmpConfig, err
 			// parsing in legacy mode failed
 		}
-		// parsing in legacy mode succeeded, saving new config
-		tmpConfig.saveConfig(path)
+		// parsing in legacy mode succeeded
 	}
 
 	// check if config is up to date, if not
@@ -119,7 +118,6 @@ func ParseConfig(path string) (Config, error) {
 			log.Fatalf("Error Parsing Legacy Config: %v", err)
 			return tmpConfig, err
 		}
-		tmpConfig.saveConfig(path)
 	}
 
 	log.Trace("Read config, now setting defaults")
@@ -218,14 +216,6 @@ func reloadConfig() error {
 	//TODO: clear caches
 }
 
-func (c Config) saveConfig(path string) error {
-	d, err := yaml.Marshal(&c)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(path, d, 0600)
-}
-
 // CONFIG EDITING FUNCTIONS
 
 func (c Config) getPublicCalendars() []string {
@@ -258,7 +248,6 @@ func (c Config) addProfile(name string, sources []string, public bool, immutable
 		Tokens:        []string{},
 		Rules:         []Rule{},
 	}
-	c.saveConfig(configPath)
 }
 
 // edit a profile, keeping tokens and rules
@@ -270,12 +259,10 @@ func (c Config) editProfile(name string, sources []string, public bool, immutabl
 		Tokens:        c.Profiles[name].Tokens,
 		Rules:         c.Profiles[name].Rules,
 	}
-	c.saveConfig(configPath)
 }
 
 func (c Config) deleteProfile(name string) {
 	delete(c.Profiles, name)
-	c.saveConfig(configPath)
 }
 
 func (c Config) notifierExists(name string) bool {
@@ -348,7 +335,7 @@ func (c Config) addNotifyRecipient(notifierName string, recipient string) error 
 	n := c.Notifiers[notifierName]
 	n.Recipients = append(n.Recipients, recipient)
 	c.Notifiers[notifierName] = n
-	return c.saveConfig(configPath)
+	return nil
 }
 
 func (c Config) removeNotifyRecipient(notifierName string, recipient string) error {
@@ -364,7 +351,7 @@ func (c Config) removeNotifyRecipient(notifierName string, recipient string) err
 		if r == recipient {
 			n.Recipients = append(n.Recipients[:i], n.Recipients[i+1:]...)
 			c.Notifiers[notifierName] = n
-			return c.saveConfig(configPath)
+			return nil
 		}
 	}
 	return fmt.Errorf("recipient not found") //TODO: not supported on db
@@ -381,7 +368,7 @@ func (c Config) addRule(profileName string, rule Rule) error {
 	p := c.Profiles[profileName]
 	p.Rules = append(c.Profiles[profileName].Rules, rule)
 	c.Profiles[profileName] = p
-	return c.saveConfig(configPath)
+	return nil
 }
 
 func (c Config) removeRuleFromProfile(profile string, index int) {
@@ -393,7 +380,6 @@ func (c Config) removeRuleFromProfile(profile string, index int) {
 	p := c.Profiles[profile]
 	p.Rules = append(p.Rules[:index], p.Rules[index+1:]...)
 	c.Profiles[profile] = p
-	c.saveConfig(configPath)
 }
 
 func (c Config) createToken(profileName string, note string) error {
@@ -408,7 +394,7 @@ func (c Config) createToken(profileName string, note string) error {
 	p := c.Profiles[profileName]
 	p.Tokens = append(c.Profiles[profileName].Tokens, token)
 	c.Profiles[profileName] = p
-	return c.saveConfig(configPath)
+	return nil
 }
 
 func (c Config) modifyTokenNote(profileName string, token string, note string) error {
@@ -437,7 +423,7 @@ func (c Config) deleteToken(profileName string, token string) error {
 		}
 	}
 	c.Profiles[profileName] = p
-	return c.saveConfig(configPath)
+	return nil
 }
 
 func (c Config) addSource(profileName string, src string) error {
@@ -451,7 +437,7 @@ func (c Config) addSource(profileName string, src string) error {
 	p := c.Profiles[profileName]
 	p.Sources = append(c.Profiles[profileName].Sources, src)
 	c.Profiles[profileName] = p
-	return c.saveConfig(configPath)
+	return nil
 }
 
 func (c Config) RunCleanup() {

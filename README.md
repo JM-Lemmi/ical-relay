@@ -8,6 +8,8 @@ You can download an example configuration file from [here](https://raw.githubuse
 
 The edited ical can be accessed on `http://server/profiles/profilename`
 
+For persistent configuration changes you will need a postgress database. See [Config](#config) for more information.
+
 ## Install from Apt Repository
 
 If you're running a Debian based system, you can install the latest release from the my Package Repository.
@@ -25,9 +27,7 @@ If you want to run the beta version, you can use the `testing` repository. Repla
 
 This installs the ical-relay as a systemd service. Change the configuration in `/etc/ical-relay/config.yml` and start the service with `systemctl start ical-relay`.
 
-## Run standalone Binary
-
-## Debian package
+## Install Package from Github
 
 Download the package from the latest release.
 
@@ -114,13 +114,24 @@ The `server` section contains the configuration for the HTTP server. You can cha
 You can list as many profiles as you want. Each profile has to have a source.
 You can then add as many rules as you want. The `name:` filed specifies the module, the rule references. All other fields are dependent on the module.
 The rule are executed in the order they are listed. You can create multiple rules from one module.
-The entire db block is optional.
 
-## config versioning
+### config versioning
 
 | ical-relay version | config version |
 |--------------------|----------------|
 | 2.0.0-beta.5       | 2              |
+
+### database versioning
+
+| ical-relay version | db version |
+|--------------------|------------|
+| 2.0.0-beta.6       | 4          |
+
+## Database / Ephemeral-Mode
+
+If you want the configuration changes from the frontend to persist, you have to use a postgres database. You can also run in ephemeral mode (`--ephemeral`), which will read the config, but not write to a DB or to the config file.
+
+Immutable-Past Files are not affected by ephemeral mode
 
 ## immutable-past
 

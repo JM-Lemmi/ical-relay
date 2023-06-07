@@ -28,6 +28,7 @@ func main() {
 	var superverbose bool
 	flag.BoolVar(&superverbose, "vv", false, "Enable super verbose trace output")
 	importData := flag.Bool("import-data", false, "Whether to import data")
+	ephemeral := flag.Bool("ephemeral", false, "Enable ephemeral mode. Running only in Memory, no Database needed.")
 	flag.Parse()
 
 	if verbose {
@@ -67,14 +68,20 @@ func main() {
 		log.Debug("Server mode.")
 	}
 
-	if len(conf.Server.DB.Host) > 0 {
-		// connect to DB
-		connect()
-		log.Traceln("%#v", db)
+	if !*ephemeral {
+		if len(conf.Server.DB.Host) > 0 {
+			// connect to DB
+			connect()
+			log.Traceln("%#v", db)
 
-		if *importData {
-			conf.importToDB()
+			if *importData {
+				conf.importToDB()
+			}
+		} else {
+			log.Fatal("No database configured. Did you mean to start in ephemeral mode?")
 		}
+	} else {
+		log.Warn("Running in ephemeral-mode. Changes to the config will not persist!!")
 	}
 
 	// setup template path
