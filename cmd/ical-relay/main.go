@@ -2,14 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"html/template"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -73,43 +69,8 @@ func main() {
 
 	if len(conf.Server.DB.Host) > 0 {
 		// connect to DB
-		if conf.Server.DB.Host == "Special:EMBEDDED" {
-			log.Info("Starting embedded postgres server (this will take a while on the first run)...")
-			if conf.Server.DB.User == "" {
-				conf.Server.DB.User = "postgres"
-			}
-			if conf.Server.DB.Password == "" {
-				conf.Server.DB.Password = "postgres"
-			}
-			postgres := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
-				Username(conf.Server.DB.User).
-				Password(conf.Server.DB.Password).
-				Database(conf.Server.DB.DbName).
-				Version(embeddedpostgres.V15).
-				Logger(log.StandardLogger().Writer()).
-				BinariesPath(conf.Server.StoragePath + "db/runtime").
-				DataPath(conf.Server.StoragePath + "db/data").
-				Locale("C").
-				Port(5432)) //todo: support non default port
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
-			go func() {
-				sigs := <-sigs
-				log.Info("Caught ", sigs)
-				err := postgres.Stop()
-				if err != nil {
-					log.Fatal("Could not properly shutdown embedded postgres server: ", err)
-				}
-				os.Exit(0)
-			}()
-			err := postgres.Start()
-			if err != nil {
-				log.Fatal("Could not start embedded postgres server: ", err)
-			}
-			conf.Server.DB.Host = "localhost"
-		}
 		connect()
-		fmt.Printf("%#v\n", db)
+		log.Traceln("%#v", db)
 
 		if *importData {
 			conf.importToDB()

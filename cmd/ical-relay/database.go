@@ -4,18 +4,19 @@ import (
 	"database/sql"
 	_ "embed"
 	"encoding/json"
-	"fmt"
+	"strings"
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 var db sqlx.DB
 
 const CurrentDbVersion = 4
 
+// startup connection function
 func connect() {
 	userStr := ""
 	if conf.Server.DB.User != "" {
@@ -125,7 +126,7 @@ func dbProfileExists(profileName string) bool {
 
 	err := db.Get(&profileExists, `SELECT EXISTS (SELECT * FROM profile WHERE name = $1)`, profileName)
 	log.Info("Exec'd" + "SELECT EXISTS (SELECT * FROM profile WHERE name = " + profileName + ")")
-	fmt.Printf("%#v\n", profileExists)
+	log.Trace("%#v", profileExists)
 	if err != nil {
 		panic(err)
 	}
@@ -185,7 +186,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	if err != nil {
 		log.Panic(err)
 	}
-	fmt.Printf("%#v\n", dbRules)
+	log.Trace("%#v", dbRules)
 	for _, dbRule := range dbRules {
 		rule := new(Rule)
 		rule.Operator = dbRule.Operator
@@ -218,7 +219,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 		}
 		profile.Rules = append(profile.Rules, *rule)
 	}
-	fmt.Printf("%#v\n", profile.Rules)
+	log.Trace("%#v", profile.Rules)
 	return profile
 }
 
@@ -469,7 +470,7 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*notifier, error
 		log.Fatal(err)
 		return nil, err
 	}
-	//fmt.Printf("%#v\n", duration.String())
+	//log.Trace("%#v", duration.String())
 	readNotifier.Interval = duration.String()
 
 	if fetchRecipients {
