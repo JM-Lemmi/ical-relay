@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  ical-relay:
+    build:
+      context: .
+      dockerfile: ./cmd/ical-relay/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./cmd/ical-relay/config.yml:/etc/ical-relay/config.yml
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ical_relay
+    volumes:
+      - ./cmd/ical-relay/postgres-data:/var/lib/postgresql/data

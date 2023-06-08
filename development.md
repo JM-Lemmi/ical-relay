@@ -17,3 +17,9 @@ adding a new pkg you also need to add it to `go work` to use it.
 ```
 go work use ./pkg/<newname>
 ```
+
+## Development Docker Compose
+
+```
+docker compose -f docker-compose.dev.yml up --force-recreate
+```

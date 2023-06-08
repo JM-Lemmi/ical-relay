@@ -10,3 +10,4 @@ config.yml
 .debpkg/
 calstore/
 notifystore/
+cmd/ical-relay/postgres-data
