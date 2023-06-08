@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/alexflint/go-arg"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -24,20 +24,22 @@ var router *mux.Router
 func main() {
 	log.Info("Welcome to ical-relay, version " + version)
 
-	var notifier string
-	flag.StringVar(&notifier, "notifier", "", "Run notifier with given ID")
-	flag.StringVar(&configPath, "config", "config.yml", "Path to config file")
-	var verbose bool
-	flag.BoolVar(&verbose, "v", false, "Enables verbose debug output")
-	var superverbose bool
-	flag.BoolVar(&superverbose, "vv", false, "Enable super verbose trace output")
-	importData := flag.Bool("import-data", false, "Whether to import data")
-	flag.Parse()
+	// CLI Flags
+	var args struct {
+		Notifier     string `help:"Run notifier with given ID"`
+		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
+		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
+		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
+		ImportData   bool   `help:"Import Data from Config into DB"`
+	}
+	arg.MustParse(&args)
 
-	if verbose {
+	configPath = args.ConfigPath
+
+	if args.Verbose {
 		log.SetLevel(log.DebugLevel)
 	}
-	if superverbose {
+	if args.Superverbose {
 		log.SetLevel(log.TraceLevel)
 	}
 
@@ -48,20 +50,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !verbose && !superverbose {
+	if !args.Verbose && !args.Superverbose {
 		// only set the level from config, if not set by flags
 		log.SetLevel(conf.Server.LogLevel)
 	}
 	log.Debug("Debug log is enabled") // only shows if Debug is actually enabled
 	log.Trace("Trace log is enabled") // only shows if Trace is actually enabled
 
-	log.Trace("Trace log is enabled") // only shows if Trace is actually enabled
 	log.Tracef("%+v\n", conf)
 
 	// run notifier if specified
-	if notifier != "" {
-		log.Debug("Notifier mode called. Running: " + notifier)
-		err := RunNotifier(notifier)
+	if args.Notifier != "" {
+		log.Debug("Notifier mode called. Running: " + args.Notifier)
+		err := RunNotifier(args.Notifier)
 		if err != nil {
 			os.Exit(1)
 		} else {
@@ -111,7 +112,7 @@ func main() {
 		connect()
 		fmt.Printf("%#v\n", db)
 
-		if *importData {
+		if args.ImportData {
 			conf.importToDB()
 		}
 	}

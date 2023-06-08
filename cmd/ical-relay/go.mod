@@ -18,14 +18,16 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/juliangruber/go-intersect/v2 v2.0.1
+require (
+	github.com/alexflint/go-arg v1.4.3
+	github.com/google/uuid v1.3.0
+	github.com/juliangruber/go-intersect/v2 v2.0.1
+)
 
 require (
+	github.com/alexflint/go-scalar v1.1.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/sys v0.7.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
-	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
 
 replace (
