@@ -1,3 +1,7 @@
+# v2.0.0-beta.6.5
+
+- Remove db Trace logging from fmt.Print and use correct Loglevel
+
 # v2.0.0-beta.6.4
 
 - Fix Calendar view crashing for events without a `SUMMARY`

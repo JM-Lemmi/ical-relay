@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -14,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "2.0.0-beta.6.4"
+var version = "2.0.0-beta.6.5"
 
 var configPath string
 var conf Config
@@ -110,7 +109,7 @@ func main() {
 			conf.Server.DB.Host = "localhost"
 		}
 		connect()
-		fmt.Printf("%#v\n", db)
+		log.Tracef("%#v\n", db)
 
 		if args.ImportData {
 			conf.importToDB()
