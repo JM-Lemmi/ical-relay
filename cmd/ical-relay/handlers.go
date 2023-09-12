@@ -220,8 +220,16 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 		if err != nil {
 			log.Errorln(err)
 		}
+
+		summary := event.GetProperty("SUMMARY")
+		var summarytext string
+		if summary != nil {
+			summarytext = summary.Value
+		} else {
+			summarytext = ""
+		}
 		data := eventData{
-			"title":      event.GetProperty("SUMMARY").Value,
+			"title":      summarytext,
 			"start":      startTime,
 			"show_start": showStart,
 			"end":        endTime,
