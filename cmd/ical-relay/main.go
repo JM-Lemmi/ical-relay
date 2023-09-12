@@ -30,7 +30,7 @@ func main() {
 		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
-		ImportData   bool   `help:"Import Data from Config into DB"`
+		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
 	}
 	arg.MustParse(&args)
 
