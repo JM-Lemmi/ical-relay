@@ -1,3 +1,8 @@
+# v2.0.0-beta.6.4
+
+- Fix Calendar view crashing for events without a `SUMMARY`
+- Switch cli-args library
+
 # v2.0.0-beta.6.3
 
 - Fix Edit view crashing for events without a `SUMMARY` or `LOCATION` property
