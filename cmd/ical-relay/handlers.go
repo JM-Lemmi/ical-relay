@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
+	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,6 +32,7 @@ func initHandlers() {
 	router.HandleFunc("/howto-users", howtoUsersHandler).Name("howtoUsers")
 	router.HandleFunc("/admin", adminHandler).Name("admin")
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
+	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
 
 	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
@@ -301,6 +304,56 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", profileName))
+	fmt.Fprint(w, calendar.Serialize())
+}
+
+func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Infoln("New Request!")
+	profileNames := strings.Split(vars["profiles"], "+")
+
+	for _, profileName := range profileNames {
+		if !conf.profileExists(profileName) {
+			err := fmt.Errorf("profile '%s' doesn't exist", profileName)
+			tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
+			return
+		}
+	}
+
+	var calendar *ics.Calendar
+
+	// loop over sources and combine
+	var ncalendar *ics.Calendar
+	var err error
+
+	for i, profileName := range profileNames {
+		profile := conf.Profiles[profileName]
+		if i == 0 {
+			// first source gets assigned to base calendar
+			log.Debug("Loading source ", profileName, " as base calendar")
+			calendar, err = getProfileCalendar(profile, profileName)
+			if err != nil {
+				err := fmt.Errorf("error loading profile %s", profileName)
+				tryRenderErrorOrFallback(w, r, http.StatusBadRequest, err, err.Error())
+				return
+			}
+		} else {
+			// all other calendars only load events
+			log.Debug("Loading source ", profileName, " as additional calendar")
+			ncalendar, err = getProfileCalendar(profile, profileName)
+			if err != nil {
+				err := fmt.Errorf("error loading profile %s", profileName)
+				tryRenderErrorOrFallback(w, r, http.StatusBadRequest, err, err.Error())
+				return
+			}
+			helpers.AddEvents(calendar, ncalendar)
+		}
+	}
+
+	// return new calendar
+	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=combinedcalendars.ics"))
 	fmt.Fprint(w, calendar.Serialize())
 }
 
