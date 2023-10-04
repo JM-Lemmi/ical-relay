@@ -207,6 +207,10 @@ Autorization is done in three levels:
 - Profile-Admin: Token for a specific profile, can use most endpoints for this profile, but not all module types.
 - Super-Admin: Rights for all profiles and can also use all modules. May include LFI or CSRF-capable config options. Should be used with caution.
 
+### Combining multiple calendar Profiles into one ICS
+
+http://localhost:8080/profiles-combi/profile1+profile2
+
 ### Adding an Event from File via API:
 
 ```

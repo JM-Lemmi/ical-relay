@@ -1,3 +1,7 @@
+# 2.0.0-beta.7
+
+- Add /profiles-combi endpoint for combining multiple profiles on the fly
+
 # v2.0.0-beta.6.5
 
 - Remove db Trace logging from fmt.Print and use correct Loglevel
