@@ -269,7 +269,7 @@ func dbRemoveAllProfileSources(profile profile) {
 	// reasonably index on source.url, this capability is unused.
 	// The db schema should be simplified and directly reference the profile from the source table, dropping the
 	// profile_sources.
-	_, err := db.Exec(`DELETE FROM source WHERE id IN (SELECT FROM profile_sources WHERE profile = $1)`,
+	_, err := db.Exec(`DELETE FROM source WHERE id IN (SELECT id FROM profile_sources WHERE profile = $1)`,
 		profile.Name)
 	if err != nil {
 		log.Fatal(err)
