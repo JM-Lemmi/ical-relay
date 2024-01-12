@@ -261,6 +261,23 @@ func dbAddProfileSource(profile profile, source string) {
 	}
 }
 
+func dbRemoveAllProfileSources(profile profile) {
+	log.Info(profile.Name)
+	// Note: The following SQL statement is needlessly complicated due to the db supporting a n:n relation between
+	// source and profile over profile_sources.
+	// This n:n connection was used before db schema version 4, but since we support base64 events and can no longer
+	// reasonably index on source.url, this capability is unused.
+	// The db schema should be simplified and directly reference the profile from the source table, dropping the
+	// profile_sources.
+	_, err := db.Exec(`DELETE FROM source WHERE id IN (SELECT FROM profile_sources WHERE profile = $1)`,
+		profile.Name)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
+
+// TODO: fix this, leaves orphans currently
 func dbRemoveProfileSource(profile profile, sourceId int64) {
 	_, err := db.Exec(`DELETE FROM profile_sources WHERE profile = $1 AND source = $2`,
 		profile.Name, sourceId)
