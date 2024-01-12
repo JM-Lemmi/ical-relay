@@ -120,9 +120,9 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 
 		conf.editProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
 
-		requestLogger.Infoln("Edited new profile: " + profileName)
+		requestLogger.Infoln("Edited profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Edited new profile: "+profileName+"\n")
+		fmt.Fprint(w, "Edited profile: "+profileName+"\n")
 
 	case http.MethodDelete:
 		// Delete profile
