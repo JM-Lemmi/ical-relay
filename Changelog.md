@@ -1,3 +1,7 @@
+# 2.0.0-beta.7.3
+
+- Implement PUT /api/profiles/<profile> (editProfile) for DB
+
 # 2.0.0-beta.7
 
 - Add /profiles-combi endpoint for combining multiple profiles on the fly
