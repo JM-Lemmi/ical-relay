@@ -12,6 +12,7 @@ services:
       - ./cmd/ical-relay/config.yml:/etc/ical-relay/config.yml
     depends_on:
       - postgres
+    restart: on-failure
   postgres:
     image: postgres:latest
     environment:
@@ -19,4 +20,4 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: ical_relay
     volumes:
-      - ./cmd/ical-relay/postgres-data:/var/lib/postgresql/data
+      - ./postgres-data:/var/lib/postgresql/data

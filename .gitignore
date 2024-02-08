@@ -11,6 +11,6 @@ config.yml
 .debpkg/
 calstore/
 notifystore/
-cmd/ical-relay/postgres-data
+postgres-data
 __debug_bin*
 cmd/ical-relay/db/*
