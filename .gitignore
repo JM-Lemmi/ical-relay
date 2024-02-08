@@ -1,4 +1,5 @@
 ical-relay
+relay
 !ical-relay/
 /dist
 rice-box.go
@@ -11,3 +12,5 @@ config.yml
 calstore/
 notifystore/
 cmd/ical-relay/postgres-data
+__debug_bin*
+cmd/ical-relay/db/*

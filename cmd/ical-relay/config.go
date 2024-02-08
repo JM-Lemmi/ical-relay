@@ -253,12 +253,24 @@ func (c Config) addProfile(name string, sources []string, public bool, immutable
 // edit a profile, keeping tokens and rules
 func (c Config) editProfile(name string, sources []string, public bool, immutablepast bool) {
 	c.Profiles[name] = profile{
+		Name:          name,
 		Sources:       sources,
 		Public:        public,
 		ImmutablePast: immutablepast,
 		Tokens:        c.Profiles[name].Tokens,
+		NTokens:       c.Profiles[name].NTokens,
 		Rules:         c.Profiles[name].Rules,
 	}
+	if db.DB != nil {
+		dbRemoveAllProfileSources(c.Profiles[name])
+		dbWriteProfile(c.Profiles[name])
+		for _, source := range c.Profiles[name].Sources {
+			if !dbProfileSourceExists(c.Profiles[name], source) {
+				dbAddProfileSource(c.Profiles[name], source)
+			}
+		}
+	}
+	c.saveConfig(configPath)
 }
 
 func (c Config) deleteProfile(name string) {

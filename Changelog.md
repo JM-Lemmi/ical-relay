@@ -1,3 +1,20 @@
+# 2.0.0-beta.7.3
+
+- Implement PUT /api/profiles/<profile> (editProfile) for DB
+
+# 2.0.0-beta.7
+
+- Add /profiles-combi endpoint for combining multiple profiles on the fly
+
+# v2.0.0-beta.6.5
+
+- Remove db Trace logging from fmt.Print and use correct Loglevel
+
+# v2.0.0-beta.6.4
+
+- Fix Calendar view crashing for events without a `SUMMARY`
+- Switch cli-args library
+
 # v2.0.0-beta.6.3
 
 - Fix Edit view crashing for events without a `SUMMARY` or `LOCATION` property

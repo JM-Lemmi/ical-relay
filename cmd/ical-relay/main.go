@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "2.0.0-beta.6.3"
+var version = "2.0.0-beta.7.3"
 
 var configPath string
 var conf Config
@@ -26,7 +26,7 @@ func main() {
 		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
-		ImportData   bool   `help:"Import Data from Config into DB"`
+		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
 		Ephemeral    bool   `arg:"-e" help:"Enable ephemeral mode. Running only in Memory, no Database needed."`
 	}
 	arg.MustParse(&args)
@@ -73,7 +73,7 @@ func main() {
 		if len(conf.Server.DB.Host) > 0 {
 			// connect to DB
 			connect()
-			log.Traceln("%#v", db)
+			log.Tracef("%#v", db)
 
 			if args.ImportData {
 				conf.importToDB()

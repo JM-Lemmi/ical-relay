@@ -126,8 +126,8 @@ func dbProfileExists(profileName string) bool {
 	var profileExists bool
 
 	err := db.Get(&profileExists, `SELECT EXISTS (SELECT * FROM profile WHERE name = $1)`, profileName)
-	log.Info("Exec'd" + "SELECT EXISTS (SELECT * FROM profile WHERE name = " + profileName + ")")
-	log.Trace("%#v", profileExists)
+	log.Debug("Exec'd" + "SELECT EXISTS (SELECT * FROM profile WHERE name = " + profileName + ")")
+	log.Tracef("%#v\n", profileExists)
 	if err != nil {
 		panic(err)
 	}
@@ -187,7 +187,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Trace("%#v", dbRules)
+	log.Tracef("%#v\n", dbRules)
 	for _, dbRule := range dbRules {
 		rule := new(Rule)
 		rule.Operator = dbRule.Operator
@@ -220,7 +220,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 		}
 		profile.Rules = append(profile.Rules, *rule)
 	}
-	log.Trace("%#v", profile.Rules)
+	log.Tracef("%#v\n", profile.Rules)
 	return profile
 }
 
@@ -263,6 +263,23 @@ func dbAddProfileSource(profile profile, source string) {
 	}
 }
 
+func dbRemoveAllProfileSources(profile profile) {
+	log.Info(profile.Name)
+	// Note: The following SQL statement is needlessly complicated due to the db supporting a n:n relation between
+	// source and profile over profile_sources.
+	// This n:n connection was used before db schema version 4, but since we support base64 events and can no longer
+	// reasonably index on source.url, this capability is unused.
+	// The db schema should be simplified and directly reference the profile from the source table, dropping the
+	// profile_sources.
+	_, err := db.Exec(`DELETE FROM source WHERE id IN (SELECT source FROM profile_sources WHERE profile = $1)`,
+		profile.Name)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
+
+// TODO: fix this, leaves orphans currently
 func dbRemoveProfileSource(profile profile, sourceId int64) {
 	_, err := db.Exec(`DELETE FROM profile_sources WHERE profile = $1 AND source = $2`,
 		profile.Name, sourceId)
@@ -471,7 +488,7 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*notifier, error
 		log.Fatal(err)
 		return nil, err
 	}
-	//log.Trace("%#v", duration.String())
+	//log.Tracef("%#v\n", duration.String())
 	readNotifier.Interval = duration.String()
 
 	if fetchRecipients {
