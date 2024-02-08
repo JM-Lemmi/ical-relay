@@ -21,5 +21,5 @@ go work use ./pkg/<newname>
 ## Development Docker Compose
 
 ```
-docker compose -f docker-compose.dev.yml up --force-recreate
+docker compose -f docker-compose.dev.yml up --build --force-recreate
 ```
