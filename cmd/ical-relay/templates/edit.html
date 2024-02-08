@@ -1,145 +1,178 @@
 <!DOCTYPE html>
 <head lang="de">
-    <title>Bearbeiten - {{.ApplicationName}}</title>
-    {{template "head.html" .}}
+  <title>Bearbeiten - {{.ApplicationName}}</title>
+  {{template "head.html" .}}
 </head>
 
 <body>
-    {{template "nav.html" .}}
-    <main class="container">
-        <h1 class="mb-3">{{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty "SUMMARY").Value}}{{ end }} bearbeiten</h1>
-        <div class="alert alert-danger" id="edit-error" style="display: none;">
-            Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
+  {{template "nav.html" .}}
+  <main class="container">
+    <h1 class="mb-3">
+      {{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty
+      "SUMMARY").Value}}{{ end }} bearbeiten
+    </h1>
+    <div class="alert alert-danger" id="edit-error" style="display: none">
+      Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
+    </div>
+    <form id="edit-form">
+      <div class="row mb-3">
+        <label for="summary" class="col-sm-1 col-form-label">Titel</label>
+        <div class="col-sm-11">
+          <input type="text" class="form-control" id="summary" name="summary"
+          value="{{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty
+          "SUMMARY").Value}}{{ end }}">
         </div>
-        <form id="edit-form">
-            <div class="row mb-3">
-                <label for="summary" class="col-sm-1 col-form-label">Titel</label>
-                <div class="col-sm-11">
-                    <input type="text" class="form-control" id="summary" name="summary" value="{{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty "SUMMARY").Value}}{{ end }}">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label for="location" class="col-sm-1 col-form-label">Ort</label>
-                <div class="col-sm-11">
-                    <input type="text" class="form-control" id="location" name="location" value="{{ if .Event.GetProperty "LOCATION" }}{{(.Event.GetProperty "LOCATION").Value}}{{ end }}">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label for="start" class="col-sm-1 col-form-label">Start</label>
-                <div class="col-sm-5">
-                    <input type="datetime-local" class="form-control" id="start" name="start">
-                </div>
-                <label for="end" class="col-sm-1 col-form-label">Ende</label>
-                <div class="col-sm-5">
-                    <input type="datetime-local" class="form-control" id="end" name="end">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label for="description" class="col-sm-1 col-form-label">Beschreibung</label>
-                <div class="col-sm-11">
-                    <textarea class="form-control" id="description" name="description"
-                        rows="1">{{ if .Event.GetProperty "DESCRIPTION" }}{{(.Event.GetProperty "DESCRIPTION").Value}}{{ end }}</textarea>
-                </div>
-            </div>
-            <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-danger ml-3" id="delete-btn">Löschen</button>
-                <button type="submit" class="btn btn-primary">Speichern</button>
-            </div>
-        </form>
-    </main>
-    {{template "footer.html" .}}
-    <script>
-        const profileName = {{.ProfileName }};
-        const uid = {{(.Event.GetProperty "UID").Value}};
-        const originalSummary = {{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty "SUMMARY").Value}}{{ else }} ""{{ end }};
-        const originalLocation = {{ if .Event.GetProperty "LOCATION" }}{{(.Event.GetProperty "LOCATION").Value}}{{ else }} ""{{ end }};
-        const originalStart = dayjs({{(.Event.GetStartAt).Format "2006-01-02T15:04:05Z07:00"}});
-        const originalEnd = dayjs({{(.Event.GetEndAt).Format "2006-01-02T15:04:05Z07:00"}});
-        const originalDescription = {{ if .Event.GetProperty "DESCRIPTION" }}{{ (.Event.GetProperty "DESCRIPTION").Value }}{{ else }} ""{{ end }};
-        document.getElementById("start").value = originalStart.format("YYYY-MM-DDTHH:mm");
-        document.getElementById("end").value = originalEnd.format("YYYY-MM-DDTHH:mm");
+      </div>
+      <div class="row mb-3">
+        <label for="location" class="col-sm-1 col-form-label">Ort</label>
+        <div class="col-sm-11">
+          <input type="text" class="form-control" id="location" name="location"
+          value="{{ if .Event.GetProperty "LOCATION" }}{{(.Event.GetProperty
+          "LOCATION").Value}}{{ end }}">
+        </div>
+      </div>
+      <div class="row mb-3">
+        <label for="start" class="col-sm-1 col-form-label">Start</label>
+        <div class="col-sm-5">
+          <input
+            type="datetime-local"
+            class="form-control"
+            id="start"
+            name="start"
+          />
+        </div>
+        <label for="end" class="col-sm-1 col-form-label">Ende</label>
+        <div class="col-sm-5">
+          <input
+            type="datetime-local"
+            class="form-control"
+            id="end"
+            name="end"
+          />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <label for="description" class="col-sm-1 col-form-label"
+          >Beschreibung</label
+        >
+        <div class="col-sm-11">
+          <textarea
+            class="form-control"
+            id="description"
+            name="description"
+            rows="1"
+          >
+{{ if .Event.GetProperty "DESCRIPTION" }}{{(.Event.GetProperty "DESCRIPTION").Value}}{{ end }}</textarea
+          >
+        </div>
+      </div>
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-danger ml-3" id="delete-btn">
+          Löschen
+        </button>
+        <button type="submit" class="btn btn-primary">Speichern</button>
+      </div>
+    </form>
+  </main>
+  {{template "footer.html" .}}
+  <script>
+    const profileName = {{.ProfileName }};
+    const uid = {{(.Event.GetProperty "UID").Value}};
+    const originalSummary = {{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty "SUMMARY").Value}}{{ else }} ""{{ end }};
+    const originalLocation = {{ if .Event.GetProperty "LOCATION" }}{{(.Event.GetProperty "LOCATION").Value}}{{ else }} ""{{ end }};
+    const originalStart = dayjs({{(.Event.GetStartAt).Format "2006-01-02T15:04:05Z07:00"}});
+    const originalEnd = dayjs({{(.Event.GetEndAt).Format "2006-01-02T15:04:05Z07:00"}});
+    const originalDescription = {{ if .Event.GetProperty "DESCRIPTION" }}{{ (.Event.GetProperty "DESCRIPTION").Value }}{{ else }} ""{{ end }};
+    document.getElementById("start").value = originalStart.format("YYYY-MM-DDTHH:mm");
+    document.getElementById("end").value = originalEnd.format("YYYY-MM-DDTHH:mm");
 
-        function return_to_prev() {
-            let next = new URLSearchParams(window.location.search).get("return-to");
-            if (next) {
-                let nextUrl = new URL(next, window.location.origin);
-                if (nextUrl.origin === window.location.origin) {
-                    window.location.href = next;
-                }
+    function return_to_prev() {
+        let next = new URLSearchParams(window.location.search).get("return-to");
+        if (next) {
+            let nextUrl = new URL(next, window.location.origin);
+            if (nextUrl.origin === window.location.origin) {
+                window.location.href = next;
             }
+        }
+        if (profileName) {
             window.location.href = `/view/${profileName}`;
         }
+    }
 
-        function handleEdit(e) {
-            e.preventDefault();
-            let event = {};
-            if (document.getElementById("summary").value !== originalSummary) {
-                event.summary = document.getElementById("summary").value;
-            }
-            if (document.getElementById("location").value !== originalLocation) {
-                event.location = document.getElementById("location").value;
-            }
-            let start = dayjs(document.getElementById("start").value);
-            if (!start.isSame(originalStart)) {
-                event.start = start.toISOString();
-            }
-            let end = dayjs(document.getElementById("end").value);
-            if (!end.isSame(originalEnd)) {
-                event.end = end.toISOString();
-            }
-            if (document.getElementById("description").value !== originalDescription) {
-                event.description = document.getElementById("description").value;
-            }
-            if (Object.keys(event).length === 0) {
+    function handleEdit(e) {
+        e.preventDefault();
+        let event = {};
+        if (document.getElementById("summary").value !== originalSummary) {
+            event.summary = document.getElementById("summary").value;
+        }
+        if (document.getElementById("location").value !== originalLocation) {
+            event.location = document.getElementById("location").value;
+        }
+        let start = dayjs(document.getElementById("start").value);
+        if (!start.isSame(originalStart)) {
+            event.start = start.toISOString();
+        }
+        let end = dayjs(document.getElementById("end").value);
+        if (!end.isSame(originalEnd)) {
+            event.end = end.toISOString();
+        }
+        if (document.getElementById("description").value !== originalDescription) {
+            event.description = document.getElementById("description").value;
+        }
+        if (Object.keys(event).length === 0) {
+            return_to_prev();
+            return;
+        }
+        fetch(`/api/profiles/${profileName}/calentry?` + new URLSearchParams({
+            "id": uid
+        }), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": localStorage.getItem("token")
+            },
+            body: JSON.stringify(event)
+        }).then(response => {
+            if (response.ok) {
+                // redirect to GET parameter next, if next is at the same origin
                 return_to_prev();
-                return;
+            } else {
+                console.log(response);
+                document.getElementById("edit-error").style.display = "block";
             }
-            fetch(`/api/profiles/${profileName}/calentry?` + new URLSearchParams({
-                "id": uid
-            }), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": localStorage.getItem("token")
-                },
-                body: JSON.stringify(event)
-            }).then(response => {
-                if (response.ok) {
-                    // redirect to GET parameter next, if next is at the same origin
-                    return_to_prev();
-                } else {
-                    console.log(response);
-                    document.getElementById("edit-error").style.display = "block";
-                }
-            });
-        }
-        document.addEventListener('DOMContentLoaded', function () {
-            var editForm = document.querySelector('#edit-form');
-            editForm.addEventListener('submit', handleEdit);
         });
-    </script>
-    <script>
-        function handleDelete(e) {
-            e.preventDefault();
-            fetch(`/api/profiles/${profileName}/calentry?` + new URLSearchParams({
-                "id": uid
-            }), {
-                method: "DELETE",
-                headers: {
-                    "Authorization": localStorage.getItem("token")
-                }
-            }).then(response => {
-                if (response.ok) {
-                    return_to_prev();
-                } else {
-                    console.log(response);
-                    document.getElementById("edit-error").style.display = "block";
-                }
-            });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        var editForm = document.querySelector('#edit-form');
+        editForm.addEventListener('submit', handleEdit);
+    });
+  </script>
+  <script>
+    function handleDelete(e) {
+      e.preventDefault();
+      fetch(
+        `/api/profiles/${profileName}/calentry?` +
+          new URLSearchParams({
+            id: uid,
+          }),
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: localStorage.getItem("token"),
+          },
         }
-        document.addEventListener('DOMContentLoaded', function () {
-            var deleteBtn = document.getElementById('delete-btn');
-            deleteBtn.addEventListener('click', handleDelete);
-        });
-    </script>
+      ).then((response) => {
+        if (response.ok) {
+          return_to_prev();
+        } else {
+          console.log(response);
+          document.getElementById("edit-error").style.display = "block";
+        }
+      });
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+      var deleteBtn = document.getElementById("delete-btn");
+      deleteBtn.addEventListener("click", handleDelete);
+    });
+  </script>
 </body>
