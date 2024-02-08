@@ -270,7 +270,6 @@ func (c Config) editProfile(name string, sources []string, public bool, immutabl
 			}
 		}
 	}
-	c.saveConfig(configPath)
 }
 
 func (c Config) deleteProfile(name string) {
