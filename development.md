@@ -18,11 +18,8 @@ adding a new pkg you also need to add it to `go work` to use it.
 go work use ./pkg/<newname>
 ```
 
-## Using the embedded database for testing
+## Development Docker Compose
 
-For testing you can set server.db.host to Special:EMBEDDED
 ```
-    db:
-        host: Special:EMBEDDED
-        db-name: ical_relay
+docker compose -f docker-compose.dev.yml up --build --force-recreate
 ```

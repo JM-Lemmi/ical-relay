@@ -4,11 +4,8 @@ import (
 	"html/template"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/alexflint/go-arg"
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,6 +27,7 @@ func main() {
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
+		Ephemeral    bool   `arg:"-e" help:"Enable ephemeral mode. Running only in Memory, no Database needed."`
 	}
 	arg.MustParse(&args)
 
@@ -71,49 +69,20 @@ func main() {
 		log.Debug("Server mode.")
 	}
 
-	if len(conf.Server.DB.Host) > 0 {
-		// connect to DB
-		if conf.Server.DB.Host == "Special:EMBEDDED" {
-			log.Info("Starting embedded postgres server (this will take a while on the first run)...")
-			if conf.Server.DB.User == "" {
-				conf.Server.DB.User = "postgres"
-			}
-			if conf.Server.DB.Password == "" {
-				conf.Server.DB.Password = "postgres"
-			}
-			postgres := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
-				Username(conf.Server.DB.User).
-				Password(conf.Server.DB.Password).
-				Database(conf.Server.DB.DbName).
-				Version(embeddedpostgres.V15).
-				Logger(log.StandardLogger().Writer()).
-				BinariesPath(conf.Server.StoragePath + "db/runtime").
-				DataPath(conf.Server.StoragePath + "db/data").
-				Locale("C").
-				Port(5432)) //todo: support non default port
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
-			go func() {
-				sigs := <-sigs
-				log.Info("Caught ", sigs)
-				err := postgres.Stop()
-				if err != nil {
-					log.Fatal("Could not properly shutdown embedded postgres server: ", err)
-				}
-				os.Exit(0)
-			}()
-			err := postgres.Start()
-			if err != nil {
-				log.Fatal("Could not start embedded postgres server: ", err)
-			}
-			conf.Server.DB.Host = "localhost"
-		}
-		connect()
-		log.Tracef("%#v\n", db)
+	if !args.Ephemeral {
+		if len(conf.Server.DB.Host) > 0 {
+			// connect to DB
+			connect()
+			log.Tracef("%#v", db)
 
-		if args.ImportData {
-			conf.importToDB()
+			if args.ImportData {
+				conf.importToDB()
+			}
+		} else {
+			log.Fatal("No database configured. Did you mean to start in ephemeral mode?")
 		}
+	} else {
+		log.Warn("Running in ephemeral-mode. Changes to the config will not persist!!")
 	}
 
 	// setup template path

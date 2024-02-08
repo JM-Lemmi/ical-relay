@@ -16,6 +16,7 @@ var db sqlx.DB
 
 const CurrentDbVersion = 4
 
+// startup connection function
 func connect() {
 	userStr := ""
 	if conf.Server.DB.User != "" {
@@ -30,6 +31,7 @@ func connect() {
 
 	dbConn, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
+		log.Fatalf("Connection to db failed: %s", err)
 		panic(err)
 	}
 	log.Debug("Connected to db")
