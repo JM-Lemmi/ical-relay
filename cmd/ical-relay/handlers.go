@@ -164,12 +164,7 @@ func newEntryHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("Create Event request")
 	profileName := vars["profile"]
-	profile, ok := conf.GetProfileByName(profileName)
-	if !ok {
-		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
-		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
-		return
-	}
+	profile := conf.GetProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["ProfileName"] = profileName
 	data["Profile"] = profile

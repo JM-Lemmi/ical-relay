@@ -25,7 +25,7 @@ type Config struct {
 	Server    serverConfig        `yaml:"server"`
 	Profiles  map[string]profile  `yaml:"profiles,omitempty"`
 	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
-	LiteMode bool                `yaml:"litemode,omitempty"`
+	LiteMode  bool                `yaml:"litemode,omitempty"`
 }
 
 type serverConfig struct {
@@ -206,7 +206,7 @@ func (c Config) importToDB() {
 }
 
 // CONFIG EDITING FUNCTIONS
-
+// Return a profile by name and a bool indicating if the profile exists
 func (c Config) GetProfileByName(name string) profile {
 	if !c.LiteMode {
 		// Dereference the pointer
@@ -241,7 +241,7 @@ func (c Config) profileExists(name string) bool {
 
 // add a profile without tokens and without rules
 func (c Config) addProfile(name string, sources []string, public bool, immutablepast bool) {
-	tempProfile = profile{
+	tempProfile := profile{
 		Sources:       sources,
 		Public:        public,
 		ImmutablePast: immutablepast,
@@ -258,7 +258,7 @@ func (c Config) addProfile(name string, sources []string, public bool, immutable
 
 // edit a profile, keeping tokens and rules
 func (c Config) editProfile(name string, sources []string, public bool, immutablepast bool) {
-	tempProfile = profile{
+	tempProfile := profile{
 		Name:          name,
 		Sources:       sources,
 		Public:        public,
@@ -283,7 +283,7 @@ func (c Config) editProfile(name string, sources []string, public bool, immutabl
 
 func (c Config) deleteProfile(name string) {
 	if !c.LiteMode {
-		dbRemoveProfile(name)
+		fmt.Errorf("DB Delete Profile not implemented yet!") // TODO: implement
 	} else {
 		delete(c.Profiles, name)
 	}
@@ -339,7 +339,7 @@ func (c Config) getNotifiers() map[string]notifier {
 		return notifiers
 	} else {
 		return c.Notifiers
-	}	
+	}
 }
 
 func (c Config) getNotifier(notifierName string) notifier {
@@ -353,13 +353,13 @@ func (c Config) getNotifier(notifierName string) notifier {
 
 func (c Config) addNotifyRecipient(notifierName string, recipient string) error {
 	if !c.LiteMode {
-		if !dbNotifierExists(notifierName) { 
+		if !dbNotifierExists(notifierName) {
 			return fmt.Errorf("notifier does not exist")
 		}
 		dbAddNotifierRecipient(notifier{Name: notifierName}, recipient)
 		return nil
 	} else {
-		if !c.notifierExists(notifierName) { 
+		if !c.notifierExists(notifierName) {
 			return fmt.Errorf("notifier does not exist")
 		}
 		n := c.Notifiers[notifierName]
@@ -371,7 +371,7 @@ func (c Config) addNotifyRecipient(notifierName string, recipient string) error 
 
 func (c Config) removeNotifyRecipient(notifierName string, recipient string) error {
 	if !c.LiteMode {
-		if !dbNotifierExists(notifierName) { 
+		if !dbNotifierExists(notifierName) {
 			return fmt.Errorf("notifier does not exist")
 		}
 		dbRemoveNotifierRecipient(notifier{Name: notifierName}, recipient)
@@ -400,7 +400,7 @@ func (c Config) addRule(profileName string, rule Rule) error {
 		dbAddProfileRule(profile{Name: profileName}, rule)
 		return nil
 	} else {
-		if !c.profileExists(profileName) { 
+		if !c.profileExists(profileName) {
 			return fmt.Errorf("profile " + profileName + " does not exist")
 		}
 		p := c.Profiles[profileName]
@@ -495,7 +495,6 @@ func (c Config) addSource(profileName string, src string) error {
 }
 
 func (c Config) RunCleanup() {
-	profiles := nil
 	if !c.LiteMode {
 		log.Error("RunCleanup currently not supported on db") // TODO: implement
 	} else {
