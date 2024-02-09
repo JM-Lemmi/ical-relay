@@ -14,7 +14,7 @@ func prettyPrintConf(c Config) string {
 // TestParseConfig - tests that the config is parsed correctly
 func TestParseConfig(t *testing.T) {
 	// test that the config is parsed correctly
-	conf, err := ParseConfig("./fixtures/testconfig.yaml")
+	conf, err := ParseConfig("./fixtures/testconfig.yaml", true)
 	if err != nil {
 		t.Errorf("Error parsing config: %s", err)
 	}
@@ -55,7 +55,7 @@ func TestParseConfig(t *testing.T) {
 
 func TestExampleConfig(t *testing.T) {
 	// test that the config is parsed correctly
-	conf, err := ParseConfig("./config.yml.example")
+	conf, err := ParseConfig("./config.yml.example", true)
 	if err != nil {
 		t.Errorf("Error parsing config: %s", err)
 	}
