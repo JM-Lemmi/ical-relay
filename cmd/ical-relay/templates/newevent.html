@@ -1,100 +1,124 @@
 <!DOCTYPE html>
 <head lang="de">
-    <title>Bearbeiten - {{.ApplicationName}}</title>
-    {{template "head.html" .}}
+  <title>Bearbeiten - {{.ApplicationName}}</title>
+  {{template "head.html" .}}
 </head>
 
 <body>
-    {{template "nav.html" .}}
-    <main class="container">
-        <h1 class="mb-3">Neues Event erstellen</h1>
-        <div class="alert alert-danger" id="edit-error" style="display: none;">
-            Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
+  {{template "nav.html" .}}
+  <main class="container">
+    <h1 class="mb-3">Neues Event erstellen</h1>
+    <div class="alert alert-danger" id="edit-error" style="display: none">
+      Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
+    </div>
+    <form id="edit-form">
+      <div class="row mb-3">
+        <label for="summary" class="col-sm-1 col-form-label">Titel</label>
+        <div class="col-sm-11">
+          <input type="text" class="form-control" id="summary" name="summary" />
         </div>
-        <form id="edit-form">
-            <div class="row mb-3">
-                <label for="summary" class="col-sm-1 col-form-label">Titel</label>
-                <div class="col-sm-11">
-                    <input type="text" class="form-control" id="summary" name="summary">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label for="location" class="col-sm-1 col-form-label">Ort</label>
-                <div class="col-sm-11">
-                    <input type="text" class="form-control" id="location" name="location">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label for="start" class="col-sm-1 col-form-label">Start</label>
-                <div class="col-sm-5">
-                    <input type="datetime-local" class="form-control" id="start" name="start">
-                </div>
-                <label for="end" class="col-sm-1 col-form-label">Ende</label>
-                <div class="col-sm-5">
-                    <input type="datetime-local" class="form-control" id="end" name="end">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label for="description" class="col-sm-1 col-form-label">Beschreibung</label>
-                <div class="col-sm-11">
-                    <textarea class="form-control" id="description" name="description" rows="1"></textarea>
-                </div>
-            </div>
-            <div class="d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">Speichern</button>
-            </div>
-        </form>
-    </main>
-    {{template "footer.html" .}}
-    <script>
-        const profileName = {{.ProfileName }};
-        
-        function return_to_prev() {
-            let next = new URLSearchParams(window.location.search).get("return-to");
-            if (next) {
-                let nextUrl = new URL(next, window.location.origin);
-                if (nextUrl.origin === window.location.origin) {
-                    window.location.href = next;
-                }
+      </div>
+      <div class="row mb-3">
+        <label for="location" class="col-sm-1 col-form-label">Ort</label>
+        <div class="col-sm-11">
+          <input
+            type="text"
+            class="form-control"
+            id="location"
+            name="location"
+          />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <label for="start" class="col-sm-1 col-form-label">Start</label>
+        <div class="col-sm-5">
+          <input
+            type="datetime-local"
+            class="form-control"
+            id="start"
+            name="start"
+          />
+        </div>
+        <label for="end" class="col-sm-1 col-form-label">Ende</label>
+        <div class="col-sm-5">
+          <input
+            type="datetime-local"
+            class="form-control"
+            id="end"
+            name="end"
+          />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <label for="description" class="col-sm-1 col-form-label"
+          >Beschreibung</label
+        >
+        <div class="col-sm-11">
+          <textarea
+            class="form-control"
+            id="description"
+            name="description"
+            rows="1"
+          ></textarea>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary">Speichern</button>
+      </div>
+    </form>
+  </main>
+  {{template "footer.html" .}}
+  <script>
+    const profileName = {{.ProfileName }};
+
+    function return_to_prev() {
+        let next = new URLSearchParams(window.location.search).get("return-to");
+        if (next) {
+            let nextUrl = new URL(next, window.location.origin);
+            if (nextUrl.origin === window.location.origin) {
+                window.location.href = next;
             }
+        }
+        if (profileName) {
             window.location.href = `/view/${profileName}`;
         }
+    }
 
-        function handleEdit(e) {
-            e.preventDefault();
-            let event = {};
-            event.summary = document.getElementById("summary").value;
-            event.location = document.getElementById("location").value;
-            let start = dayjs(document.getElementById("start").value);
-            event.start = start.toISOString();
-            let end = dayjs(document.getElementById("end").value);
-            event.end = end.toISOString();
-            event.description = document.getElementById("description").value;
+    function handleEdit(e) {
+        e.preventDefault();
+        let event = {};
+        event.summary = document.getElementById("summary").value;
+        event.location = document.getElementById("location").value;
+        let start = dayjs(document.getElementById("start").value);
+        event.start = start.toISOString();
+        let end = dayjs(document.getElementById("end").value);
+        event.end = end.toISOString();
+        event.description = document.getElementById("description").value;
 
-            if (Object.keys(event).length === 0) {
-                return_to_prev();
-                return;
-            }
-            fetch(`/api/profiles/${profileName}/newentryjson`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": localStorage.getItem("token")
-                },
-                body: JSON.stringify(event)
-            }).then(response => {
-                if (response.ok) {
-                    // redirect to GET parameter next, if next is at the same origin
-                    return_to_prev();
-                } else {
-                    console.log(response);
-                    document.getElementById("edit-error").style.display = "block";
-                }
-            });
+        if (Object.keys(event).length === 0) {
+            return_to_prev();
+            return;
         }
-        document.addEventListener('DOMContentLoaded', function () {
-            var editForm = document.querySelector('#edit-form');
-            editForm.addEventListener('submit', handleEdit);
+        fetch(`/api/profiles/${profileName}/newentryjson`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": localStorage.getItem("token")
+            },
+            body: JSON.stringify(event)
+        }).then(response => {
+            if (response.ok) {
+                // redirect to GET parameter next, if next is at the same origin
+                return_to_prev();
+            } else {
+                console.log(response);
+                document.getElementById("edit-error").style.display = "block";
+            }
         });
-    </script>
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        var editForm = document.querySelector('#edit-form');
+        editForm.addEventListener('submit', handleEdit);
+    });
+  </script>
 </body>
