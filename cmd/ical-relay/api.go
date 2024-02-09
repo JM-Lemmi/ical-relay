@@ -141,22 +141,6 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Path: /api/reloadconfig
-func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
-	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
-	requestLogger.Infoln("New API-Request!")
-
-	err := reloadConfig()
-	if err != nil {
-		requestLogger.Errorln(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Error: "+err.Error()+"\n")
-		return
-	}
-
-	ok(w, requestLogger)
-}
-
 // Path: /api/notifier/{notifier}/recipient
 func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})

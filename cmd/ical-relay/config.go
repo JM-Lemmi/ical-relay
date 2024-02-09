@@ -90,8 +90,10 @@ type notifier struct {
 // CONFIG MANAGEMENT FUNCTIONS
 
 // ParseConfig reads config from path and returns a Config struct
-func ParseConfig(path string) (Config, error) {
+func ParseConfig(path string, litemode bool) (Config, error) {
 	var tmpConfig Config
+
+	tmpConfig.LiteMode = litemode
 
 	yamlFile, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -200,19 +202,6 @@ func (c Config) importToDB() {
 		for _, recipient := range notifier.Recipients {
 			dbAddNotifierRecipient(notifier, recipient)
 		}
-	}
-}
-
-func reloadConfig() error {
-	// load config
-	var err error
-	conf, err = ParseConfig(configPath)
-	if err != nil {
-		return err
-	} else {
-		conf.importToDB()
-		log.Info("Config reloaded")
-		return nil
 	}
 }
 

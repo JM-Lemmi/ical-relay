@@ -27,7 +27,7 @@ func main() {
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
-		Ephemeral    bool   `arg:"-e" help:"Enable ephemeral mode. Running only in Memory, no Database needed."`
+		LiteMode    bool   `arg:"-l, --lite-mode" help:"Enable lite mode. Running only in Memory, no Database needed."`
 	}
 	arg.MustParse(&args)
 
@@ -42,7 +42,7 @@ func main() {
 
 	// load config
 	var err error
-	conf, err = ParseConfig(configPath)
+	conf, err = ParseConfig(configPath, args.LiteMode)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -69,7 +69,7 @@ func main() {
 		log.Debug("Server mode.")
 	}
 
-	if !args.Ephemeral {
+	if !args.LiteMode {
 		if len(conf.Server.DB.Host) > 0 {
 			// connect to DB
 			connect()
@@ -79,10 +79,10 @@ func main() {
 				conf.importToDB()
 			}
 		} else {
-			log.Fatal("No database configured. Did you mean to start in ephemeral mode?")
+			log.Fatal("No database configured. Did you mean to start in lite mode?")
 		}
 	} else {
-		log.Warn("Running in ephemeral-mode. Changes to the config will not persist!!")
+		log.Warn("Running in lite mode. Changes to the config will not persist!!")
 	}
 
 	// setup template path

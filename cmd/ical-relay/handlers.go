@@ -34,7 +34,6 @@ func initHandlers() {
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
 
-	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 	router.HandleFunc("/api/profiles/{profile}", profileApiHandler)
 	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
