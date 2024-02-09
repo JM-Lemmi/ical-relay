@@ -20,7 +20,8 @@ func TestParseConfig(t *testing.T) {
 	}
 
 	test_conf := Config{
-		Version: 2,
+		Version:  2,
+		LiteMode: true,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
@@ -61,7 +62,8 @@ func TestExampleConfig(t *testing.T) {
 	}
 
 	test_conf := Config{
-		Version: 2,
+		Version:  2,
+		LiteMode: true,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
