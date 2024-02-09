@@ -11,7 +11,8 @@ services:
     volumes:
       - ./cmd/ical-relay/config.yml:/etc/ical-relay/config.yml
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: on-failure
   postgres:
     image: postgres:latest
@@ -21,3 +22,9 @@ services:
       POSTGRES_DB: ical_relay
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "ical_relay"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
