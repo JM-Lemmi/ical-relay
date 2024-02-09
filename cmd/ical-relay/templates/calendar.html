@@ -99,7 +99,6 @@
         document.getElementById("btn-month").onclick = switchToMonth;
 
         function updateCalendar(date) {
-            console.log("UDPATE CALENDAR");
             localStorage.setItem("viewType", currentType);
             document.getElementById("btn-week").hidden = currentType === "week";
             document.getElementById("btn-month").hidden = currentType === "month";
