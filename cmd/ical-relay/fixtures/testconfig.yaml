@@ -4,6 +4,7 @@ server:
   addr: ":80"
   loglevel: "info"
   url: "https://cal.julian-lemmerich.de"
+  storagepath: "teststoragepath"
   templatepath: /opt/ical-relay/templates
   faviconpath: /static/media/favicon.svg
   name: "Calendar"

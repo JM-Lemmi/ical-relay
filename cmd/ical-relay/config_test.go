@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// prettyPrintConf - pretty prints the config struct
 func prettyPrintConf(c Config) string {
 	return fmt.Sprintf("%+v\n", c)
 }
@@ -27,7 +28,7 @@ func TestParseConfig(t *testing.T) {
 			LogLevel:      4,
 			Name:          "Calendar",
 			PrivacyPolicy: "http://your-data-privacy-policy",
-			StoragePath:   "fixtures/",
+			StoragePath:   "teststoragepath/", 
 			TemplatePath:  "/opt/ical-relay/templates/",
 			URL:           "https://cal.julian-lemmerich.de",
 			DB: dbConfig{
