@@ -128,7 +128,7 @@
                     continue;
                 }
                 // 4th argument: edit_enabled set to false if the date is in the past and immutable_past is true
-                let day_vstack = getDayVStack(date, events, show_edit, !immutable_past || date >= dayjs().startOf("day"));
+                let day_vstack = getDayVStack(date, events, show_edit, immutable_past);
                 row.appendChild(day_vstack);
             }
         }
