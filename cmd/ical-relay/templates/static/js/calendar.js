@@ -55,19 +55,19 @@ function getEventCard(event, show_edit = false, edit_enabled = true) {
                 description_el.style.textOverflow = "visible";
                 description_visible = true;
             }
-        }); 
+        });
         event_text.appendChild(description_el);
     }
     event_body.appendChild(event_text);
     if (show_edit) {
         let edit_button = document.createElement("button");
         edit_button.classList.add("btn", "btn-sm", "btn-outline-secondary", "rounded-circle", "edit-button");
-        if(!edit_enabled){
+        if (!edit_enabled) {
             edit_button.classList.add("disabled");
         }
         edit_button.addEventListener("click", function (e) {
             e.stopPropagation();
-            location.href = event.edit_url + '?' + new URLSearchParams({'return-to': window.location.pathname});
+            location.href = event.edit_url + '?' + new URLSearchParams({ 'return-to': window.location.pathname });
         });
         event_body.appendChild(edit_button);
     }
@@ -76,14 +76,15 @@ function getEventCard(event, show_edit = false, edit_enabled = true) {
 }
 
 function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
+    // VStack = Column of events for a day
     let day_vstack = document.createElement("div");
     document.createElement("div");
     day_vstack.classList.add("vstack", "col-md-4", "col-xl-2", "pt-2", "day-column", "mb-3");
     let day_title = document.createElement("h5");
     day_title.classList.add("fw-semibold", "text-center", "m-0");
-    if(currentType === "month"){
+    if (currentType === "month") {
         day_title.role = "button";
-        day_title.onclick = function(){
+        day_title.onclick = function () {
             currentType = "week";
             setSelectedDate(date);
         }
@@ -102,16 +103,16 @@ function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
         });
         for (let event of day_events) {
             let card = getEventCard(event, show_edit, edit_enabled);
-            if(currentType === "month" && date.format("MM") != currentMonth){
+            if (currentType === "month" && date.format("MM") != currentMonth) {
                 card.style.backgroundColor = "#e1e6ea";
             }
             day_vstack.appendChild(card);
         }
     } else {
         let card = getEmptyCard();
-        if(currentType === "month" && date.format("MM") != currentMonth){
+        if (currentType === "month" && date.format("MM") != currentMonth) {
             card.style.backgroundColor = "#e1e6ea";
-        }else{
+        } else {
             card.classList.add("bg-light");
         }
         day_vstack.appendChild(card);
