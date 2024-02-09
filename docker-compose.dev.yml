@@ -7,7 +7,7 @@ services:
       dockerfile: ./cmd/ical-relay/Dockerfile
     command: /usr/bin/ical-relay --config /etc/ical-relay/config.yml --import-data
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./cmd/ical-relay/config.yml:/etc/ical-relay/config.yml
     depends_on:
