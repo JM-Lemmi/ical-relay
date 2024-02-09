@@ -360,9 +360,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		// read json from body to calendar struct
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			log.Errorf("Could not read the body in newentryfileApiHandler -- failed with %s", err.Error())
 		}
 		err = json.Unmarshal(body, &eventjson)
 		if err != nil {
@@ -524,9 +522,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			log.Errorf("Could not read the body in rulesApiHandler -- failed with %s", err.Error())
 		}
 		err = json.Unmarshal(body, &rule)
 		if err != nil {
@@ -634,9 +630,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			requestLogger.Errorln(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+            log.Errorf("Could not read the body in tokenEndpoint -- failed with %s", err.Error())
 		}
 		err = json.Unmarshal(body, &bodyData)
 		if err != nil {
