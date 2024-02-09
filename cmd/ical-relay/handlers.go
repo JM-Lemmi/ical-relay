@@ -117,7 +117,7 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conf.ensureProfileLoaded(profileName)
-	profile := conf.getProfileByName(profileName)
+	profile := conf.GetProfileByName(profileName)
 
 	// find event by uid in profile
 	uid := vars["uid"]
@@ -152,7 +152,7 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conf.ensureProfileLoaded(profileName)
-	profile := conf.getProfileByName(profileName)
+	profile := conf.GetProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["Rules"] = profile.Rules
 	data["ProfileName"] = profileName
@@ -164,7 +164,7 @@ func newEntryHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("Create Event request")
 	profileName := vars["profile"]
-	profile, ok := conf.getProfileByName(profileName)
+	profile, ok := conf.GetProfileByName(profileName)
 	if !ok {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
@@ -187,7 +187,7 @@ func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conf.ensureProfileLoaded(profileName)
-	profile := conf.getProfileByName(profileName)
+	profile := conf.GetProfileByName(profileName)
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
@@ -278,7 +278,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conf.ensureProfileLoaded(profileName)
-	profile := conf.getProfileByName(profileName)
+	profile := conf.GetProfileByName(profileName)
 
 	// load params
 	time := r.URL.Query().Get("reminder")
@@ -327,7 +327,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	for i, profileName := range profileNames {
-		profile := conf.getProfileByName(profileName)
+		profile := conf.GetProfileByName(profileName)
 		if i == 0 {
 			// first source gets assigned to base calendar
 			log.Debug("Loading source ", profileName, " as base calendar")

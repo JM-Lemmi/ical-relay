@@ -604,7 +604,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.Header().Set("Content-Type", "application/json")
-		tokens, _ := json.Marshal(conf.getProfileByName(profileName).NTokens)
+		tokens, _ := json.Marshal(conf.GetProfileByName(profileName).NTokens)
 		w.Write(tokens)
 	case http.MethodPut:
 		err := conf.createToken(profileName, bodyData["note"].(string))
