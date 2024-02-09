@@ -28,7 +28,7 @@ func TestParseConfig(t *testing.T) {
 			LogLevel:      4,
 			Name:          "Calendar",
 			PrivacyPolicy: "http://your-data-privacy-policy",
-			StoragePath:   "teststoragepath/", 
+			StoragePath:   "teststoragepath/",
 			TemplatePath:  "/opt/ical-relay/templates/",
 			URL:           "https://cal.julian-lemmerich.de",
 			DB: dbConfig{
