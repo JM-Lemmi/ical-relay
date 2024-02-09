@@ -75,7 +75,7 @@ function getEventCard(event, show_edit = false, edit_enabled = true) {
     return event_card;
 }
 
-function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
+function getDayVStack(date, events, show_edit = false, immutable_past = true) {
     let day_vstack = document.createElement("div");
     document.createElement("div");
     day_vstack.classList.add("vstack", "col-md-4", "col-xl-2", "pt-2", "day-column", "mb-3");
@@ -101,6 +101,7 @@ function getDayVStack(date, events, show_edit = false, edit_enabled = true) {
             return dayjs(a.start).diff(dayjs(b.start));
         });
         for (let event of day_events) {
+            let edit_enabled = !immutable_past || dayjs(event.start).isAfter(dayjs());
             let card = getEventCard(event, show_edit, edit_enabled);
             if(currentType === "month" && date.format("MM") != currentMonth){
                 card.style.backgroundColor = "#e1e6ea";

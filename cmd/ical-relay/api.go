@@ -41,10 +41,21 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": "/api/calendars"})
 	requestLogger.Infoln("New API-Request!")
 
-	var callist []string = conf.getPublicCalendars()
+	var callist []string
+	token := r.Header.Get("Authorization")
+	if !checkSuperAuthorization(token) {
+		callist = conf.getPublicCalendars()
+	} else {
+		callist = conf.getAllCalendars()
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	caljson, _ := json.Marshal(callist)
+	caljson, err := json.Marshal(callist)
+	if err != nil {
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	w.Write(caljson)
 }
 
@@ -231,8 +242,11 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var entry map[string]interface{}
 
-		body, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(body, &entry)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Errorf("Could not read the body in calendarEntryApiHandler -- failed with %s", err.Error())
+		}
+		err = json.Unmarshal(body, &entry)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -328,8 +342,11 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		var eventjson map[string]string
 
 		// read json from body to calendar struct
-		body, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(body, &eventjson)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Errorf("Could not read the body in newentryfileApiHandler -- failed with %s", err.Error())
+		}
+		err = json.Unmarshal(body, &eventjson)
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -432,8 +449,8 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// read file into buffer and convert to base 64
-		for infile, _ := range r.MultipartForm.File {
-			file, err := r.MultipartForm.File[infile][0].Open()
+		for _, infile := range r.MultipartForm.File {
+			file, err := infile[0].Open()
 			if err != nil {
 				requestLogger.Errorln(err)
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -487,8 +504,11 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var rule Rule
 
-		body, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(body, &rule)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Errorf("Could not read the body in rulesApiHandler -- failed with %s", err.Error())
+		}
+		err = json.Unmarshal(body, &rule)
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -592,8 +612,11 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	var bodyData map[string]interface{}
 	if r.Method != http.MethodGet {
-		body, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(body, &bodyData)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+            log.Errorf("Could not read the body in tokenEndpoint -- failed with %s", err.Error())
+		}
+		err = json.Unmarshal(body, &bodyData)
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -604,7 +627,12 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.Header().Set("Content-Type", "application/json")
-		tokens, _ := json.Marshal(conf.GetProfileByName(profileName).NTokens)
+		tokens, err := json.Marshal(conf.Profiles[profileName].NTokens)
+		if err != nil {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		w.Write(tokens)
 	case http.MethodPut:
 		err := conf.createToken(profileName, bodyData["note"].(string))
@@ -641,8 +669,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 }
 
 func ok(w http.ResponseWriter, requestLogger *log.Entry) {
-	ok, _ := json.Marshal("ok")
-	_, err := w.Write(ok)
+	_, err := w.Write([]byte(`"ok"`))
 	if err != nil {
 		requestLogger.Error("Failed to send data to client!")
 	}
