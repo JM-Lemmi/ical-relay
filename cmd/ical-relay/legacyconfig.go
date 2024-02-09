@@ -29,6 +29,9 @@ type LegacyConfig struct {
 // CONFIG MANAGEMENT FUNCTIONS
 
 // ParseConfig reads config from path and returns a Config struct
+// This function is used to parse the legacy config file
+// It is only used by the config.go file as part of the initial config parsing
+// This may be removed in the future
 func LegacyParseConfig(path string) (Config, error) {
 	var tmpConfig Config
 	var oldConfig LegacyConfig

@@ -21,7 +21,7 @@ import (
 
 func checkAuthoriziation(token string, profileName string) bool {
 	conf.ensureProfileLoaded(profileName)
-	if helpers.Contains(conf.Profiles[profileName].Tokens, token) || checkSuperAuthorization(token) {
+	if helpers.Contains(conf.GetProfileByName(profileName).Tokens, token) || checkSuperAuthorization(token) {
 		return true
 	} else {
 		return false
@@ -620,7 +620,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.Header().Set("Content-Type", "application/json")
-		tokens, _ := json.Marshal(conf.Profiles[profileName].NTokens)
+		tokens, _ := json.Marshal(conf.getProfileByName(profileName).NTokens)
 		w.Write(tokens)
 	case http.MethodPut:
 		err := conf.createToken(profileName, bodyData["note"].(string))

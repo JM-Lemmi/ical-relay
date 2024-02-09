@@ -118,7 +118,7 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := conf.getProfileByName(profileName)
 
 	// find event by uid in profile
 	uid := vars["uid"]
@@ -153,7 +153,7 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := conf.getProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["Rules"] = profile.Rules
 	data["ProfileName"] = profileName
@@ -165,7 +165,7 @@ func newEntryHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("Create Event request")
 	profileName := vars["profile"]
-	profile, ok := conf.Profiles[profileName]
+	profile, ok := conf.getProfileByName(profileName)
 	if !ok {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
@@ -188,7 +188,7 @@ func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := conf.getProfileByName(profileName)
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
@@ -279,7 +279,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := conf.getProfileByName(profileName)
 
 	// load params
 	time := r.URL.Query().Get("reminder")
@@ -328,7 +328,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	for i, profileName := range profileNames {
-		profile := conf.Profiles[profileName]
+		profile := conf.getProfileByName(profileName)
 		if i == 0 {
 			// first source gets assigned to base calendar
 			log.Debug("Loading source ", profileName, " as base calendar")

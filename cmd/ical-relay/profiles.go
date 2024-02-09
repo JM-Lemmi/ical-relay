@@ -223,7 +223,7 @@ func getSource(source string) (*ics.Calendar, error) {
 	case "profile":
 		profileName := strings.Split(source, "://")[1]
 		conf.ensureProfileLoaded(profileName)
-		calendar, err = getProfileCalendar(conf.Profiles[profileName], profileName)
+		calendar, err = getProfileCalendar(conf.getProfileByName(profileName), profileName)
 		if err != nil {
 			return nil, err
 		}
