@@ -18,7 +18,6 @@ import (
 // STRUCTS
 // !! breaking changes need to keep the old version in legacyconfig.go !!
 
-// Config TODO: Eventually split into two parts: Config (possibly directly serverConfig) and Data (Profiles, Notifiers)
 // Config represents configuration for the application
 type Config struct {
 	Version   int                 `yaml:"version"`
@@ -206,10 +205,11 @@ func (c Config) importToDB() {
 }
 
 // CONFIG EDITING FUNCTIONS
+
 // Return a profile by name
+// If Profile does not exist, this will definitely panic at some point...
 func (c Config) GetProfileByName(name string) profile {
 	if !c.LiteMode {
-		// Dereference the pointer
 		return *dbReadProfile(name)
 	} else {
 		return c.Profiles[name]
@@ -296,7 +296,7 @@ func (c Config) editProfile(name string, sources []string, public bool, immutabl
 
 func (c Config) deleteProfile(name string) {
 	if !c.LiteMode {
-		fmt.Errorf("DB Delete Profile not implemented yet!") // TODO: implement
+		panic("DB Delete Profile not implemented yet!") // TODO: implement
 	} else {
 		delete(c.Profiles, name)
 	}
