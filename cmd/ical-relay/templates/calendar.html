@@ -141,13 +141,19 @@
                     currentType = "month";
                 }
             }
-            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
-            updateCalendar(currentDate);
+            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs();
+            if (currentDate.day() === 0){
+                currentDate = currentDate.add(1, "day")
+            }
+            updateCalendar(currentDate.startOf(currentType));
         }
         addEventListener("hashchange", onHashChange)
         onHashChange();
 
         function setSelectedDate(date) {
+            if(date.day() === 0){
+                date = date.add(1, "day")
+            }
             if(currentType === "month"){
                 window.location.hash = date.format("YYYY-MM");
             }else{
