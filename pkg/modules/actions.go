@@ -47,6 +47,7 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 	}
 
 	// parse move-time
+	// should be ok to leave at empty string check
 	if params["move-time"] != "" && (params["new-start"] != "" || params["new-end"] != "") {
 		return fmt.Errorf("two exclusive params were given: 'move-time' and 'new-start'/'new-end'")
 	}
@@ -58,7 +59,7 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 			event := cal.Components[i].(*ics.VEvent)
 
 			log.Debug("Changing event with id " + event.Id())
-			if params["new-summary"] != "" {
+			if _, ok := params["new-summary"]; ok {
 				if event.GetProperty(ics.ComponentPropertySummary) == nil {
 					params["overwrite"] = "true"
 					// if the summary is not set, we need to create it
@@ -75,7 +76,7 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				log.Debug("Changed summary to " + event.GetProperty(ics.ComponentPropertySummary).Value)
 			}
-			if params["new-description"] != "" {
+			if _, ok := params["new-description"]; ok {
 				if event.GetProperty(ics.ComponentPropertyDescription) == nil {
 					params["overwrite"] = "true"
 					// if the description is not set, we need to create it
@@ -92,7 +93,7 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				log.Debug("Changed description to " + event.GetProperty(ics.ComponentPropertyDescription).Value)
 			}
-			if params["new-location"] != "" {
+			if _, ok := params["new-location"]; ok {
 				if event.GetProperty(ics.ComponentPropertyLocation) == nil {
 					params["overwrite"] = "true"
 					// if the description is not set, we need to create it
@@ -109,7 +110,7 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				log.Debug("Changed location to " + event.GetProperty(ics.ComponentPropertyLocation).Value)
 			}
-			if params["new-start"] != "" {
+			if _, ok := params["new-start"]; ok {
 				start, err := time.Parse(time.RFC3339, params["new-start"])
 				if err != nil {
 					return fmt.Errorf("invalid start time: %s", err.Error())
@@ -117,7 +118,7 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				event.SetStartAt(start)
 				log.Debug("Changed start to " + params["new-start"])
 			}
-			if params["new-end"] != "" {
+			if _, ok := params["new-end"]; ok {
 				end, err := time.Parse(time.RFC3339, params["new-end"])
 				if err != nil {
 					return fmt.Errorf("invalid end time: %s", err.Error())
@@ -125,7 +126,8 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				event.SetEndAt(end)
 				log.Debug("Changed end to " + params["new-end"])
 			}
-			if params["move-time"] != "" {
+
+			if _, ok := params["move-time"]; ok {
 				dur, err := time.ParseDuration(params["move-time"])
 				if err != nil {
 					return fmt.Errorf("invalid duration: %s", err.Error())
