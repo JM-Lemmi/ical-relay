@@ -146,6 +146,17 @@ func dbListPublicProfiles() []string {
 	return profiles
 }
 
+func dbListAllProfiles() []string {
+	var profiles []string
+
+	err := db.Select(&profiles, `SELECT name FROM profile`)
+	if err != nil {
+		panic(err)
+	}
+
+	return profiles
+}
+
 func dbListProfiles() []string {
 	var profiles []string
 
