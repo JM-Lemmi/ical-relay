@@ -16,7 +16,7 @@
 	initSelect2('#nav-profile');
     async function displayAdminIfSuperAuth(){
         try{
-            if(await API.get("checkSuperAuth") === "ok"){
+            if(window.localStorage.getItem("token") !== null && await API.get("checkSuperAuth") === "ok"){
                 document.querySelector("#nav-admin-link").classList.remove("d-none");
             }
         }catch(APIError){}
