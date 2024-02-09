@@ -3,16 +3,15 @@ module github.com/jm-lemmi/ical-relay/relay
 go 1.19
 
 require (
-	github.com/arran4/golang-ical v0.0.0-20230318005454-19abf92700cc
-	github.com/fergusstrange/embedded-postgres v1.21.0
-	github.com/gorilla/mux v1.8.0
+	github.com/arran4/golang-ical v0.2.4
+	github.com/gorilla/mux v1.8.1
 	github.com/jm-lemmi/ical-relay/compare v0.0.0-00010101000000-000000000000
 	github.com/jm-lemmi/ical-relay/helpers v0.0.0-00010101000000-000000000000
 	github.com/jm-lemmi/ical-relay/modules v0.0.0-00010101000000-000000000000
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/lib/pq v1.10.8
-	github.com/sirupsen/logrus v1.9.0
-	github.com/thanhpk/randstr v1.0.5
+	github.com/lib/pq v1.10.9
+	github.com/sirupsen/logrus v1.9.3
+	github.com/thanhpk/randstr v1.0.6
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
@@ -20,14 +19,13 @@ require (
 
 require (
 	github.com/alexflint/go-arg v1.4.3
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	github.com/juliangruber/go-intersect/v2 v2.0.1
 )
 
 require (
-	github.com/alexflint/go-scalar v1.1.0 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	github.com/alexflint/go-scalar v1.2.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 )
 
 replace (
