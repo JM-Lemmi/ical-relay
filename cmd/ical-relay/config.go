@@ -311,19 +311,6 @@ func (c Config) notifierExists(name string) bool {
 	}
 }
 
-// This is the hack that makes everything work currently
-// TODO: This can probably be removed
-func (c Config) ensureProfileLoaded(name string) {
-	if !c.LiteMode {
-		return
-	}
-	profile := dbReadProfile(name)
-	if profile == nil {
-		log.Fatal("Attempted to ensureProfileLoaded on an nonexistent profile")
-	}
-	c.Profiles[profile.Name] = *profile
-}
-
 func (c Config) addNotifierFromProfile(name string) {
 	c.addNotifier(notifier{
 		Name:       name,

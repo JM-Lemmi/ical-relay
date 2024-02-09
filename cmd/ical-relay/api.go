@@ -20,7 +20,10 @@ import (
 )
 
 func checkAuthoriziation(token string, profileName string) bool {
-	conf.ensureProfileLoaded(profileName)
+	if !conf.profileExists(profileName) {
+		log.Errorf("profile '%s' doesn't exist", profileName)
+		return false
+	}
 	if helpers.Contains(conf.GetProfileByName(profileName).Tokens, token) || checkSuperAuthorization(token) {
 		return true
 	} else {
@@ -608,13 +611,12 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
 
 	var bodyData map[string]interface{}
 	if r.Method != http.MethodGet {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-            log.Errorf("Could not read the body in tokenEndpoint -- failed with %s", err.Error())
+			log.Errorf("Could not read the body in tokenEndpoint -- failed with %s", err.Error())
 		}
 		err = json.Unmarshal(body, &bodyData)
 		if err != nil {

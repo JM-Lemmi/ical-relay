@@ -116,7 +116,6 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
 	profile := conf.GetProfileByName(profileName)
 
 	// find event by uid in profile
@@ -151,7 +150,6 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
 	profile := conf.GetProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["Rules"] = profile.Rules
@@ -164,8 +162,7 @@ func newEntryHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("Create Event request")
 	profileName := vars["profile"]
-	ok := conf.profileExists(profileName)
-	if !ok {
+	if !conf.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
@@ -187,7 +184,6 @@ func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
 	profile := conf.GetProfileByName(profileName)
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	if err != nil {
@@ -278,7 +274,6 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
 	profile := conf.GetProfileByName(profileName)
 
 	// load params

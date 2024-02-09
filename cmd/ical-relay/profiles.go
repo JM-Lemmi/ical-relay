@@ -222,7 +222,9 @@ func getSource(source string) (*ics.Calendar, error) {
 		}
 	case "profile":
 		profileName := strings.Split(source, "://")[1]
-		conf.ensureProfileLoaded(profileName)
+		if !conf.profileExists(profileName) {
+			return nil, fmt.Errorf("Profile does not exist: %s", profileName)
+		}
 		calendar, err = getProfileCalendar(conf.GetProfileByName(profileName), profileName)
 		if err != nil {
 			return nil, err
