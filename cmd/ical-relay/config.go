@@ -206,7 +206,7 @@ func (c Config) importToDB() {
 }
 
 // CONFIG EDITING FUNCTIONS
-// Return a profile by name and a bool indicating if the profile exists
+// Return a profile by name
 func (c Config) GetProfileByName(name string) profile {
 	if !c.LiteMode {
 		// Dereference the pointer
