@@ -231,6 +231,18 @@ func (c Config) getPublicCalendars() []string {
 	return cal
 }
 
+func (c Config) getAllCalendars() []string {
+	if db.DB != nil {
+		return dbListAllProfiles()
+	}
+	var cal []string
+	for p := range c.Profiles {
+		log.Debug("Adding profile " + p + " to list")
+		cal = append(cal, p)
+	}
+	return cal
+}
+
 func (c Config) profileExists(name string) bool {
 	if db.DB != nil {
 		return dbProfileExists(name)

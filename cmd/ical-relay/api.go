@@ -41,7 +41,13 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": "/api/calendars"})
 	requestLogger.Infoln("New API-Request!")
 
-	var callist []string = conf.getPublicCalendars()
+	var callist []string
+	token := r.Header.Get("Authorization")
+	if !checkSuperAuthorization(token) {
+		callist = conf.getPublicCalendars()
+	} else {
+		callist = conf.getAllCalendars()
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	caljson, _ := json.Marshal(callist)
