@@ -51,7 +51,7 @@ func LegacyParseConfig(path string) (Config, error) {
 	tmpConfig.Version = 2
 	tmpConfig.Profiles = make(map[string]profile)
 
-	for p, _ := range oldConfig.Profiles {
+	for p := range oldConfig.Profiles {
 		// build new rules and sources from old modules
 		var rules []Rule
 		var sources []string
