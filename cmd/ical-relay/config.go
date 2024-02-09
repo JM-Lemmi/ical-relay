@@ -331,7 +331,10 @@ func (c Config) getNotifiers() map[string]notifier {
 	if db.DB != nil {
 		notifiers := make(map[string]notifier)
 		for _, notifierName := range dbListNotifiers() {
-			notifier, _ := dbReadNotifier(notifierName, false)
+			notifier, err := dbReadNotifier(notifierName, false)
+			if err != nil {
+				log.Warnf("`dbReadNotifier` failed with %s", err.Error())
+			}
 			notifiers[notifierName] = *notifier
 		}
 		return notifiers
@@ -341,7 +344,10 @@ func (c Config) getNotifiers() map[string]notifier {
 
 func (c Config) getNotifier(notifierName string) notifier {
 	if db.DB != nil {
-		notifier, _ := dbReadNotifier(notifierName, true)
+		notifier, err := dbReadNotifier(notifierName, true)
+		if err != nil {
+			log.Warnf("`dbReadNotifier` faild with %s", err.Error())
+		}
 		return *notifier
 	}
 	return c.Notifiers[notifierName]
@@ -467,7 +473,10 @@ func (c Config) RunCleanup() {
 	for p := range c.Profiles {
 		for i, m := range c.Profiles[p].Rules {
 			if m.Expiry != "" {
-				exp, _ := time.Parse(time.RFC3339, m.Expiry)
+				exp, err := time.Parse(time.RFC3339, m.Expiry)
+				if err != nil {
+					log.Errorf("RunCleanup could not parse the expiry time: %s", err.Error())
+				}
 				if time.Now().After(exp) {
 					c.removeRuleFromProfile(p, i)
 				}
@@ -490,7 +499,7 @@ func CleanupStartup() {
 }
 
 func TimeCleanup() {
-	interval, _ := time.ParseDuration("1h")
+	interval := time.Hour
 	if interval == 0 {
 		// failsave for 0s interval, to make machine still responsive
 		interval = 1 * time.Second
