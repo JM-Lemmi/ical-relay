@@ -478,10 +478,21 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 			file.Close()
 			b64file := base64.StdEncoding.EncodeToString(buf.Bytes())
 
+			// Check if file can be pased
+			_, parse_err := ics.ParseCalendar(bytes.NewReader(buf.Bytes()))
+
+			if parse_err != nil {
+				requestLogger.Errorln(parse_err)
+				http.Error(w, parse_err.Error(), http.StatusUnprocessableEntity)
+				return
+			}
+
 			// create source
 			source := "base64://" + b64file
 			log.Debug("Adding source " + source)
 			conf.addSource(profileName, source)
+
+			ok(w, requestLogger)
 		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -630,7 +641,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-            log.Errorf("Could not read the body in tokenEndpoint -- failed with %s", err.Error())
+			log.Errorf("Could not read the body in tokenEndpoint -- failed with %s", err.Error())
 		}
 		err = json.Unmarshal(body, &bodyData)
 		if err != nil {
