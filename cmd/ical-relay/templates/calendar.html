@@ -64,6 +64,7 @@
     {{template "footer.html" .}}
     <script>
         const events = {{ .Events }};
+        const profileName = {{.ProfileName}};
 
         let immutable_past = {{ .ImmutablePast }};
         let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};

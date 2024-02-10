@@ -28,12 +28,9 @@ async function handleDroppedFiles(files) {
         const formData = new FormData();
 
         formData.append('files[]', file, file.name)
-        if(!localStorage.getItem("profile")) {
-            document.getElementById("no-profile-error").style.display = "block";
-            return;
-        }
+       
         await API.postFormData(
-            "profiles/" + localStorage.getItem("profile") + "/newentryfile",
+            "profiles/" + profileName + "/newentryfile",
               formData
         ).then((response) => {
             console.log(response);
