@@ -486,7 +486,6 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Check if file can be pased
-
 			_, parse_err := ics.ParseCalendar(bytes.NewReader(buf.Bytes()))
 
 			if parse_err != nil {
