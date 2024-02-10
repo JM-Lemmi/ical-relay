@@ -2,6 +2,9 @@ go 1.19
 
 use (
 	./cmd/ical-relay
+	./cmd/ical-notifier
+	./pkg/golang-ical
 	./pkg/compare
+	./pkg/helpers
 	./pkg/modules
 )
