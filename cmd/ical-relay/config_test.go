@@ -14,14 +14,13 @@ func prettyPrintConf(c Config) string {
 // TestParseConfig - tests that the config is parsed correctly
 func TestParseConfig(t *testing.T) {
 	// test that the config is parsed correctly
-	conf, err := ParseConfig("./fixtures/testconfig.yaml", true)
+	conf, err := ParseConfig("./fixtures/testconfig.yaml")
 	if err != nil {
 		t.Errorf("Error parsing config: %s", err)
 	}
 
 	test_conf := Config{
-		Version:  2,
-		LiteMode: true,
+		Version: 2,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
@@ -56,14 +55,13 @@ func TestParseConfig(t *testing.T) {
 
 func TestExampleConfig(t *testing.T) {
 	// test that the config is parsed correctly
-	conf, err := ParseConfig("./config.yml.example", true)
+	conf, err := ParseConfig("./config.yml.example")
 	if err != nil {
 		t.Errorf("Error parsing config: %s", err)
 	}
 
 	test_conf := Config{
-		Version:  2,
-		LiteMode: true,
+		Version: 2,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
