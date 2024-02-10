@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -26,6 +26,27 @@ type LegacyConfig struct {
 	Notifiers map[string]notifier      `yaml:"notifiers,omitempty"`
 }
 
+type ConfigV2 struct {
+	Version   int                  `yaml:"version"`
+	Server    serverConfig         `yaml:"server"`
+	Profiles  map[string]profileV2 `yaml:"profiles,omitempty"`
+	Notifiers map[string]notifier  `yaml:"notifiers,omitempty"`
+}
+
+type profileV2 struct {
+	Name          string   `db:"name"`
+	Sources       []string `yaml:"sources,omitempty"`
+	Public        bool     `yaml:"public" db:"public"`
+	ImmutablePast bool     `yaml:"immutable-past,omitempty" db:"immutable_past"`
+	Tokens        []string `yaml:"admin-tokens"`
+	NTokens       []token  `yaml:"admin-tokens-storage-v2,omitempty"`
+	Rules         []Rule   `yaml:"rules,omitempty"`
+}
+
+type ConfigVersion struct {
+	Version int `yaml:"version"`
+}
+
 // CONFIG MANAGEMENT FUNCTIONS
 
 // ParseConfig reads config from path and returns a Config struct
@@ -35,23 +56,78 @@ type LegacyConfig struct {
 func LegacyParseConfig(path string) (Config, error) {
 	var tmpConfig Config
 	var oldConfig LegacyConfig
+	var configVersion ConfigVersion
 
-	yamlFile, err := ioutil.ReadFile(path)
+	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("Error Reading Config: %v ", err)
-		return tmpConfig, err
+	}
+
+	err = yaml.Unmarshal(yamlFile, &configVersion)
+	if err != nil {
+		configVersion = ConfigVersion{Version: -1}
+	}
+
+	if configVersion.Version == 2 {
+		var configV2 ConfigV2
+
+		yamlFile, err = os.ReadFile(path)
+		if err != nil {
+			log.Fatalf("Error Reading Config: %v ", err)
+		}
+
+		err = yaml.Unmarshal(yamlFile, &configV2)
+		if err != nil {
+			log.Fatalf("Error Unmarshalling Config: %v", err)
+		}
+
+		tmpConfig.Server = configV2.Server
+		tmpConfig.Notifiers = configV2.Notifiers
+		tmpConfig.Version = 3
+		tmpConfig.Profiles = make(map[string]profile)
+
+		for p := range configV2.Profiles {
+			var tokens []token
+			for _, tokenString := range configV2.Profiles[p].Tokens {
+				tokens = append(tokens, token{
+					Token: tokenString,
+				})
+			}
+			for _, nToken := range configV2.Profiles[p].NTokens {
+				tokens = append(tokens, nToken)
+			}
+
+			tmpConfig.Profiles[p] = profile{
+				Sources:       configV2.Profiles[p].Sources,
+				Public:        configV2.Profiles[p].Public,
+				ImmutablePast: configV2.Profiles[p].ImmutablePast,
+				Tokens:        tokens,
+				Rules:         configV2.Profiles[p].Rules,
+			}
+		}
+		return tmpConfig, nil
+	}
+
+	if configVersion.Version != -1 {
+		log.Fatalf("Unknown configVersion %d", configVersion)
+	}
+
+	//Attempting to resurrect unversioned config:
+
+	yamlFile, err = os.ReadFile(path)
+	if err != nil {
+		log.Fatalf("Error Reading Config: %v ", err)
 	}
 
 	err = yaml.Unmarshal(yamlFile, &oldConfig)
 	if err != nil {
 		log.Fatalf("Error Unmarshalling Config: %v", err)
-		return tmpConfig, err
 	}
 
 	// transfer the old config to the new one
 	tmpConfig.Server = oldConfig.Server
 	tmpConfig.Notifiers = oldConfig.Notifiers
-	tmpConfig.Version = 2
+	tmpConfig.Version = 3
 	tmpConfig.Profiles = make(map[string]profile)
 
 	for p := range oldConfig.Profiles {
@@ -159,11 +235,18 @@ func LegacyParseConfig(path string) (Config, error) {
 			}
 		}
 
+		var tokens []token
+		for _, tokenString := range oldConfig.Profiles[p].Tokens {
+			tokens = append(tokens, token{
+				Token: tokenString,
+			})
+		}
+
 		tmpConfig.Profiles[p] = profile{
 			Sources:       sources,
 			Public:        oldConfig.Profiles[p].Public,
 			ImmutablePast: oldConfig.Profiles[p].ImmutablePast,
-			Tokens:        oldConfig.Profiles[p].Tokens,
+			Tokens:        tokens,
 			Rules:         rules,
 		}
 	}

@@ -31,7 +31,7 @@ func (c DatabaseDataStore) addProfile(name string, sources []string, public bool
 		Sources:       sources,
 		Public:        public,
 		ImmutablePast: immutablePast,
-		Tokens:        []string{},
+		Tokens:        []token{},
 		Rules:         []Rule{},
 	})
 }

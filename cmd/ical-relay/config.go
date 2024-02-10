@@ -66,8 +66,7 @@ type profile struct {
 	Sources       []string `yaml:"sources,omitempty"`
 	Public        bool     `yaml:"public" db:"public"`
 	ImmutablePast bool     `yaml:"immutable-past,omitempty" db:"immutable_past"`
-	Tokens        []string `yaml:"admin-tokens"`
-	NTokens       []token  `yaml:"admin-tokens-storage-v2,omitempty"`
+	Tokens        []token  `yaml:"admin-tokens,omitempty"`
 	Rules         []Rule   `yaml:"rules,omitempty"`
 }
 
@@ -181,7 +180,7 @@ func (c Config) importToDB() {
 			}
 		}
 		for _, token := range profile.Tokens {
-			dbWriteProfileToken(profile, token, nil)
+			dbWriteProfileToken(profile, token.Token, token.Note)
 		}
 		for _, rule := range profile.Rules {
 			if !dbProfileRuleExists(profile, rule) {
@@ -238,7 +237,7 @@ func (c Config) addProfile(name string, sources []string, public bool, immutable
 		Sources:       sources,
 		Public:        public,
 		ImmutablePast: immutablepast,
-		Tokens:        []string{},
+		Tokens:        []token{},
 		Rules:         []Rule{},
 	}
 }
@@ -250,7 +249,6 @@ func (c Config) editProfile(name string, sources []string, public bool, immutabl
 		Public:        public,
 		ImmutablePast: immutablepast,
 		Tokens:        c.Profiles[name].Tokens,
-		NTokens:       c.Profiles[name].NTokens,
 		Rules:         c.Profiles[name].Rules,
 	}
 }
@@ -329,12 +327,15 @@ func (c Config) removeRuleFromProfile(profile string, index int) {
 }
 
 func (c Config) createToken(profileName string, note string) error {
-	token := randstr.Base62(64)
+	tokenString := randstr.Base62(64)
 	if !c.profileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	p := c.Profiles[profileName]
-	p.Tokens = append(c.Profiles[profileName].Tokens, token)
+	p.Tokens = append(c.Profiles[profileName].Tokens, token{
+		Token: tokenString,
+		Note:  &note,
+	})
 	c.Profiles[profileName] = p
 	return nil
 }
@@ -353,7 +354,7 @@ func (c Config) deleteToken(profileName string, token string) error {
 	}
 	p := c.Profiles[profileName]
 	for i, cToken := range p.Tokens {
-		if cToken == token {
+		if cToken.Token == token {
 			p.Tokens = append(p.Tokens[:i], p.Tokens[i+1:]...)
 			break
 		}

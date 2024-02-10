@@ -19,16 +19,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func checkAuthoriziation(token string, profileName string) bool {
+func checkAuthorization(tokenString string, profileName string) bool {
 	if !dataStore.profileExists(profileName) {
 		log.Errorf("profile '%s' doesn't exist", profileName)
 		return false
 	}
-	if helpers.Contains(dataStore.getProfileByName(profileName).Tokens, token) || checkSuperAuthorization(token) {
-		return true
-	} else {
-		return false
+	for _, token := range dataStore.getProfileByName(profileName).Tokens {
+		if token.Token == tokenString {
+			return true
+		}
 	}
+	return checkSuperAuthorization(tokenString)
 }
 
 func checkSuperAuthorization(token string) bool {
@@ -228,7 +229,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !checkAuthoriziation(token, profileName) {
+	if !checkAuthorization(token, profileName) {
 		requestLogger.Warnln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
@@ -333,7 +334,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !checkAuthoriziation(token, profileName) {
+	if !checkAuthorization(token, profileName) {
 		requestLogger.Warnln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
@@ -433,7 +434,7 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !checkAuthoriziation(token, profileName) {
+	if !checkAuthorization(token, profileName) {
 		requestLogger.Warnln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
@@ -492,7 +493,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !checkAuthoriziation(token, profileName) {
+	if !checkAuthorization(token, profileName) {
 		requestLogger.Warnln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
@@ -562,7 +563,7 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if checkAuthoriziation(token, profileName) {
+	if checkAuthorization(token, profileName) {
 		requestLogger.Infoln("Authorization successful!")
 		ok(w, requestLogger)
 	} else {
@@ -629,7 +630,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.Header().Set("Content-Type", "application/json")
-		tokens, err := json.Marshal(conf.Profiles[profileName].NTokens) //TODO: Not shimmed by DataStore!
+		tokens, err := json.Marshal(conf.getProfileByName(profileName).Tokens)
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
