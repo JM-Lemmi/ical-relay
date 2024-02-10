@@ -478,13 +478,6 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 			file.Close()
 			b64file := base64.StdEncoding.EncodeToString(buf.Bytes())
 
-			// check if file is larger than 40000 bytes
-			if len(b64file) > 40000 {
-				requestLogger.Errorln("File is too large!")
-				http.Error(w, "File is too large!", http.StatusRequestEntityTooLarge)
-				return
-			}
-
 			// Check if file can be pased
 			_, parse_err := ics.ParseCalendar(bytes.NewReader(buf.Bytes()))
 
