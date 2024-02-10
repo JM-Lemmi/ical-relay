@@ -28,3 +28,31 @@ type DataStore interface {
 	addNotifyRecipient(notifierName string, recipient string) error
 	removeNotifyRecipient(notifierName string, recipient string) error
 }
+
+type token struct {
+	Token string  `db:"token"`
+	Note  *string `db:"note"`
+}
+
+type profile struct {
+	Name          string   `db:"name"`
+	Sources       []string `yaml:"sources,omitempty"`
+	Public        bool     `yaml:"public" db:"public"`
+	ImmutablePast bool     `yaml:"immutable-past,omitempty" db:"immutable_past"`
+	Tokens        []token  `yaml:"admin-tokens,omitempty"`
+	Rules         []Rule   `yaml:"rules,omitempty"`
+}
+
+type Rule struct {
+	Filters  []map[string]string `yaml:"filters" json:"filters"`
+	Operator string              `yaml:"operator" json:"operator"`
+	Action   map[string]string   `yaml:"action" json:"action"`
+	Expiry   string              `yaml:"expiry,omitempty" json:"expiry,omitempty"`
+}
+
+type notifier struct {
+	Name       string   `db:"name"`
+	Source     string   `yaml:"source" db:"source"`
+	Interval   string   `yaml:"interval" db:"interval"`
+	Recipients []string `yaml:"recipients"`
+}

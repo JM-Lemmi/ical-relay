@@ -9,10 +9,6 @@ import (
 type DatabaseDataStore struct {
 }
 
-func (c DatabaseDataStore) getProfileByName(name string) profile {
-	return *dbReadProfile(name)
-}
-
 func (c DatabaseDataStore) getPublicCalendars() []string {
 	return dbListPublicProfiles()
 }
@@ -23,6 +19,10 @@ func (c DatabaseDataStore) getAllCalendars() []string {
 
 func (c DatabaseDataStore) profileExists(name string) bool {
 	return dbProfileExists(name)
+}
+
+func (c DatabaseDataStore) getProfileByName(name string) profile {
+	return *dbReadProfile(name)
 }
 
 func (c DatabaseDataStore) addProfile(name string, sources []string, public bool, immutablePast bool) {
@@ -51,6 +51,51 @@ func (c DatabaseDataStore) editProfile(name string, sources []string, public boo
 			dbAddProfileSource(tempProfile, source)
 		}
 	}
+}
+
+func (c DatabaseDataStore) addSource(profileName string, src string) error {
+	if !dbProfileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	dbAddProfileSource(profile{Name: profileName}, src)
+	return nil
+}
+
+func (c DatabaseDataStore) addRule(profileName string, rule Rule) error {
+	if !dbProfileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	dbAddProfileRule(profile{Name: profileName}, rule)
+	return nil
+}
+
+func (c DatabaseDataStore) removeRuleFromProfile(profile string, index int) {
+	log.Error("removeRuleFromProfile currently not supported on db") // TODO: implement
+}
+
+func (c DatabaseDataStore) createToken(profileName string, note string) error {
+	token := randstr.Base62(64)
+	if !dbProfileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	dbWriteProfileToken(profile{Name: profileName}, token, &note)
+	return nil
+}
+
+func (c DatabaseDataStore) modifyTokenNote(profileName string, token string, note string) error {
+	if !dbProfileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	dbWriteProfileToken(profile{Name: profileName}, token, &note)
+	return nil
+}
+
+func (c DatabaseDataStore) deleteToken(profileName string, token string) error {
+	if !dbProfileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	dbRemoveProfileToken(profile{Name: profileName}, token)
+	return nil
 }
 
 func (c DatabaseDataStore) deleteProfile(name string) {
@@ -98,50 +143,5 @@ func (c DatabaseDataStore) removeNotifyRecipient(notifierName string, recipient 
 		return fmt.Errorf("notifier does not exist")
 	}
 	dbRemoveNotifierRecipient(notifier{Name: notifierName}, recipient)
-	return nil
-}
-
-func (c DatabaseDataStore) addRule(profileName string, rule Rule) error {
-	if !dbProfileExists(profileName) {
-		return fmt.Errorf("profile " + profileName + " does not exist")
-	}
-	dbAddProfileRule(profile{Name: profileName}, rule)
-	return nil
-}
-
-func (c DatabaseDataStore) removeRuleFromProfile(profile string, index int) {
-	log.Error("removeRuleFromProfile currently not supported on db") // TODO: implement
-}
-
-func (c DatabaseDataStore) createToken(profileName string, note string) error {
-	token := randstr.Base62(64)
-	if !dbProfileExists(profileName) {
-		return fmt.Errorf("profile " + profileName + " does not exist")
-	}
-	dbWriteProfileToken(profile{Name: profileName}, token, &note)
-	return nil
-}
-
-func (c DatabaseDataStore) modifyTokenNote(profileName string, token string, note string) error {
-	if !dbProfileExists(profileName) {
-		return fmt.Errorf("profile " + profileName + " does not exist")
-	}
-	dbWriteProfileToken(profile{Name: profileName}, token, &note)
-	return nil
-}
-
-func (c DatabaseDataStore) deleteToken(profileName string, token string) error {
-	if !dbProfileExists(profileName) {
-		return fmt.Errorf("profile " + profileName + " does not exist")
-	}
-	dbRemoveProfileToken(profile{Name: profileName}, token)
-	return nil
-}
-
-func (c DatabaseDataStore) addSource(profileName string, src string) error {
-	if !dbProfileExists(profileName) {
-		return fmt.Errorf("profile " + profileName + " does not exist")
-	}
-	dbAddProfileSource(profile{Name: profileName}, src)
 	return nil
 }

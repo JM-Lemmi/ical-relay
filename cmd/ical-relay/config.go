@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,41 +55,13 @@ type mailConfig struct {
 	SMTPPass   string `yaml:"smtp_pass,omitempty"`
 }
 
-type token struct {
-	Token string  `db:"token"`
-	Note  *string `db:"note"`
-}
-
-type profile struct {
-	Name          string   `db:"name"`
-	Sources       []string `yaml:"sources,omitempty"`
-	Public        bool     `yaml:"public" db:"public"`
-	ImmutablePast bool     `yaml:"immutable-past,omitempty" db:"immutable_past"`
-	Tokens        []token  `yaml:"admin-tokens,omitempty"`
-	Rules         []Rule   `yaml:"rules,omitempty"`
-}
-
-type Rule struct {
-	Filters  []map[string]string `yaml:"filters" json:"filters"`
-	Operator string              `yaml:"operator" json:"operator"`
-	Action   map[string]string   `yaml:"action" json:"action"`
-	Expiry   string              `yaml:"expiry,omitempty" json:"expiry,omitempty"`
-}
-
-type notifier struct {
-	Name       string   `db:"name"`
-	Source     string   `yaml:"source" db:"source"`
-	Interval   string   `yaml:"interval" db:"interval"`
-	Recipients []string `yaml:"recipients"`
-}
-
 // CONFIG MANAGEMENT FUNCTIONS
 
 // ParseConfig reads config from path and returns a Config struct
 func ParseConfig(path string) (Config, error) {
 	var tmpConfig Config
 
-	yamlFile, err := ioutil.ReadFile(path)
+	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("Error Reading Config: %v ", err)
 		return tmpConfig, err
@@ -201,11 +172,7 @@ func (c Config) importToDB() {
 	}
 }
 
-// CONFIG EDITING FUNCTIONS
-
-func (c Config) getProfileByName(name string) profile {
-	return c.Profiles[name]
-}
+// CONFIG DataStore FUNCTIONS
 
 func (c Config) getPublicCalendars() []string {
 	var cal []string
@@ -231,6 +198,10 @@ func (c Config) profileExists(name string) bool {
 	return ok
 }
 
+func (c Config) getProfileByName(name string) profile {
+	return c.Profiles[name]
+}
+
 // add a profile without tokens and without rules
 func (c Config) addProfile(name string, sources []string, public bool, immutablepast bool) {
 	c.Profiles[name] = profile{
@@ -253,60 +224,14 @@ func (c Config) editProfile(name string, sources []string, public bool, immutabl
 	}
 }
 
-func (c Config) deleteProfile(name string) {
-	delete(c.Profiles, name)
-}
-
-func (c Config) notifierExists(name string) bool {
-	_, ok := c.Notifiers[name]
-	return ok
-}
-
-// TODO: move this function into the application code
-func (c Config) addNotifierFromProfile(name string) {
-	c.addNotifier(notifier{
-		Name:       name,
-		Source:     c.Server.URL + "/profiles/" + name,
-		Interval:   "1h",
-		Recipients: []string{},
-	})
-}
-
-func (c Config) addNotifier(notifier notifier) {
-	c.Notifiers[notifier.Name] = notifier
-}
-
-func (c Config) getNotifiers() map[string]notifier {
-	return c.Notifiers
-}
-
-func (c Config) getNotifier(notifierName string) notifier {
-	return c.Notifiers[notifierName]
-}
-
-func (c Config) addNotifyRecipient(notifierName string, recipient string) error {
-	if !c.notifierExists(notifierName) {
-		return fmt.Errorf("notifier does not exist")
+func (c Config) addSource(profileName string, src string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	n := c.Notifiers[notifierName]
-	n.Recipients = append(n.Recipients, recipient)
-	c.Notifiers[notifierName] = n
+	p := c.Profiles[profileName]
+	p.Sources = append(c.Profiles[profileName].Sources, src)
+	c.Profiles[profileName] = p
 	return nil
-}
-
-func (c Config) removeNotifyRecipient(notifierName string, recipient string) error {
-	if !c.notifierExists(notifierName) {
-		return fmt.Errorf("notifier does not exist")
-	}
-	n := c.Notifiers[notifierName]
-	for i, r := range n.Recipients {
-		if r == recipient {
-			n.Recipients = append(n.Recipients[:i], n.Recipients[i+1:]...)
-			c.Notifiers[notifierName] = n
-			return nil
-		}
-	}
-	return fmt.Errorf("recipient not found")
 }
 
 func (c Config) addRule(profileName string, rule Rule) error {
@@ -363,14 +288,62 @@ func (c Config) deleteToken(profileName string, token string) error {
 	return nil
 }
 
-func (c Config) addSource(profileName string, src string) error {
-	if !c.profileExists(profileName) {
-		return fmt.Errorf("profile " + profileName + " does not exist")
+func (c Config) deleteProfile(name string) {
+	delete(c.Profiles, name)
+}
+
+func (c Config) notifierExists(name string) bool {
+	_, ok := c.Notifiers[name]
+	return ok
+}
+
+func (c Config) addNotifier(notifier notifier) {
+	c.Notifiers[notifier.Name] = notifier
+}
+
+func (c Config) getNotifiers() map[string]notifier {
+	return c.Notifiers
+}
+
+func (c Config) getNotifier(notifierName string) notifier {
+	return c.Notifiers[notifierName]
+}
+
+func (c Config) addNotifyRecipient(notifierName string, recipient string) error {
+	if !c.notifierExists(notifierName) {
+		return fmt.Errorf("notifier does not exist")
 	}
-	p := c.Profiles[profileName]
-	p.Sources = append(c.Profiles[profileName].Sources, src)
-	c.Profiles[profileName] = p
+	n := c.Notifiers[notifierName]
+	n.Recipients = append(n.Recipients, recipient)
+	c.Notifiers[notifierName] = n
 	return nil
+}
+
+func (c Config) removeNotifyRecipient(notifierName string, recipient string) error {
+	if !c.notifierExists(notifierName) {
+		return fmt.Errorf("notifier does not exist")
+	}
+	n := c.Notifiers[notifierName]
+	for i, r := range n.Recipients {
+		if r == recipient {
+			n.Recipients = append(n.Recipients[:i], n.Recipients[i+1:]...)
+			c.Notifiers[notifierName] = n
+			return nil
+		}
+	}
+	return fmt.Errorf("recipient not found")
+}
+
+// LEGACY functions (to be moved elsewhere, or not supported yet by DataStore)
+
+// TODO: move this function into the application code
+func (c Config) addNotifierFromProfile(name string) {
+	c.addNotifier(notifier{
+		Name:       name,
+		Source:     c.Server.URL + "/profiles/" + name,
+		Interval:   "1h",
+		Recipients: []string{},
+	})
 }
 
 func (c Config) RunCleanup() {
