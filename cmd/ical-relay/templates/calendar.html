@@ -107,16 +107,17 @@
             if(currentType === "month"){
                 document.getElementById("current-date").innerHTML = currentDate.format("MMMM YYYY");
 
-                calendarStart = date.day(0);
+                calendarStart = date.startOf('month').day(0);
                 calendarEnd = date.add(4, "week").day(6);
             }else{
-                document.getElementById("current-date").innerHTML = "KW"+currentDate.format(" w MMMM");
-
                 calendarStart = date.startOf("week").subtract(1, "day");
+                if(date.day() === 0){
+                    calendarStart = calendarStart.add(1,"week")
+                }
                 calendarEnd = calendarStart.add(1, "week");
+
+                document.getElementById("current-date").innerHTML = "KW"+calendarStart.add(1,"day").format(" w MMMM");
             }
-            console.log(calendarStart);
-            console.log(calendarEnd);
             let calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
             let row;
@@ -141,7 +142,7 @@
                     currentType = "month";
                 }
             }
-            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
+            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf('day');
             updateCalendar(currentDate);
         }
         addEventListener("hashchange", onHashChange)
