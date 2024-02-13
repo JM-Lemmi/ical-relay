@@ -3,10 +3,26 @@
     <title>{{.ProfileName }} - {{.ApplicationName }}</title>
     {{template "head.html" .}}
     <script src="/static/js/calendar.js"></script>
+    <script src="/static/js/dnd.js" defer></script>
 </head>
 <body>
     {{template "nav.html" .}}
     <main class="container" style="position: relative">
+
+        <div id="dropzone" class="dropzone" style="display: none;">
+            Drag and drop .ics files here to import them.
+        </div>
+
+        <div class="alert alert-success" id="import-success" style="display: none">
+            .ics-Datei erfolgreich importiert!
+          </div>
+          <div class="alert alert-danger" id="import-error" style="display: none">
+            .ics-Datei konnte nicht importiert werden!
+          </div>
+          <div class="alert alert-danger" id="no-profile-error" style="display: none">
+            Kein Profil hinterlegt!
+          </div>
+        
         <!-- Error Message with a close button -->
         <div class="row d-none" id="error-message-wrapper">
             <div class="text-center alert alert-danger alert-dismissible" role="alert">
@@ -48,6 +64,7 @@
     {{template "footer.html" .}}
     <script>
         const events = {{ .Events }};
+        const profileName = {{.ProfileName}};
 
         let immutable_past = {{ .ImmutablePast }};
         let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};
@@ -141,13 +158,19 @@
                     currentType = "month";
                 }
             }
-            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs().startOf(currentType);
-            updateCalendar(currentDate);
+            currentDate = location.hash ? dayjs(location.hash.substring(1)) : dayjs();
+            if (currentDate.day() === 0){
+                currentDate = currentDate.add(1, "day")
+            }
+            updateCalendar(currentDate.startOf(currentType));
         }
         addEventListener("hashchange", onHashChange)
         onHashChange();
 
         function setSelectedDate(date) {
+            if(date.day() === 0){
+                date = date.add(1, "day")
+            }
             if(currentType === "month"){
                 window.location.hash = date.format("YYYY-MM");
             }else{

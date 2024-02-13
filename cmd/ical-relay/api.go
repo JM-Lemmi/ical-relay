@@ -466,10 +466,20 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 			file.Close()
 			b64file := base64.StdEncoding.EncodeToString(buf.Bytes())
 
+			// Check if file can be pased
+			_, parse_err := ics.ParseCalendar(bytes.NewReader(buf.Bytes()))
+
+			if parse_err != nil {
+				requestLogger.Errorln(parse_err)
+				http.Error(w, parse_err.Error(), http.StatusUnprocessableEntity)
+				return
+			}
+
 			// create source
 			source := "base64://" + b64file
 			log.Debug("Adding source " + source)
 			dataStore.addSource(profileName, source)
+			ok(w, requestLogger)
 		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

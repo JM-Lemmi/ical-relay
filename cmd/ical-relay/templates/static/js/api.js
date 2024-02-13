@@ -45,6 +45,14 @@ class API{
             body: JSON.stringify(data),
         }), method, "DELETE")
     }
+
+    static async postFormData(method, data) {
+        return handleFetchPromise(fetch(apiBase+method, {
+            method: "POST",
+            headers: API.getHeaders(),
+            body: data,
+        }), method, "POST")
+    }
 }
 
 class APIError extends Error{
