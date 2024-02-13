@@ -120,6 +120,7 @@ The rule are executed in the order they are listed. You can create multiple rule
 | ical-relay version | config version |
 |--------------------|----------------|
 | 2.0.0-beta.5       | 2              |
+| ?                  | 3              |
 
 ### database versioning
 

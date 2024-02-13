@@ -74,19 +74,19 @@ func ParseConfig(path string) (Config, error) {
 		if err != nil {
 			log.Fatalf("Error Parsing Legacy Config: %v", err)
 			return tmpConfig, err
-			// parsing in legacy mode failed
 		}
-		// parsing in legacy mode succeeded
+		tmpConfig.saveConfig(path)
 	}
 
-	// check if config is up to date, if not
-	if tmpConfig.Version < 2 {
+	// check if config has current version, if not upgrade it
+	if tmpConfig.Version < 3 {
 		log.Warn("Config is outdated, upgrading")
 		tmpConfig, err = LegacyParseConfig(path)
 		if err != nil {
 			log.Fatalf("Error Parsing Legacy Config: %v", err)
 			return tmpConfig, err
 		}
+		tmpConfig.saveConfig(path)
 	}
 
 	log.Trace("Read config, now setting defaults")
@@ -135,6 +135,26 @@ func ParseConfig(path string) (Config, error) {
 	}
 
 	return tmpConfig, nil
+}
+
+func (c Config) saveConfig(path string) error {
+	currentConfig, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(
+		path[:strings.LastIndexByte(path, '.')]+time.Now().UTC().Format("2006-01-02_150405")+".bak.yml",
+		currentConfig,
+		0600)
+	if err != nil {
+		return err
+	}
+
+	d, err := yaml.Marshal(&c)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, d, 0600)
 }
 
 func (c Config) importToDB() {
