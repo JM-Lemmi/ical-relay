@@ -194,7 +194,7 @@ func (c Config) importToDB() {
 
 // CONFIG DataStore FUNCTIONS
 
-func (c Config) getPublicCalendars() []string {
+func (c Config) getPublicProfileNames() []string {
 	var cal []string
 	for p := range c.Profiles {
 		if c.Profiles[p].Public {
@@ -204,7 +204,7 @@ func (c Config) getPublicCalendars() []string {
 	return cal
 }
 
-func (c Config) getAllCalendars() []string {
+func (c Config) getAllProfileNames() []string {
 	var cal []string
 	for p := range c.Profiles {
 		log.Debug("Adding profile " + p + " to list")

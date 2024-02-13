@@ -1,8 +1,8 @@
 package main
 
 type DataStore interface {
-	getPublicCalendars() []string //TODO: rename to getPublicProfileNames
-	getAllCalendars() []string    //TODO: rename to getAllProfileNames
+	getPublicProfileNames() []string
+	getAllProfileNames() []string
 	profileExists(name string) bool
 	// Note: Must check if profileExists beforehand
 	getProfileByName(name string) profile

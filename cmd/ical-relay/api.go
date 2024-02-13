@@ -48,9 +48,9 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	var callist []string
 	token := r.Header.Get("Authorization")
 	if !checkSuperAuthorization(token) {
-		callist = dataStore.getPublicCalendars()
+		callist = dataStore.getPublicProfileNames()
 	} else {
-		callist = dataStore.getAllCalendars()
+		callist = dataStore.getAllProfileNames()
 	}
 
 	w.Header().Set("Content-Type", "application/json")

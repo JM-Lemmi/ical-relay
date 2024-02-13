@@ -24,7 +24,7 @@ type profileMetadata struct {
 
 func getProfilesMetadata() []profileMetadata {
 	profiles := make([]profileMetadata, 0)
-	for _, name := range dataStore.getPublicCalendars() {
+	for _, name := range dataStore.getPublicProfileNames() {
 		// FIXME: any name with "/" will break the URL
 		viewUrl, err := router.Get("calendarView").URL("profile", name)
 		if err != nil {

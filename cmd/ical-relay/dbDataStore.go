@@ -9,12 +9,12 @@ import (
 type DatabaseDataStore struct {
 }
 
-func (c DatabaseDataStore) getPublicCalendars() []string {
+func (c DatabaseDataStore) getPublicProfileNames() []string {
 	return dbListPublicProfiles()
 }
 
-func (c DatabaseDataStore) getAllCalendars() []string {
-	return dbListAllProfiles()
+func (c DatabaseDataStore) getAllProfileNames() []string {
+	return dbListProfiles()
 }
 
 func (c DatabaseDataStore) profileExists(name string) bool {
