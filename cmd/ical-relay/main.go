@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//go:generate ../../.github/scripts/generate-version.sh
 //go:embed VERSION
 var version string
 
