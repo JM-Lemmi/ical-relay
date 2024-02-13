@@ -156,6 +156,8 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	profile := conf.Profiles[profileName]
 	data := getGlobalTemplateData()
 	data["Rules"] = profile.Rules
+	data["ImmutablePast"] = profile.ImmutablePast
+	data["Public"] = profile.Public
 	data["ProfileName"] = profileName
 	htmlTemplates.ExecuteTemplate(w, "rules.html", data)
 }
