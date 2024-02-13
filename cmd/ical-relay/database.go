@@ -182,11 +182,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = db.Select(&profile.Tokens, "SELECT token FROM admin_tokens WHERE profile = $1", profileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Select(&profile.NTokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
+	err = db.Select(&profile.Tokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
 	if err != nil {
 		log.Fatal(err)
 	}

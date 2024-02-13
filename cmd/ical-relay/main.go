@@ -14,6 +14,7 @@ var version = "2.0.0-beta.7.3"
 
 var configPath string
 var conf Config
+var dataStore DataStore
 
 var router *mux.Router
 
@@ -27,7 +28,7 @@ func main() {
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
-		LiteMode    bool   `arg:"-l, --lite-mode" help:"Enable lite mode. Running only in Memory, no Database needed."`
+		LiteMode     bool   `arg:"-l, --lite-mode" help:"Enable lite mode. Running only in Memory, no Database needed."`
 	}
 	arg.MustParse(&args)
 
@@ -42,7 +43,7 @@ func main() {
 
 	// load config
 	var err error
-	conf, err = ParseConfig(configPath, args.LiteMode)
+	conf, err = ParseConfig(configPath)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -69,20 +70,18 @@ func main() {
 		log.Debug("Server mode.")
 	}
 
-	if !args.LiteMode {
-		if len(conf.Server.DB.Host) > 0 {
-			// connect to DB
-			connect()
-			log.Tracef("%#v", db)
+	if !args.LiteMode && len(conf.Server.DB.Host) > 0 {
+		// connect to DB
+		connect()
+		log.Tracef("%#v", db)
+		dataStore = DatabaseDataStore{}
 
-			if args.ImportData {
-				conf.importToDB()
-			}
-		} else {
-			log.Fatal("No database configured. Did you mean to start in lite mode?")
+		if args.ImportData {
+			conf.importToDB()
 		}
 	} else {
-		log.Warn("Running in lite mode. Changes to the config will not persist!!")
+		log.Warn("Running in lite mode. No changes (via api or frontend) will be persisted!")
+		dataStore = conf
 	}
 
 	// setup template path

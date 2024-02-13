@@ -14,14 +14,13 @@ func prettyPrintConf(c Config) string {
 // TestParseConfig - tests that the config is parsed correctly
 func TestParseConfig(t *testing.T) {
 	// test that the config is parsed correctly
-	conf, err := ParseConfig("./fixtures/testconfig.yaml", true)
+	conf, err := ParseConfig("./fixtures/testconfig.yaml")
 	if err != nil {
 		t.Errorf("Error parsing config: %s", err)
 	}
 
 	test_conf := Config{
-		Version:  2,
-		LiteMode: true,
+		Version: 3,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
@@ -56,14 +55,13 @@ func TestParseConfig(t *testing.T) {
 
 func TestExampleConfig(t *testing.T) {
 	// test that the config is parsed correctly
-	conf, err := ParseConfig("./config.yml.example", true)
+	conf, err := ParseConfig("./config.yml.example")
 	if err != nil {
 		t.Errorf("Error parsing config: %s", err)
 	}
 
 	test_conf := Config{
-		Version:  2,
-		LiteMode: true,
+		Version: 3,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
@@ -96,10 +94,11 @@ func TestExampleConfig(t *testing.T) {
 				Sources:       nil,
 				Public:        true,
 				ImmutablePast: true,
-				Tokens: []string{
-					"eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt",
+				Tokens: []token{
+					{
+						Token: "eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt",
+					},
 				},
-				NTokens: nil,
 				Rules: []Rule{
 					{
 						Filters: []map[string]string{
