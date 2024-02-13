@@ -1,3 +1,7 @@
+# 2.0.0-beta.7.4
+
+- Fix critical bug in Databse query for Rule Filters
+
 # 2.0.0-beta.7.3
 
 - Implement PUT /api/profiles/<profile> (editProfile) for DB
