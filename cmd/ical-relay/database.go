@@ -203,7 +203,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 		rule.Action = actionParameters
 
 		var dbFilters []dbFilter
-		err = db.Select(&dbFilters, "SELECT type, parameters FROM filter WHERE id = $1", dbRule.Id)
+		err = db.Select(&dbFilters, "SELECT type, parameters FROM filter WHERE rule = $1", dbRule.Id)
 		if err != nil {
 			log.Fatal(err)
 		}
