@@ -9,14 +9,35 @@
     {{template "nav.html" .}}
     <main class="container">
         <h1>Profil {{ .ProfileName }} bearbeiten</h1>
+        <h2>Quellen</h2>
 
+        {{ range $i, $source := .Sources }}
+        <div class="row g-3 align-items-center">
+            <div class="col me-auto">
+                <input type="text" id="source{{ $i }}" class="form-control" value="{{ $source }}" disabled>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger" onclick="removeSource({{ $i }})">Löschen</button>
+            </div>
+        </div>
+        {{ end }}
+        <div class="row g-3 align-items-center">
+            <div class="col me-auto">
+                <input type="text" id="new-source" class="form-control">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary" onclick="addSource()">Hinzufügen</button>
+            </div>
+        </div>
+
+        <h2>Regeln</h2>
         {{ range $i, $rule := .Rules }}
         <div class="card">
             <div>
                 <h4 class="card-header pb-3">
                     Regel {{ $i }}
-                    <a href="#" class="btn btn-primary float-end">Speichern</a>
                     <a href="#" class="btn btn-danger float-end">Löschen</a>
+                    <a href="#" class="btn btn-primary float-end">Speichern</a>
                 </h4>
             </div>
             <div class="card-body">
