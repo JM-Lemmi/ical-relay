@@ -1,6 +1,8 @@
 package main
 
 import (
+	_ "embed"
+
 	"html/template"
 	"net/http"
 	"os"
@@ -10,7 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "2.0.0-beta.7.3"
+//go:embed VERSION
+var version string
 
 var configPath string
 var conf Config
