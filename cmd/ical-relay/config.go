@@ -9,7 +9,6 @@ import (
 
 	"github.com/thanhpk/randstr"
 
-	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -114,24 +113,6 @@ func ParseConfig(path string) (Config, error) {
 	}
 	if tmpConfig.Server.FaviconPath == "" {
 		tmpConfig.Server.FaviconPath = "/static/media/favicon.svg"
-	}
-
-	//TODO: move these action out of config into main
-	if !helpers.DirectoryExists(tmpConfig.Server.StoragePath + "notifystore/") {
-		log.Info("Creating notifystore directory")
-		err = os.MkdirAll(tmpConfig.Server.StoragePath+"notifystore/", 0750)
-		if err != nil {
-			log.Fatalf("Error creating notifystore: %v", err)
-			return tmpConfig, err
-		}
-	}
-	if !helpers.DirectoryExists(tmpConfig.Server.StoragePath + "calstore/") {
-		log.Info("Creating calstore directory")
-		err = os.MkdirAll(tmpConfig.Server.StoragePath+"calstore/", 0750)
-		if err != nil {
-			log.Fatalf("Error creating calstore: %v", err)
-			return tmpConfig, err
-		}
 	}
 
 	return tmpConfig, nil

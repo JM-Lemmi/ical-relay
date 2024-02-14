@@ -13,7 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var templatePath string
 var htmlTemplates *template.Template
 
 type eventData map[string]interface{}

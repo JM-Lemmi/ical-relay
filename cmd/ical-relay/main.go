@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jm-lemmi/ical-relay/helpers"
 	"html/template"
 	"net/http"
 	"os"
@@ -26,7 +27,7 @@ func main() {
 		Notifier     string `help:"Run notifier with given ID"`
 		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
-		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
+		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
 		LiteMode     bool   `arg:"-l, --lite-mode" help:"Enable lite mode. Running only in Memory, no Database needed."`
 	}
@@ -37,7 +38,7 @@ func main() {
 	if args.Verbose {
 		log.SetLevel(log.DebugLevel)
 	}
-	if args.Superverbose {
+	if args.SuperVerbose {
 		log.SetLevel(log.TraceLevel)
 	}
 
@@ -48,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !args.Verbose && !args.Superverbose {
+	if !args.Verbose && !args.SuperVerbose {
 		// only set the level from config, if not set by flags
 		log.SetLevel(conf.Server.LogLevel)
 	}
@@ -56,6 +57,21 @@ func main() {
 	log.Trace("Trace log is enabled") // only shows if Trace is actually enabled
 
 	log.Tracef("%+v\n", conf)
+
+	if !helpers.DirectoryExists(conf.Server.StoragePath + "notifystore/") {
+		log.Info("Creating notifystore directory")
+		err = os.MkdirAll(conf.Server.StoragePath+"notifystore/", 0750)
+		if err != nil {
+			log.Fatalf("Error creating notifystore: %v", err)
+		}
+	}
+	if !helpers.DirectoryExists(conf.Server.StoragePath + "calstore/") {
+		log.Info("Creating calstore directory")
+		err = os.MkdirAll(conf.Server.StoragePath+"calstore/", 0750)
+		if err != nil {
+			log.Fatalf("Error creating calstore: %v", err)
+		}
+	}
 
 	// run notifier if specified
 	if args.Notifier != "" {
