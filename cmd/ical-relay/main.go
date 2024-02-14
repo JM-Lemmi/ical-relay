@@ -14,7 +14,7 @@ import (
 
 //go:generate ../../.github/scripts/generate-version.sh
 //go:embed VERSION
-var version string
+var version string // If you are here due to a compile error, run go generate
 
 var configPath string
 var conf Config
