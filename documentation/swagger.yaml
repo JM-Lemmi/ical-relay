@@ -38,18 +38,6 @@ paths:
                   - "profile2"
         '500':
           $ref: '#/components/responses/InternalError'
-  /api/reloadconfig:
-    get:
-      tags:
-        - public
-      summary: Reloads the config
-      description: Reloads the config of the relay stored on the server.
-      operationId: reloadConfig
-      responses:
-        '200':
-          description: successful operation
-        '500':
-          $ref: '#/components/responses/InternalError'
   /api/notifiers/{notifier}/recipient:
     post:
       tags:

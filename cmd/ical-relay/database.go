@@ -146,17 +146,6 @@ func dbListPublicProfiles() []string {
 	return profiles
 }
 
-func dbListAllProfiles() []string {
-	var profiles []string
-
-	err := db.Select(&profiles, `SELECT name FROM profile`)
-	if err != nil {
-		panic(err)
-	}
-
-	return profiles
-}
-
 func dbListProfiles() []string {
 	var profiles []string
 
@@ -182,11 +171,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = db.Select(&profile.Tokens, "SELECT token FROM admin_tokens WHERE profile = $1", profileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Select(&profile.NTokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
+	err = db.Select(&profile.Tokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -327,7 +312,7 @@ AND action_type = $3 AND action_parameters = $4 AND expiry IS NULL`,
 	}
 	if len(ruleIds) == 0 {
 		log.Trace("rule not found with pN:'", profile.Name, "' rOp:'", rule.Operator,
-			" 'aT:'", actionType, "' aP:", string(parametersJson), " rE:'", rule.Expiry, "'")
+			"' aT:'", actionType, "' aP:", string(parametersJson), " rE:'", rule.Expiry, "'")
 		return false
 	}
 	if err != nil {

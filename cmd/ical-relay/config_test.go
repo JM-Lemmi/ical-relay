@@ -20,7 +20,7 @@ func TestParseConfig(t *testing.T) {
 	}
 
 	test_conf := Config{
-		Version: 2,
+		Version: 3,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
@@ -61,7 +61,7 @@ func TestExampleConfig(t *testing.T) {
 	}
 
 	test_conf := Config{
-		Version: 2,
+		Version: 3,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
@@ -94,10 +94,11 @@ func TestExampleConfig(t *testing.T) {
 				Sources:       nil,
 				Public:        true,
 				ImmutablePast: true,
-				Tokens: []string{
-					"eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt",
+				Tokens: []token{
+					{
+						Token: "eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt",
+					},
 				},
-				NTokens: nil,
 				Rules: []Rule{
 					{
 						Filters: []map[string]string{
