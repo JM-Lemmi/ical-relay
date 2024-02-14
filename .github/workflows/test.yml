@@ -13,12 +13,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-      - run: ./.github/scripts/generate-version.sh
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.19
+      - run: go generate cmd/ical-relay/main.go
 
       - name: Run tests
         run: go test ./cmd/ical-relay/...

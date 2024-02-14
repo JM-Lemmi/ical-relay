@@ -1,12 +1,11 @@
 FROM golang:alpine AS build
 
-RUN apk --update add git
+RUN apk --update add git bash
 
 WORKDIR /app
 COPY . /app
 
-RUN if [[ $(git tag -l --contains HEAD) ]]; then echo -n $(git tag -l --contains HEAD) > ./cmd/ical-relay/VERSION; else echo -n $(git rev-parse --short HEAD) > ./cmd/ical-relay/VERSION; fi
-
+RUN go generate ./cmd/ical-relay/
 RUN go build -o ./cmd/ical-relay/ical-relay ./cmd/ical-relay/
 
 FROM alpine AS run
