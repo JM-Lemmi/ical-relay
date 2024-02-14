@@ -252,7 +252,7 @@ func (c Config) removeRuleFromProfile(profile string, index int) {
 	c.Profiles[profile] = p
 }
 
-func (c Config) createToken(profileName string, note string) error {
+func (c Config) createToken(profileName string, note *string) error {
 	tokenString := randstr.Base62(64)
 	if !c.profileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
@@ -260,17 +260,19 @@ func (c Config) createToken(profileName string, note string) error {
 	p := c.Profiles[profileName]
 	p.Tokens = append(c.Profiles[profileName].Tokens, token{
 		Token: tokenString,
-		Note:  &note,
+		Note:  note,
 	})
 	c.Profiles[profileName] = p
 	return nil
 }
 
-func (c Config) modifyTokenNote(profileName string, token string, note string) error {
+func (c Config) modifyTokenNote(profileName string, tokenString string, note *string) error {
 	if !c.profileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	fmt.Errorf("tokenNote modification not yet supported in lite mode")
+	for i := range c.Profiles[profileName].Tokens {
+		c.Profiles[profileName].Tokens[i] = token{Token: tokenString, Note: note}
+	}
 	return nil
 }
 

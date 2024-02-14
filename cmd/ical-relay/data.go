@@ -14,8 +14,8 @@ type DataStore interface {
 	addRule(profileName string, rule Rule) error
 	removeRuleFromProfile(profile string, index int)
 
-	createToken(profileName string, note string) error
-	modifyTokenNote(profileName string, token string, note string) error
+	createToken(profileName string, note *string) error
+	modifyTokenNote(profileName string, token string, note *string) error
 	deleteToken(profileName string, token string) error
 
 	deleteProfile(name string)

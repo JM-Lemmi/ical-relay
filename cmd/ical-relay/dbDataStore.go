@@ -73,20 +73,20 @@ func (c DatabaseDataStore) removeRuleFromProfile(profile string, index int) {
 	log.Error("removeRuleFromProfile currently not supported on db") // TODO: implement
 }
 
-func (c DatabaseDataStore) createToken(profileName string, note string) error {
+func (c DatabaseDataStore) createToken(profileName string, note *string) error {
 	token := randstr.Base62(64)
 	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	dbWriteProfileToken(profile{Name: profileName}, token, &note)
+	dbWriteProfileToken(profile{Name: profileName}, token, note)
 	return nil
 }
 
-func (c DatabaseDataStore) modifyTokenNote(profileName string, token string, note string) error {
+func (c DatabaseDataStore) modifyTokenNote(profileName string, token string, note *string) error {
 	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	dbWriteProfileToken(profile{Name: profileName}, token, &note)
+	dbWriteProfileToken(profile{Name: profileName}, token, note)
 	return nil
 }
 

@@ -57,7 +57,7 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	caljson, err := json.Marshal(callist)
 	if err != nil {
 		requestLogger.Errorln(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Write(caljson)
@@ -466,7 +466,7 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 			file.Close()
 			b64file := base64.StdEncoding.EncodeToString(buf.Bytes())
 
-			// Check if file can be pased
+			// Check if file can be parsed
 			_, parse_err := ics.ParseCalendar(bytes.NewReader(buf.Bytes()))
 
 			if parse_err != nil {
@@ -601,6 +601,7 @@ func checkSuperAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Path: /api/profiles/{profile}/tokens
 func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
@@ -613,7 +614,6 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-
 	profileName := vars["profile"]
 
 	if !dataStore.profileExists(profileName) {
@@ -631,7 +631,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 		}
 		err = json.Unmarshal(body, &bodyData)
 		if err != nil {
-			requestLogger.Errorln(err)
+			requestLogger.Errorf("Error while parsing json body in tokenEndpoint -- failed with %s", err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -640,15 +640,21 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.Header().Set("Content-Type", "application/json")
-		tokens, err := json.Marshal(conf.getProfileByName(profileName).Tokens)
+		tokens, err := json.Marshal(dataStore.getProfileByName(profileName).Tokens)
 		if err != nil {
 			requestLogger.Errorln(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Write(tokens)
 	case http.MethodPut:
-		err := dataStore.createToken(profileName, bodyData["note"].(string))
+		note, noteExists := bodyData["note"].(string)
+		var err error
+		if noteExists {
+			err = dataStore.createToken(profileName, &note)
+		} else {
+			err = dataStore.createToken(profileName, nil)
+		}
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -656,7 +662,13 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 			ok(w, requestLogger)
 		}
 	case http.MethodPatch:
-		err := dataStore.modifyTokenNote(profileName, bodyData["token"].(string), bodyData["note"].(string))
+		note, noteExists := bodyData["note"].(string)
+		var err error
+		if noteExists {
+			err = dataStore.modifyTokenNote(profileName, bodyData["token"].(string), &note)
+		} else {
+			err = dataStore.modifyTokenNote(profileName, bodyData["token"].(string), nil)
+		}
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
