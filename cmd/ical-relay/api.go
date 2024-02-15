@@ -630,7 +630,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-            log.Errorf("Could not read the body in tokenEndpoint -- failed with %s", err.Error())
+			log.Errorf("Could not read the body in tokenEndpoint -- failed with %s", err.Error())
 		}
 		err = json.Unmarshal(body, &bodyData)
 		if err != nil {
