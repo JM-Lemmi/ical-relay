@@ -224,15 +224,8 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 			log.Errorln(err)
 		}
 
-		summary := event.GetProperty("SUMMARY")
-		var summarytext string
-		if summary != nil {
-			summarytext = summary.Value
-		} else {
-			summarytext = ""
-		}
 		data := eventData{
-			"title":      summarytext,
+			"title":      event.GetSummary(),
 			"start":      startTime,
 			"show_start": showStart,
 			"end":        endTime,
@@ -240,12 +233,11 @@ func getEventsByDay(calendar *ics.Calendar, profileName string) calendarDataByDa
 			"id":         event.GetProperty("UID").Value,
 			"edit_url":   edit_url.String(),
 		}
-		description := event.GetProperty("DESCRIPTION")
-		if description != nil {
-			data["description"] = description.Value
+		if event.GetProperty("DESCRIPTION") != nil {
+			data["description"] = event.GetDescription()
 		}
 		if event.GetProperty("LOCATION") != nil {
-			data["location"] = event.GetProperty("LOCATION").Value
+			data["location"] = event.GetLocation()
 		}
 		startDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
 		endDay := time.Date(endTime.Year(), endTime.Month(), endTime.Day(), 0, 0, 0, 0, time.UTC)
