@@ -1,3 +1,10 @@
+# 2.0.0-beta.8
+
+- Small Stability Fixes and Bugfixes
+- Update Dependencies for Bugfixes
+- Show next week on Sundays
+- Add Events via Drag & Drop
+
 # 2.0.0-beta.7.4
 
 - Fix critical bug in Databse query for Rule Filters
