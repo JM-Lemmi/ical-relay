@@ -1,6 +1,8 @@
 package main
 
 import (
+	_ "embed"
+
 	"html/template"
 	"net/http"
 	"os"
@@ -10,7 +12,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "2.0.0-beta.7.4"
+//go:generate ../../.github/scripts/generate-version.sh
+//go:embed VERSION
+var version string // If you are here due to a compile error, run go generate
 
 var configPath string
 var conf Config
