@@ -7,9 +7,8 @@ import (
 	"time"
 
 	ics "github.com/arran4/golang-ical"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/jm-lemmi/ical-relay/helpers"
+	log "github.com/sirupsen/logrus"
 )
 
 // list of all filters

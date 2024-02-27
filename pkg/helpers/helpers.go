@@ -1,12 +1,14 @@
 package helpers
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/mail"
 	"os"
 
 	ics "github.com/arran4/golang-ical"
+	log "github.com/sirupsen/logrus"
 )
 
 func ReadCalURL(url string) (*ics.Calendar, error) {
@@ -130,4 +132,43 @@ func AddEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 		count++
 	}
 	return count
+}
+
+// OkOrHttpError is a closure to handle http errors
+func OkOrHttpError[V any](w http.ResponseWriter, args ...string) func(v V, err error) V {
+	addInfo := ""
+	for _, arg := range args {
+		addInfo += fmt.Sprintf("%s;", arg)
+	}
+	if addInfo == "" {
+		addInfo = "No additional information"
+	}
+	handleError := func(v V, err error) V {
+		if err != nil {
+			log.Errorf("Catched an error that would panic! Error: %s. Additional information: %s.", err.Error(), addInfo)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		return v
+	}
+	return handleError
+}
+
+// OkOrPanic is a closure that returns an error handling function with two inputs
+func OkOrPanic[V any](args ...string) func(v V, err error) V {
+	addInfo := ""
+	for _, e := range args {
+		addInfo += e + ";"
+	}
+	if addInfo == "" {
+		addInfo = "No additional information"
+	}
+	handleError := func(v V, err error) V {
+		if err != nil {
+			log.Errorf("Error: %s", err.Error())
+			log.Errorf("Additional information: %s", addInfo)
+			panic("Tried to handle error!")
+		}
+		return v
+	}
+	return handleError
 }
