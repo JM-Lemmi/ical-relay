@@ -109,7 +109,7 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("edit view request")
 	profileName := vars["profile"]
 
-	if !dbProfileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		requestLogger.Errorln(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
