@@ -35,7 +35,7 @@ type token struct {
 }
 
 type profile struct {
-	Name          string   `db:"name"`
+	Name          string   `yaml:"name,omitempty" db:"name"`
 	Sources       []string `yaml:"sources,omitempty"`
 	Public        bool     `yaml:"public" db:"public"`
 	ImmutablePast bool     `yaml:"immutable-past,omitempty" db:"immutable_past"`
