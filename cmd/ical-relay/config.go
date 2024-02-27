@@ -240,6 +240,7 @@ func (c Config) addRule(profileName string, rule Rule) error {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	p := c.Profiles[profileName]
+	rule.id = len(c.Profiles[profileName].Rules)
 	p.Rules = append(c.Profiles[profileName].Rules, rule)
 	c.Profiles[profileName] = p
 	return nil
@@ -250,6 +251,7 @@ func (c Config) removeRule(profileName string, rule Rule) {
 	p := c.Profiles[profileName]
 	p.Rules = append(p.Rules[:rule.id], p.Rules[rule.id+1:]...)
 	c.Profiles[profileName] = p
+	c.populateRuleIds(profileName)
 }
 
 func (c Config) createToken(profileName string, note *string) error {
@@ -341,8 +343,8 @@ func (c Config) removeNotifyRecipient(notifierName string, recipient string) err
 
 func (c Config) populateRuleIds(profileName string) {
 	p := c.Profiles[profileName]
-	for id, rule := range p.Rules {
-		rule.id = id
+	for id := range p.Rules {
+		p.Rules[id].id = id
 	}
 }
 
