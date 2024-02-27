@@ -553,7 +553,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		dataStore.removeRuleFromProfile(profileName, idint)
+		dataStore.removeRule(profileName, Rule{id: idint})
 	}
 }
 

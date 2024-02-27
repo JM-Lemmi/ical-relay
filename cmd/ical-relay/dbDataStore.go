@@ -69,8 +69,8 @@ func (c DatabaseDataStore) addRule(profileName string, rule Rule) error {
 	return nil
 }
 
-func (c DatabaseDataStore) removeRuleFromProfile(profile string, index int) {
-	log.Error("removeRuleFromProfile currently not supported on db") // TODO: implement
+func (c DatabaseDataStore) removeRule(profileName string, rule Rule) {
+	dbRemoveRule(profile{Name: profileName}, rule.id)
 }
 
 func (c DatabaseDataStore) createToken(profileName string, note *string) error {

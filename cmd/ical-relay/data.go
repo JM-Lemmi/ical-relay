@@ -12,7 +12,7 @@ type DataStore interface {
 	editProfile(name string, sources []string, public bool, immutablePast bool) //TODO: either make this take a profile type or split it into explicit editing functions
 	addSource(profileName string, src string) error
 	addRule(profileName string, rule Rule) error
-	removeRuleFromProfile(profile string, index int)
+	removeRule(profileName string, rule Rule) //editRule(string profileName, rule Rule)
 
 	createToken(profileName string, note *string) error
 	modifyTokenNote(profileName string, token string, note *string) error
@@ -44,6 +44,7 @@ type profile struct {
 }
 
 type Rule struct {
+	id       int
 	Filters  []map[string]string `yaml:"filters" json:"filters"`
 	Operator string              `yaml:"operator" json:"operator"`
 	Action   map[string]string   `yaml:"action" json:"action"`

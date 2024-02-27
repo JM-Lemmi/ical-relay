@@ -110,7 +110,7 @@ func setDbVersion(dbVersion int) {
 
 // these structs are only used for reading
 type dbRule struct {
-	Id               int64      `db:"id"`
+	Id               int        `db:"id"`
 	Operator         string     `db:"operator"`
 	ActionType       string     `db:"action_type"`
 	ActionParameters string     `db:"action_parameters"`
@@ -186,6 +186,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	log.Tracef("%#v\n", dbRules)
 	for _, dbRule := range dbRules {
 		rule := new(Rule)
+		rule.id = dbRule.Id
 		rule.Operator = dbRule.Operator
 		if dbRule.Expiry != nil {
 			rule.Expiry = dbRule.Expiry.Format(time.RFC3339)
@@ -244,7 +245,7 @@ JOIN profile_sources ps ON id = ps.source WHERE profile = $1 AND url = $2)`, pro
 }
 
 func dbAddProfileSource(profile profile, source string) {
-	var sourceId int64
+	var sourceId int
 	err := db.Get(&sourceId, `INSERT INTO source (url) VALUES ($1) RETURNING id`, source)
 	if err != nil {
 		log.Fatal(err)
@@ -275,14 +276,18 @@ func dbRemoveAllProfileSources(profile profile) {
 	}
 }
 
-// TODO: fix this, leaves orphans currently
-func dbRemoveProfileSource(profile profile, sourceId int64) {
+func dbRemoveProfileSource(profile profile, sourceId int) {
 	_, err := db.Exec(`DELETE FROM profile_sources WHERE profile = $1 AND source = $2`,
 		profile.Name, sourceId)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
+	dbCleanupOrphanSources()
+}
+
+func dbCleanupOrphanSources() {
+	//TODO
 }
 
 // used for importing
@@ -298,7 +303,7 @@ func dbProfileRuleExists(profile profile, rule Rule) bool {
 		panic(err)
 	}
 
-	var ruleIds []int64
+	var ruleIds []int
 	if rule.Expiry != "" { // stored as true NULL in db
 		err = db.Select(
 			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2
@@ -362,7 +367,7 @@ func dbAddProfileRule(profile profile, rule Rule) {
 
 	var expiry sql.NullString
 	expiry.String = rule.Expiry
-	var ruleId int64
+	var ruleId int
 	err = db.QueryRow(
 		`INSERT INTO rule (profile, operator, action_type, action_parameters, expiry) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
 		profile.Name, rule.Operator, actionType, parametersJson, expiry).Scan(&ruleId)
@@ -375,7 +380,7 @@ func dbAddProfileRule(profile profile, rule Rule) {
 	}
 }
 
-func dbAddRuleFilter(ruleId int64, filter map[string]string) {
+func dbAddRuleFilter(ruleId int, filter map[string]string) {
 	filterType := filter["type"]
 	delete(filter, "type") //TODO: possibly deep-copy
 	parametersJson, err := json.Marshal(filter)
@@ -390,18 +395,11 @@ func dbAddRuleFilter(ruleId int64, filter map[string]string) {
 	}
 }
 
-// TODO: replace with dbRemoveRule (by id only)
-// this is currently somewhat expensive, since we need to find the module by the full parameters
-func dbRemoveProfileModule(profile profile, module map[string]string) {
-	name := module["name"]
-	delete(module, "name")
-	parametersJson, err := json.Marshal(module)
-	if err != nil {
-		panic(err)
-	}
-	_, err = db.Exec(
-		`DELETE FROM module WHERE profile=$1 AND name=$2 AND parameters=$3`,
-		profile.Name, name, parametersJson)
+func dbRemoveRule(profile profile, ruleId int) {
+	//TODO: ignore profile passed here, ruleIds are unique
+	_, err := db.Exec(
+		`DELETE FROM rule WHERE profile=$1 AND id=$2`,
+		profile.Name, ruleId)
 	if err != nil {
 		panic(err)
 	}
@@ -516,6 +514,11 @@ func dbDeleteNotifier(notifier notifier) {
 	if err != nil {
 		panic(err)
 	}
+	dbCleanupOrphanRecipients()
+}
+
+func dbCleanupOrphanRecipients() {
+	//TODO
 }
 
 func dbAddNotifierRecipient(notifier notifier, recipient string) {

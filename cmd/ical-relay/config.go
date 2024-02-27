@@ -200,6 +200,7 @@ func (c Config) profileExists(name string) bool {
 }
 
 func (c Config) getProfileByName(name string) profile {
+	c.populateRuleIds(name)
 	return c.Profiles[name]
 }
 
@@ -216,7 +217,6 @@ func (c Config) addProfile(name string, sources []string, public bool, immutable
 
 func (c Config) editProfile(name string, sources []string, public bool, immutablepast bool) {
 	c.Profiles[name] = profile{
-		Name:          name,
 		Sources:       sources,
 		Public:        public,
 		ImmutablePast: immutablepast,
@@ -245,11 +245,11 @@ func (c Config) addRule(profileName string, rule Rule) error {
 	return nil
 }
 
-func (c Config) removeRuleFromProfile(profile string, index int) {
-	log.Info("Removing rule at position " + fmt.Sprint(index+1) + " from profile " + profile)
-	p := c.Profiles[profile]
-	p.Rules = append(p.Rules[:index], p.Rules[index+1:]...)
-	c.Profiles[profile] = p
+func (c Config) removeRule(profileName string, rule Rule) {
+	log.Info("Removing rule at position " + fmt.Sprint(rule.id+1) + " from profile " + profileName)
+	p := c.Profiles[profileName]
+	p.Rules = append(p.Rules[:rule.id], p.Rules[rule.id+1:]...)
+	c.Profiles[profileName] = p
 }
 
 func (c Config) createToken(profileName string, note *string) error {
@@ -337,6 +337,15 @@ func (c Config) removeNotifyRecipient(notifierName string, recipient string) err
 	return fmt.Errorf("recipient not found")
 }
 
+// internal helper functions
+
+func (c Config) populateRuleIds(profileName string) {
+	p := c.Profiles[profileName]
+	for id, rule := range p.Rules {
+		rule.id = id
+	}
+}
+
 // LEGACY functions (to be moved elsewhere, or not supported yet by DataStore)
 
 // TODO: move this function into the application code
@@ -361,7 +370,7 @@ func (c Config) RunCleanup() {
 						log.Errorf("RunCleanup could not parse the expiry time: %s", err.Error())
 					}
 					if time.Now().After(exp) {
-						c.removeRuleFromProfile(p, i)
+						c.removeRule(p, Rule{id: i})
 					}
 				}
 			}
