@@ -11,6 +11,8 @@ type DataStore interface {
 	// editProfile edits a profile, not touching tokens and rules
 	editProfile(name string, sources []string, public bool, immutablePast bool) //TODO: either make this take a profile type or split it into explicit editing functions
 	addSource(profileName string, src string) error
+	// removeSource removes all sources with the given src string
+	removeSource(profileName string, src string) error
 	addRule(profileName string, rule Rule) error
 	removeRule(profileName string, rule Rule) //editRule(string profileName, rule Rule)
 

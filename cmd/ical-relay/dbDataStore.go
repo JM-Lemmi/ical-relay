@@ -61,6 +61,14 @@ func (c DatabaseDataStore) addSource(profileName string, src string) error {
 	return nil
 }
 
+func (c DatabaseDataStore) removeSource(profileName string, src string) error {
+	if !dbProfileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	dbRemoveProfileSourceByUrl(profile{Name: profileName}, src)
+	return nil
+}
+
 func (c DatabaseDataStore) addRule(profileName string, rule Rule) error {
 	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")

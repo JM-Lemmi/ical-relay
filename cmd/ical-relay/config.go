@@ -235,6 +235,20 @@ func (c Config) addSource(profileName string, src string) error {
 	return nil
 }
 
+func (c Config) removeSource(profileName string, src string) error {
+	if !c.profileExists(profileName) {
+		return fmt.Errorf("profile " + profileName + " does not exist")
+	}
+	p := c.Profiles[profileName]
+	for i, cSource := range p.Sources {
+		if cSource == src {
+			p.Sources = append(p.Sources[:i], p.Sources[i+1:]...)
+		}
+	}
+	c.Profiles[profileName] = p
+	return nil
+}
+
 func (c Config) addRule(profileName string, rule Rule) error {
 	if !c.profileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
@@ -286,7 +300,6 @@ func (c Config) deleteToken(profileName string, token string) error {
 	for i, cToken := range p.Tokens {
 		if cToken.Token == token {
 			p.Tokens = append(p.Tokens[:i], p.Tokens[i+1:]...)
-			break
 		}
 	}
 	c.Profiles[profileName] = p

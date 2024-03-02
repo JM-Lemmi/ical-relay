@@ -276,6 +276,23 @@ func dbRemoveAllProfileSources(profile profile) {
 	}
 }
 
+// TODO: Expose sourceId, like we do for rules, to avoid this potentially expensive search
+func dbRemoveProfileSourceByUrl(profile profile, sourceUrl string) {
+	var sourceIds []int
+	err := db.Select(&sourceIds, `SELECT id FROM source WHERE url = $1`,
+		sourceUrl)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	if len(sourceIds) == 0 {
+		log.Trace("no sources found for searchString sU:'", sourceUrl, "' p:'", profile.Name, "'")
+	}
+	for _, sourceId := range sourceIds {
+		dbRemoveProfileSource(profile, sourceId) //Note: This will only remove the source if it belongs to the profile
+	}
+}
+
 func dbRemoveProfileSource(profile profile, sourceId int) {
 	_, err := db.Exec(`DELETE FROM profile_sources WHERE profile = $1 AND source = $2`,
 		profile.Name, sourceId)
