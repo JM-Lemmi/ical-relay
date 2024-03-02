@@ -232,6 +232,14 @@ ON CONFLICT (name) DO UPDATE SET public = excluded.public, immutable_past = excl
 	}
 }
 
+func dbDeleteProfile(profile profile) {
+	_, err := db.Exec(`DELETE FROM profile WHERE name=$1`, profile.Name)
+	if err != nil {
+		panic(err)
+	}
+	dbCleanupOrphanSources()
+}
+
 func dbProfileSourceExists(profile profile, source string) bool {
 	var profileSourceExists bool
 
@@ -304,7 +312,13 @@ func dbRemoveProfileSource(profile profile, sourceId int) {
 }
 
 func dbCleanupOrphanSources() {
-	//TODO
+	_, err := db.Exec(
+		`DELETE FROM source WHERE (SELECT COUNT(*) FROM profile_sources WHERE profile_sources.source=source.id) < 1`,
+	)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 }
 
 // used for importing
@@ -535,7 +549,14 @@ func dbDeleteNotifier(notifier notifier) {
 }
 
 func dbCleanupOrphanRecipients() {
-	//TODO
+	_, err := db.Exec(
+		`DELETE FROM recipients WHERE
+        	(SELECT COUNT(*) FROM notifier_recipients WHERE notifier_recipients.recipient=recipients.email) < 1`,
+	)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 }
 
 func dbAddNotifierRecipient(notifier notifier, recipient string) {
