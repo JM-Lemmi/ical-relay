@@ -95,7 +95,7 @@ jobs:
           name: ical-relay_${{ matrix.arch }}
       - run: |
           mkdir -p cmd/ical-relay/.debpkg/usr/bin
-          cp ${{steps.download.outputs.download-path}}/ical-relay cmd/ical-relay/.debpkg/usr/bin/
+          cp ${{steps.download.outputs.download-path}}/ical-relay cmd/ical-relay/.debpkg/usr/bin/ical-relay_${{ matrix.arch }}
           chmod +x cmd/ical-relay/.debpkg/usr/bin/ical-relay_${{ matrix.arch }}
       - uses: jiro4989/build-deb-action@v2
         id: package
