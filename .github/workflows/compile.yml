@@ -7,6 +7,9 @@ on:
 jobs:
   Compile:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -15,7 +18,7 @@ jobs:
         with:
           go-version: '1.18.0' # The Go version to download (if necessary) and use.
       - run: go generate cmd/ical-relay/main.go
-      - run: go build -o ./bin/ical-relay ./cmd/ical-relay/
+      - run: env GOOS=linux GOARCH=${{ matrix.arch }} go build -o ./bin/ical-relay ./cmd/ical-relay/
       - uses: actions/upload-artifact@v3
         with:
           name: ical-relay
