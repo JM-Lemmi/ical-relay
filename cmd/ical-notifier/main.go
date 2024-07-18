@@ -57,9 +57,33 @@ func main() {
 
 	// DETECTION
 	// get all notifiers to iterate
-	// get source
-	// compare to history on file
-	// write output to db
+	rows, err := db.Queryx("SELECT url FROM notifier_source")
+	if err != nil {
+		log.Fatal("Failed to get notifiers from db:", err)
+	}
+
+	var notifiers []string
+	for rows.Next() {
+		var notifier string
+		err := rows.StructScan(&notifier)
+		if err != nil {
+			log.Fatal("Failed to scan notifier:", err)
+		}
+		notifiers = append(notifiers, notifier)
+	}
+	log.Debug("Notifiers:", notifiers)
+
+	for _, notifier := range notifiers {
+		// get source
+		ics1, err := getSource(notifier)
+		if err != nil {
+			log.Error("Failed to get source for notifier", notifier, err)
+			continue
+		}
+		// compare to history on file
+		historyFilename := conf.Server.StoragePath + "notifystore/" + notifier + "-past.ics"
+		// write output to db
+	}
 
 	// NOTIFY
 	// iterate over all notifiers
