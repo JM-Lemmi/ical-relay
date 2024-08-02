@@ -1,12 +1,14 @@
 package helpers
 
 import (
+	"encoding/xml"
 	"io/ioutil"
 	"net/http"
 	"net/mail"
 	"os"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/gopherlibs/feedhub/feedhub"
 )
 
 func ReadCalURL(url string) (*ics.Calendar, error) {
@@ -37,6 +39,27 @@ func LoadCalFile(filename string) (*ics.Calendar, error) {
 		return cal, err
 	}
 	return cal, nil
+}
+
+func LoadRSSFeed(filename string) (feedhub.Rss, error) {
+	var feed feedhub.Rss
+	// read file
+	data, err := os.ReadFile("feed.rss")
+	if err != nil {
+		return feed, err
+	}
+
+	// Parse the RSS feed
+	var feedXml feedhub.RssFeedXml
+	err = xml.Unmarshal(data, &feedXml)
+	if err != nil {
+		return feed, err
+	}
+
+	// Convert the parsed RSS feed to a feeds.Feed object
+	feed = feedXml.ToFeed() // TODO: upstream lib function doesnt exist yet!
+
+	return feed, nil
 }
 
 func DirectoryExists(filename string) bool {

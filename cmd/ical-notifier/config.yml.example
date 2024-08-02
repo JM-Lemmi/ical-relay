@@ -23,4 +23,3 @@ notifiers:
       mail:
         - "jm.lemmerich@gmail.com"
       rss:
-        - "/var/www/html/mycalendar.rss

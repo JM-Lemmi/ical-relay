@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"os"
 
 	"gopkg.in/gomail.v2"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/gopherlibs/feedhub/feedhub"
 	"github.com/jm-lemmi/ical-relay/compare"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
@@ -48,8 +50,10 @@ func notifyChanges(notifierName string, notifier notifier) error {
 				sendNotifyMails(notifierName, recipients, added, deleted, changed)
 
 			case "rss":
-				// TODO: implement RSS feed
-				continue
+				err := sendRSSFeed(notifierName, added, deleted, changed)
+				if err != nil {
+					log.Error("Failed to send RSS feed for notifier", notifierName, err)
+				}
 
 			case "webhook":
 				// TODO: implement webhook
@@ -63,7 +67,7 @@ func notifyChanges(notifierName string, notifier notifier) error {
 	}
 }
 
-func sendNotifyMails(notifierName string, recipients []string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
+func sendNotifyMails(notifierName string, recipients []string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) {
 	var body string
 
 	if len(added) > 0 {
@@ -104,8 +108,45 @@ func sendNotifyMails(notifierName string, recipients []string, added []ics.VEven
 		err := d.DialAndSend(m)
 		if err != nil {
 			log.Errorln("error sending mail: " + err.Error())
-			return err
 		}
-		return nil
 	}
+}
+
+func sendRSSFeed(notifierName string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
+	filename := conf.General.StoragePath + "rssstore/" + notifierName + ".rss"
+
+	feed, err := helpers.LoadRSSFeed(filename)
+	if err != nil {
+		log.Error("Failed to load RSS feed for notifier", notifierName, err)
+		return err
+	}
+
+	// add new items
+	for _, event := range added {
+		feed.Add(&feedhub.Item{
+			Title:       "Added " + event.GetProperty(ics.ComponentPropertySummary).Value,
+			Description: helpers.PrettyPrint(event),
+		})
+	}
+	for _, event := range deleted {
+		feed.Add(&feedhub.Item{
+			Title:       "Deleted " + event.GetProperty(ics.ComponentPropertySummary).Value,
+			Description: helpers.PrettyPrint(event),
+		})
+	}
+	for _, event := range changed {
+		feed.Add(&feedhub.Item{
+			Title:       "Changed " + event.GetProperty(ics.ComponentPropertySummary).Value,
+			Description: helpers.PrettyPrint(event),
+		})
+	}
+
+	// Write the updated RSS feed to the file
+	fhandle, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+
+	err = feed.WriteRss(fhandle)
+	return err
 }

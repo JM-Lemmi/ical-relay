@@ -25,11 +25,13 @@ require (
 
 require (
 	github.com/alexflint/go-scalar v1.2.0 // indirect
+	github.com/gopherlibs/feedhub v1.1.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 )
 
 replace (
 	github.com/arran4/golang-ical => ../../pkg/golang-ical
+	github.com/gopherlibs/feedhub => ../../pkg/feedhub
 	github.com/jm-lemmi/ical-relay/compare => ../../pkg/compare
 	github.com/jm-lemmi/ical-relay/helpers => ../../pkg/helpers
 	github.com/jm-lemmi/ical-relay/modules => ../../pkg/modules
