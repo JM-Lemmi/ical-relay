@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/url"
-	"time"
 
 	"gopkg.in/gomail.v2"
 
@@ -41,8 +40,6 @@ func notifyChanges(notifierName string, notifier notifier) error {
 	} else {
 		log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed)) + " changed")
 
-		// TODO: add different notification types
-
 		var body string
 
 		if len(added) > 0 {
@@ -61,27 +58,21 @@ func notifyChanges(notifierName string, notifier notifier) error {
 			}
 		}
 
-		for _, recipient := range notifier.Recipients {
-			m := gomail.NewMessage()
-			m.SetHeader("From", conf.General.Mail.Sender)
-			m.SetHeader("To", recipient)
-			m.SetHeader("Subject", "Calendar Notification for "+notifierName)
+		// iterate over all recipients by type
+		for rectype, recipients := range notifier.Recipients {
+			switch rectype {
+			case "mail":
+				for _, recipient := range recipients {
+					sendNotifyMail(notifierName, recipient, body)
+				}
 
-			unsubscribeURL := conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
-			m.SetHeader("List-Unsubscribe", unsubscribeURL)
-			bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
-			m.SetBody("text/plain", string(bodyunsubscribe))
+			case "rss":
+				// TODO: implement RSS feed
+				continue
 
-			d := gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort}
-			if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
-				d = gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort, Username: conf.General.Mail.SMTPUser, Password: conf.General.Mail.SMTPPass}
-			}
-			log.Info("Sending Mail Notification to " + recipient)
-
-			err := d.DialAndSend(m)
-			if err != nil {
-				requestLogger.Errorln("error sending mail: " + err.Error())
-				return err
+			case "webhook":
+				// TODO: implement webhook
+				continue
 			}
 		}
 
@@ -91,35 +82,27 @@ func notifyChanges(notifierName string, notifier notifier) error {
 	}
 }
 
-// runs a heartbeat loop with specified sleep duration
-func NotifierTiming(id string, interval time.Duration) {
-	if interval == 0 {
-		// failsave for 0s interval, to make machine still responsive
-		interval = 1 * time.Second
-	}
-	log.Debug("Notifier " + id + ", Interval: " + interval.String())
-	// endless loop
-	for {
-		time.Sleep(interval)
-		notifyChanges(id)
-	}
-}
+func sendNotifyMail(notifierName string, recipient string, body string) error {
+	m := gomail.NewMessage()
+	m.SetHeader("From", conf.General.Mail.Sender)
+	m.SetHeader("To", recipient)
+	m.SetHeader("Subject", "Calendar Notification for "+notifierName)
 
-// starts a heartbeat notifier in a sub-routine
-func NotifierStartup() {
-	log.Info("Starting Notifiers")
-	for id, n := range conf.getNotifiers() {
-		interval, err := time.ParseDuration(n.Interval)
-		if err != nil {
-			log.Error("Failed to parse duration for notifier " + id + ": " + n.Interval)
-		}
-		go NotifierTiming(id, interval)
-	}
-}
+	unsubscribeURL := conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
+	m.SetHeader("List-Unsubscribe", unsubscribeURL)
+	bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
+	m.SetBody("text/plain", string(bodyunsubscribe))
 
-func RunNotifier(id string) error {
-	if !conf.notifierExists(id) {
-		return fmt.Errorf("notifier not found")
+	d := gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort}
+	if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
+		d = gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort, Username: conf.General.Mail.SMTPUser, Password: conf.General.Mail.SMTPPass}
 	}
-	return notifyChanges(id)
+	log.Info("Sending Mail Notification to " + recipient)
+
+	err := d.DialAndSend(m)
+	if err != nil {
+		log.Errorln("error sending mail: " + err.Error())
+		return err
+	}
+	return nil
 }

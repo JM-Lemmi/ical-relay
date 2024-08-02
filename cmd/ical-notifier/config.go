@@ -17,7 +17,7 @@ import (
 // Config represents static configuration for the application
 type Config struct {
 	Version   int                 `yaml:"version"`
-	General   generalConfig       `yaml:"server"`
+	General   generalConfig       `yaml:"general"`
 	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
 }
 
@@ -25,7 +25,6 @@ type generalConfig struct {
 	URL         string     `yaml:"url"`
 	LogLevel    log.Level  `yaml:"loglevel"`
 	StoragePath string     `yaml:"storagepath"`
-	FaviconPath string     `yaml:"faviconpath,omitempty"`
 	Name        string     `yaml:"name,omitempty"`
 	DB          dbConfig   `yaml:"db,omitempty"`
 	Mail        mailConfig `yaml:"mail,omitempty"`
@@ -47,8 +46,8 @@ type mailConfig struct {
 }
 
 type notifier struct {
-	Source     string   `yaml:"source"`
-	Recipients []string `yaml:"recipients"`
+	Source     string              `yaml:"source"`
+	Recipients map[string][]string `yaml:"recipients"`
 }
 
 // CONFIG MANAGEMENT FUNCTIONS
