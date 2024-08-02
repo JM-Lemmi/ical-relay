@@ -1,3 +1,11 @@
+# 2.0.0-beta.8.3
+
+- remove startup of notifiers (in preparation for rework and due to crashing)
+
+# 2.0.0-beta.8.2
+
+- fix critical bug in upstream library that exponentially escaped backslashes
+
 # 2.0.0-beta.8
 
 - Small Stability Fixes and Bugfixes

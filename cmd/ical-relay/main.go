@@ -96,8 +96,6 @@ func main() {
 	router = mux.NewRouter()
 	initHandlers()
 
-	// start notifiers
-	NotifierStartup()
 	// start cleanup
 	CleanupStartup()
 
