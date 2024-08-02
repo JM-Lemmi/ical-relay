@@ -1,10 +1,11 @@
 FROM golang:alpine AS build
 
-RUN apk --update add git
+RUN apk --update add git bash
 
 WORKDIR /app
 COPY . /app
 
+RUN go generate ./cmd/ical-relay/
 RUN go build -o ./cmd/ical-relay/ical-relay ./cmd/ical-relay/
 
 FROM alpine AS run

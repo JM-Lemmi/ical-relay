@@ -66,13 +66,13 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				switch params["overwrite"] {
 				case "false":
-					event.SetProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertySummary).Value+"; "+params["new-summary"])
+					event.SetSummary(event.GetSummary() + "; " + params["new-summary"])
 				case "fillempty":
 					if event.GetProperty(ics.ComponentPropertySummary).Value == "" {
-						event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
+						event.SetSummary(params["new-summary"])
 					}
 				case "true":
-					event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
+					event.SetSummary(params["new-summary"])
 				}
 				log.Debug("Changed summary to " + event.GetProperty(ics.ComponentPropertySummary).Value)
 			}
@@ -83,13 +83,13 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				switch params["overwrite"] {
 				case "false":
-					event.SetProperty(ics.ComponentPropertyDescription, event.GetProperty(ics.ComponentPropertyDescription).Value+"; "+params["new-description"])
+					event.SetDescription(event.GetDescription() + "; " + params["new-description"])
 				case "fillempty":
 					if event.GetProperty(ics.ComponentPropertyDescription).Value == "" {
-						event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
+						event.SetDescription(params["new-description"])
 					}
 				case "true":
-					event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
+					event.SetDescription(params["new-description"])
 				}
 				log.Debug("Changed description to " + event.GetProperty(ics.ComponentPropertyDescription).Value)
 			}
@@ -100,13 +100,13 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				switch params["overwrite"] {
 				case "false":
-					event.SetProperty(ics.ComponentPropertyLocation, event.GetProperty(ics.ComponentPropertyLocation).Value+"; "+params["new-location"])
+					event.SetLocation(event.GetLocation() + "; " + params["new-location"])
 				case "fillempty":
 					if event.GetProperty(ics.ComponentPropertyLocation).Value == "" {
-						event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
+						event.SetLocation(params["new-location"])
 					}
 				case "true":
-					event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
+					event.SetLocation(params["new-location"])
 				}
 				log.Debug("Changed location to " + event.GetProperty(ics.ComponentPropertyLocation).Value)
 			}
