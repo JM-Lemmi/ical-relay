@@ -89,6 +89,15 @@ func ParseConfig(path string) (Config, error) {
 		tmpConfig.General.Name = "Calendar"
 	}
 
+	if !helpers.DirectoryExists(tmpConfig.General.StoragePath + "rssstore/") {
+		log.Info("Creating rssstore directory")
+		err = os.MkdirAll(tmpConfig.General.StoragePath+"rssstore/", 0750)
+		if err != nil {
+			log.Fatalf("Error creating rssstore: %v", err)
+			return tmpConfig, err
+		}
+	}
+
 	if !helpers.DirectoryExists(tmpConfig.General.StoragePath + "notifystore/") {
 		log.Info("Creating notifystore directory")
 		err = os.MkdirAll(tmpConfig.General.StoragePath+"notifystore/", 0750)

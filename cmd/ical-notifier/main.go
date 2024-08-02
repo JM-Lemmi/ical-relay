@@ -65,7 +65,9 @@ func main() {
 	for notifierName, notifier := range conf.Notifiers {
 		err = notifyChanges(notifierName, notifier)
 		if err != nil {
-			log.Error("Failed to run notifier", notifierName, err)
+			log.Error("Failed to run notifier ", notifierName, ": ", err)
+		} else {
+			log.Info("Notifier ", notifierName, " ran successfully")
 		}
 	}
 }

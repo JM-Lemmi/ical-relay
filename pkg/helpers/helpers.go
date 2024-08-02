@@ -41,23 +41,23 @@ func LoadCalFile(filename string) (*ics.Calendar, error) {
 	return cal, nil
 }
 
-func LoadRSSFeed(filename string) (feedhub.Rss, error) {
-	var feed feedhub.Rss
+func LoadRSSFeed(filename string) (feedhub.RssFeedXml, error) {
+	var feed feedhub.RssFeedXml
 	// read file
-	data, err := os.ReadFile("feed.rss")
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return feed, err
+	}
+
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return feed, err
 	}
 
 	// Parse the RSS feed
-	var feedXml feedhub.RssFeedXml
-	err = xml.Unmarshal(data, &feedXml)
+	err = xml.Unmarshal(data, &feed)
 	if err != nil {
 		return feed, err
 	}
-
-	// Convert the parsed RSS feed to a feeds.Feed object
-	feed = feedXml.ToFeed() // TODO: upstream lib function doesnt exist yet!
 
 	return feed, nil
 }
