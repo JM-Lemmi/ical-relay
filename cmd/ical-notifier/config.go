@@ -22,9 +22,10 @@ type Config struct {
 }
 
 type generalConfig struct {
-	URL         string     `yaml:"url"`
+	LiteMode    bool       `yaml:"lite"`          // if used in conjunction with ical-relay, this should be false.
+	URL         string     `yaml:"url,omitempty"` // if used in conjunction with ical-relay, this should be the same as in ical-relay
 	LogLevel    log.Level  `yaml:"loglevel"`
-	StoragePath string     `yaml:"storagepath"`
+	StoragePath string     `yaml:"storagepath"` // should be the same as in ical-relay, if used in conjunction with ical-relay
 	Name        string     `yaml:"name,omitempty"`
 	DB          dbConfig   `yaml:"db,omitempty"`
 	Mail        mailConfig `yaml:"mail,omitempty"`

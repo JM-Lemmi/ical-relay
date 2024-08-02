@@ -6,6 +6,7 @@ import (
 
 	"gopkg.in/gomail.v2"
 
+	ics "github.com/arran4/golang-ical"
 	"github.com/jm-lemmi/ical-relay/compare"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
@@ -40,31 +41,11 @@ func notifyChanges(notifierName string, notifier notifier) error {
 	} else {
 		log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed)) + " changed")
 
-		var body string
-
-		if len(added) > 0 {
-			for _, event := range added {
-				body += "Added:\n\n" + helpers.PrettyPrint(event) + "\n\n"
-			}
-		}
-		if len(deleted) > 0 {
-			for _, event := range deleted {
-				body += "Deleted:\n\n" + helpers.PrettyPrint(event) + "\n\n"
-			}
-		}
-		if len(changed) > 0 {
-			for _, event := range changed {
-				body += "Changed (displaying new version):\n\n" + helpers.PrettyPrint(event) + "\n\n"
-			}
-		}
-
 		// iterate over all recipients by type
 		for rectype, recipients := range notifier.Recipients {
 			switch rectype {
 			case "mail":
-				for _, recipient := range recipients {
-					sendNotifyMail(notifierName, recipient, body)
-				}
+				sendNotifyMails(notifierName, recipients, added, deleted, changed)
 
 			case "rss":
 				// TODO: implement RSS feed
@@ -82,27 +63,49 @@ func notifyChanges(notifierName string, notifier notifier) error {
 	}
 }
 
-func sendNotifyMail(notifierName string, recipient string, body string) error {
-	m := gomail.NewMessage()
-	m.SetHeader("From", conf.General.Mail.Sender)
-	m.SetHeader("To", recipient)
-	m.SetHeader("Subject", "Calendar Notification for "+notifierName)
+func sendNotifyMails(notifierName string, recipients []string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
+	var body string
 
-	unsubscribeURL := conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
-	m.SetHeader("List-Unsubscribe", unsubscribeURL)
-	bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
-	m.SetBody("text/plain", string(bodyunsubscribe))
-
-	d := gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort}
-	if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
-		d = gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort, Username: conf.General.Mail.SMTPUser, Password: conf.General.Mail.SMTPPass}
+	if len(added) > 0 {
+		for _, event := range added {
+			body += "Added:\n\n" + helpers.PrettyPrint(event) + "\n\n"
+		}
 	}
-	log.Info("Sending Mail Notification to " + recipient)
-
-	err := d.DialAndSend(m)
-	if err != nil {
-		log.Errorln("error sending mail: " + err.Error())
-		return err
+	if len(deleted) > 0 {
+		for _, event := range deleted {
+			body += "Deleted:\n\n" + helpers.PrettyPrint(event) + "\n\n"
+		}
 	}
-	return nil
+	if len(changed) > 0 {
+		for _, event := range changed {
+			body += "Changed (displaying new version):\n\n" + helpers.PrettyPrint(event) + "\n\n"
+		}
+	}
+
+	for _, recipient := range recipients {
+		m := gomail.NewMessage()
+		m.SetHeader("From", conf.General.Mail.Sender)
+		m.SetHeader("To", recipient)
+		m.SetHeader("Subject", "Calendar Notification for "+notifierName)
+
+		if !conf.General.LiteMode {
+			unsubscribeURL := conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
+			m.SetHeader("List-Unsubscribe", unsubscribeURL)
+			bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
+			m.SetBody("text/plain", string(bodyunsubscribe))
+		}
+
+		d := gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort}
+		if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
+			d = gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort, Username: conf.General.Mail.SMTPUser, Password: conf.General.Mail.SMTPPass}
+		}
+		log.Info("Sending Mail Notification to " + recipient)
+
+		err := d.DialAndSend(m)
+		if err != nil {
+			log.Errorln("error sending mail: " + err.Error())
+			return err
+		}
+		return nil
+	}
 }

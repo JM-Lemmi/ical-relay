@@ -1,6 +1,7 @@
 version: 1
 
 general:
+  lite: true
   url: "https://cal.julian-lemmerich.de"
   loglevel: "info"
   storagepath: /etc/ical-relay/
