@@ -3,62 +3,45 @@ package main
 import (
 	"fmt"
 	"net/url"
-	"os"
 	"time"
 
 	"gopkg.in/gomail.v2"
 
-	ics "github.com/arran4/golang-ical"
 	"github.com/jm-lemmi/ical-relay/compare"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
-func notifyChanges(id string) error {
-	requestLogger := log.WithFields(log.Fields{"notifier": id})
+func notifyChanges(notifierName string, notifier notifier) error {
+	requestLogger := log.WithFields(log.Fields{"notifier": notifierName})
 	requestLogger.Infoln("Running Notifier!")
 
-	n := conf.getNotifier(id)
-
-	notifystore := conf.Server.StoragePath + "notifystore/"
-
-	// check if file exists, if not download for the first time
-	if _, err := os.Stat(notifystore + id + ".ics"); os.IsNotExist(err) {
-		log.Info("File does not exist, downloading for the first time")
-		calendar, err := helpers.ReadCalURL(n.Source)
-		if err != nil {
-			requestLogger.Errorln(err)
-			return err
-		}
-		// save file
-		helpers.WriteCalFile(calendar, notifystore+id+".ics")
-	}
-
-	// read files
-	file1, err := os.Open(notifystore + id + ".ics")
+	// get source
+	currentICS, err := getSource(notifier.Source)
 	if err != nil {
-		requestLogger.Errorln("error opening calendar1 file: " + err.Error())
+		log.Error("Failed to get source for notifier", notifierName, err)
 		return err
 	}
-	calendar1, err := ics.ParseCalendar(file1)
+	// compare to history on file
+	historyFilename := conf.General.StoragePath + "notifystore/" + notifierName + "-past.ics"
+	historyICS, err := helpers.LoadCalFile(historyFilename)
+
+	// if history file does not exist, create it
 	if err != nil {
-		requestLogger.Errorln("error parsing calendar1 file: " + err.Error())
+		log.Info("History file does not exist, saving for the first time")
+		helpers.WriteCalFile(currentICS, historyFilename)
 		return err
 	}
 
-	calendar2, err := helpers.ReadCalURL(n.Source)
-	if err != nil {
-		requestLogger.Errorln("error parsing calendar2 file: " + err.Error())
-		return err
-	}
-
-	added, deleted, changed := compare.Compare(calendar1, calendar2)
+	added, deleted, changed := compare.Compare(currentICS, historyICS)
 
 	if len(added)+len(deleted)+len(changed) == 0 {
 		log.Info("No changes detected.")
 		return nil
 	} else {
 		log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed)) + " changed")
+
+		// TODO: add different notification types
 
 		var body string
 
@@ -78,20 +61,20 @@ func notifyChanges(id string) error {
 			}
 		}
 
-		for _, recipient := range n.Recipients {
+		for _, recipient := range notifier.Recipients {
 			m := gomail.NewMessage()
-			m.SetHeader("From", conf.Server.Mail.Sender)
+			m.SetHeader("From", conf.General.Mail.Sender)
 			m.SetHeader("To", recipient)
-			m.SetHeader("Subject", "Calendar Notification for "+id)
+			m.SetHeader("Subject", "Calendar Notification for "+notifierName)
 
-			unsubscribeURL := conf.Server.URL + "/notifier/" + url.QueryEscape(id) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
+			unsubscribeURL := conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
 			m.SetHeader("List-Unsubscribe", unsubscribeURL)
 			bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
 			m.SetBody("text/plain", string(bodyunsubscribe))
 
-			d := gomail.Dialer{Host: conf.Server.Mail.SMTPServer, Port: conf.Server.Mail.SMTPPort}
-			if conf.Server.Mail.SMTPUser != "" && conf.Server.Mail.SMTPPass != "" {
-				d = gomail.Dialer{Host: conf.Server.Mail.SMTPServer, Port: conf.Server.Mail.SMTPPort, Username: conf.Server.Mail.SMTPUser, Password: conf.Server.Mail.SMTPPass}
+			d := gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort}
+			if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
+				d = gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort, Username: conf.General.Mail.SMTPUser, Password: conf.General.Mail.SMTPPass}
 			}
 			log.Info("Sending Mail Notification to " + recipient)
 
@@ -103,7 +86,7 @@ func notifyChanges(id string) error {
 		}
 
 		// save updated calendar
-		helpers.WriteCalFile(calendar2, notifystore+id+".ics")
+		helpers.WriteCalFile(historyICS, historyFilename)
 		return nil
 	}
 }

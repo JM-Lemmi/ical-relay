@@ -27,7 +27,7 @@ func main() {
 	// CLI Flags
 	var args struct {
 		Notifier     string `help:"Run notifier with given ID"`
-		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
+		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
@@ -59,19 +59,6 @@ func main() {
 	log.Trace("Trace log is enabled") // only shows if Trace is actually enabled
 
 	log.Tracef("%+v\n", conf)
-
-	// run notifier if specified
-	if args.Notifier != "" {
-		log.Debug("Notifier mode called. Running: " + args.Notifier)
-		err := RunNotifier(args.Notifier)
-		if err != nil {
-			os.Exit(1)
-		} else {
-			os.Exit(0)
-		}
-	} else {
-		log.Debug("Server mode.")
-	}
 
 	if !args.Ephemeral {
 		if len(conf.Server.DB.Host) > 0 {

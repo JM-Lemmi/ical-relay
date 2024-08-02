@@ -1,16 +1,25 @@
 package main
 
 import (
+	"bytes"
 	_ "embed"
+	"encoding/base64"
+	"fmt"
+	"os"
+	"strings"
 
 	"github.com/alexflint/go-arg"
-	"github.com/jmoiron/sqlx"
+	ics "github.com/arran4/golang-ical"
+	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "2.0.0-beta.7.3"
+//go:generate ../../.github/scripts/generate-version.sh
+//go:embed VERSION
+var version string // If you are here due to a compile error, run go generate
 
-var db sqlx.DB
+var configPath string
+var conf Config
 
 func main() {
 	log.Info("Welcome to ical-notifier, version " + version)
@@ -20,9 +29,11 @@ func main() {
 		Notifier     string `help:"Run notifier with given ID"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
-		Database     string `arg:"-d,--database" arg:"required" help:"Database connection string"` // postgresql://ical_relay:password@localhost:5234/ical_relay
+		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
 	}
 	arg.MustParse(&args)
+
+	configPath = args.ConfigPath
 
 	if args.Verbose {
 		log.SetLevel(log.DebugLevel)
@@ -31,71 +42,63 @@ func main() {
 		log.SetLevel(log.TraceLevel)
 	}
 
+	// load config
+	var err error
+	conf, err = ParseConfig(configPath)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	if !args.Verbose && !args.Superverbose {
+		// only set the level from config, if not set by flags
+		log.SetLevel(conf.General.LogLevel)
+	}
+
 	log.Debug("Debug log is enabled") // only shows if Debug is actually enabled
 	log.Trace("Trace log is enabled") // only shows if Trace is actually enabled
 
-	// connect to DB
-	dbConn, err := sqlx.Connect("postgres", args.Database)
-	if err != nil {
-		log.Fatalf("Connection to db failed: %s", err)
-		panic(err)
-	}
-	log.Debug("Connected to db")
-	db = *dbConn
-	log.Tracef("%#v", db)
+	log.Tracef("%+v\n", conf)
 
-	// check db version / init tables
-	// TODO: if we share database with ical_relay there will be a version but we still want to init the database
-	var dbVersion int
-	err = db.Get(&dbVersion, `SELECT MAX(version) FROM schema_upgrades`)
-	if err != nil {
-		log.Info("Initially creating tables...")
-		initTables()
-	}
-
-	// TODO
-
-	// DETECTION
+	// APPLICATION LOGIC
 	// get all notifiers to iterate
-	rows, err := db.Queryx("SELECT url FROM notifier_source")
-	if err != nil {
-		log.Fatal("Failed to get notifiers from db:", err)
-	}
 
-	var notifiers []string
-	for rows.Next() {
-		var notifier string
-		err := rows.StructScan(&notifier)
+	for notifierName, notifier := range conf.Notifiers {
+		err = notifyChanges(notifierName, notifier)
 		if err != nil {
-			log.Fatal("Failed to scan notifier:", err)
+			log.Error("Failed to run notifier", notifierName, err)
 		}
-		notifiers = append(notifiers, notifier)
 	}
-	log.Debug("Notifiers:", notifiers)
-
-	for _, notifier := range notifiers {
-		// get source
-		ics1, err := getSource(notifier)
-		if err != nil {
-			log.Error("Failed to get source for notifier", notifier, err)
-			continue
-		}
-		// compare to history on file
-		historyFilename := conf.Server.StoragePath + "notifystore/" + notifier + "-past.ics"
-		// write output to db
-	}
-
-	// NOTIFY
-	// iterate over all notifiers
-	// trigger notifier code (send mail, write rss file)
 }
 
-//go:embed db.sql
-var dbInitScript string
+// direct copy from ../ical-relay/profiles.go
+// but with switch option "profile" removed
+func getSource(source string) (*ics.Calendar, error) {
+	var calendar *ics.Calendar
+	var err error
 
-func initTables() {
-	_, err := db.Exec(dbInitScript)
-	if err != nil {
-		log.Panic("Failed to execute db init script", err)
+	switch strings.Split(source, "://")[0] {
+	case "http", "https":
+		calendar, err = helpers.ReadCalURL(source)
+		if err != nil {
+			return nil, err
+		}
+	case "file":
+		calendar, err = helpers.LoadCalFile(strings.Split(source, "://")[1])
+		if err != nil {
+			return nil, err
+		}
+	case "base64":
+		decoded, err := base64.StdEncoding.DecodeString(strings.Split(source, "://")[1])
+		if err != nil {
+			return nil, err
+		}
+
+		calendar, err = ics.ParseCalendar(bytes.NewReader(decoded))
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknown source type '%s'", strings.Split(source, "://")[0])
 	}
+	return calendar, nil
 }
