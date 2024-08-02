@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"time"
 
 	"gopkg.in/gomail.v2"
 
@@ -121,51 +122,63 @@ func sendRSSFeed(notifierName string, added []ics.VEvent, deleted []ics.VEvent, 
 		if os.IsNotExist(err) {
 			log.Info("RSS feed does not exist, creating new one")
 			// create new feed
-			feed = feedhub.RssFeedXml{
-				XMLName: xml.Name{Local: "rss"},
-				Version: "2.0",
-				Channel: &feedhub.RssFeed{
-					Title:       notifierName + " Change Tracking",
-					Link:        conf.General.URL + "/rss/" + notifierName + ".rss",
-					Description: "Calendar Change Tracking for " + conf.General.Name + " " + notifierName,
-					Items:       []*feedhub.RssItem{},
-				},
+			// TODO: maybe create earlier (when history file is downloaded?)
+			newfeed := feedhub.Feed{
+				Title:       notifierName + " Change Tracking",
+				Link:        &feedhub.Link{Href: conf.General.URL + "/rss/" + notifierName + ".rss"},
+				Description: "Calendar Change Tracking for " + conf.General.Name + " " + notifierName,
+				Created:     time.Now(),
 			}
-			feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
+			newfeed.Add(&feedhub.Item{
 				Title:       "Initial Feed Creation",
 				Description: "This is the initial loading for " + notifierName + ". Possible changes before this time could not be tracked.",
+				Created:     time.Now(),
 			})
+
+			feedRss, err := newfeed.ToRss()
+			if err != nil {
+				return err
+			}
+
+			// Write the new RSS feed to the file
+			fhandle, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
+			if err != nil {
+				return err
+			}
+
+			_, err = fhandle.Write([]byte(feedRss))
+			return err
 		} else {
 			log.Error("Failed to load RSS feed for notifier", notifierName, err)
 			return err
 		}
-	} else {
+	}
 
-		// add new items
-		// TODO: missing timestamp of changedetection
-		for _, event := range added {
-			feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
-				Title:       "Added " + event.GetProperty(ics.ComponentPropertySummary).Value,
-				Description: helpers.PrettyPrint(event),
-			})
-		}
-		for _, event := range deleted {
-			feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
-				Title:       "Deleted " + event.GetProperty(ics.ComponentPropertySummary).Value,
-				Description: helpers.PrettyPrint(event),
-			})
-		}
-		for _, event := range changed {
-			feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
-				Title:       "Changed " + event.GetProperty(ics.ComponentPropertySummary).Value,
-				Description: helpers.PrettyPrint(event),
-			})
-		}
-
+	// add new items
+	for _, event := range added {
+		feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
+			Title:       "Added " + event.GetProperty(ics.ComponentPropertySummary).Value,
+			Description: helpers.PrettyPrint(event),
+			PubDate:     time.Now().Format(time.RFC1123Z),
+		})
+	}
+	for _, event := range deleted {
+		feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
+			Title:       "Deleted " + event.GetProperty(ics.ComponentPropertySummary).Value,
+			Description: helpers.PrettyPrint(event),
+			PubDate:     time.Now().Format(time.RFC1123Z),
+		})
+	}
+	for _, event := range changed {
+		feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
+			Title:       "Changed " + event.GetProperty(ics.ComponentPropertySummary).Value,
+			Description: helpers.PrettyPrint(event),
+			PubDate:     time.Now().Format(time.RFC1123Z),
+		})
 	}
 
 	// Write the updated RSS feed to the file
-	// TODO: rss is currently not perfect
+	// TODO: rss is currently not perfect, its removing the xml header and stuff...
 	xmlData, err := xml.MarshalIndent(feed, "", "  ")
 	if err != nil {
 		return err
