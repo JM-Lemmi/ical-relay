@@ -36,7 +36,7 @@ func notifyChanges(notifierName string, notifier notifier) error {
 		return nil
 	}
 
-	added, deleted, changed := compare.Compare(currentICS, historyICS)
+	added, deleted, changed := compare.Compare(historyICS, currentICS)
 
 	if len(added)+len(deleted)+len(changed) == 0 {
 		log.Info("No changes detected.")

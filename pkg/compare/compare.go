@@ -7,6 +7,7 @@ import (
 
 func Compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent, []ics.VEvent) {
 	// Compare the two calendars
+	// cal1 is the old calendar, cal2 is the new calendar
 	// Returns array of arrays. Added, Deleted, Changed Events
 
 	var added []ics.VEvent
