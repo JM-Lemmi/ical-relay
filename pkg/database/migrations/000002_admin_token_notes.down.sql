@@ -1,0 +1,1 @@
+ALTER TABLE admin_tokens DROP COLUMN IF EXISTS note;
