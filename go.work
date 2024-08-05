@@ -3,6 +3,5 @@ go 1.19
 use (
 	./cmd/ical-relay
 	./pkg/compare
-	./pkg/database
 	./pkg/modules
 )

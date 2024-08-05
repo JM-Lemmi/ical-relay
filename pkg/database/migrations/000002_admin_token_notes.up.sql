@@ -1,1 +1,0 @@
-ALTER TABLE admin_tokens ADD COLUMN note text;

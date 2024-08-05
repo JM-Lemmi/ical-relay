@@ -8,7 +8,7 @@ require (
 	github.com/jm-lemmi/ical-relay/compare v0.0.0-00010101000000-000000000000
 	github.com/jm-lemmi/ical-relay/helpers v0.0.0-00010101000000-000000000000
 	github.com/jm-lemmi/ical-relay/modules v0.0.0-00010101000000-000000000000
-	github.com/jmoiron/sqlx v1.4.0
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
 	github.com/sirupsen/logrus v1.9.3
 	github.com/thanhpk/randstr v1.0.6
@@ -24,22 +24,13 @@ require (
 )
 
 require (
-	github.com/golang-migrate/migrate/v4 v4.17.1 // indirect
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-)
-
-require (
 	github.com/alexflint/go-scalar v1.2.0 // indirect
-	github.com/jm-lemmi/ical-relay/database v0.0.0-00010101000000-000000000000
 	golang.org/x/sys v0.17.0 // indirect
 )
 
 replace (
 	github.com/arran4/golang-ical => ../../pkg/golang-ical
 	github.com/jm-lemmi/ical-relay/compare => ../../pkg/compare
-	github.com/jm-lemmi/ical-relay/database => ../../pkg/database
 	github.com/jm-lemmi/ical-relay/helpers => ../../pkg/helpers
 	github.com/jm-lemmi/ical-relay/modules => ../../pkg/modules
 )

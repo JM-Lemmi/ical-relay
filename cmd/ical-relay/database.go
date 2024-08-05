@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jm-lemmi/ical-relay/database"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
@@ -19,7 +18,94 @@ const CurrentDbVersion = 4
 
 // startup connection function
 func connect() {
-	db = database.ConnectAndUpgradeDB(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
+	userStr := ""
+	if conf.Server.DB.User != "" {
+		userStr = conf.Server.DB.User
+		if conf.Server.DB.Password != "" {
+			userStr += ":" + conf.Server.DB.Password
+		}
+		userStr += "@"
+	}
+	connStr := "postgresql://" + userStr + conf.Server.DB.Host + "/" + conf.Server.DB.DbName + "?sslmode=disable"
+	log.Debug("Connecting to db using " + connStr)
+
+	dbConn, err := sqlx.Connect("postgres", connStr)
+	if err != nil {
+		log.Fatalf("Connection to db failed: %s", err)
+		panic(err)
+	}
+	log.Debug("Connected to db")
+	db = *dbConn
+
+	var dbVersion int
+	err = db.Get(&dbVersion, `SELECT MAX(version) FROM schema_upgrades`)
+	if err != nil {
+		log.Info("Initially creating tables...")
+		initTables()
+		setDbVersion(CurrentDbVersion)
+		dbVersion = CurrentDbVersion
+	}
+	if dbVersion != CurrentDbVersion {
+		doDbUpgrade(dbVersion)
+	}
+}
+
+//go:embed db.sql
+var dbInitScript string
+
+func initTables() {
+	_, err := db.Exec(dbInitScript)
+	if err != nil {
+		log.Panic("Failed to execute db init script", err)
+	}
+}
+
+func doDbUpgrade(fromDbVersion int) {
+	log.Debugf("Upgrading db from version %d", fromDbVersion)
+	if fromDbVersion < 2 {
+		_, err := db.Exec("ALTER TABLE admin_tokens ADD COLUMN note text")
+		if err != nil {
+			panic("Failed to upgrade db")
+		}
+		setDbVersion(2)
+	}
+	if fromDbVersion < 3 {
+		// We don't support a lossless upgrade from this db version due to no releases with versions older than 3
+		log.Error("Unsupported db version, dropping module data")
+		_, err := db.Exec("DROP TABLE module")
+		if err != nil {
+			panic("Failed to upgrade db")
+		}
+		_, err = db.Exec("ALTER TABLE profile DROP COLUMN source")
+		if err != nil {
+			panic("Failed to upgrade db")
+		}
+		initTables() //create new tables
+		setDbVersion(3)
+	}
+	if fromDbVersion < 4 {
+		log.Error("Unsupported db version, dropping profile source data and rules")
+		_, err := db.Exec("DROP TABLE profile_sources; DROP TABLE source")
+		if err != nil {
+			//log.Panic("Failed to upgrade db", err)
+		}
+		_, err = db.Exec("DROP TABLE filter; DROP TABLE rule; DROP TABLE action")
+		if err != nil {
+			log.Panic("Failed to upgrade db", err)
+		}
+		initTables()
+		setDbVersion(4)
+	}
+}
+
+func setDbVersion(dbVersion int) {
+	log.Infof("DB is now at version %d", dbVersion)
+	_, err := db.Exec("INSERT INTO schema_upgrades(version) VALUES ($1)", dbVersion)
+	if err != nil {
+		log.Panicf(
+			"Failed to set db version! If future restarts fail, you might have to manually set the version to %d",
+			dbVersion)
+	}
 }
 
 // these structs are only used for reading
