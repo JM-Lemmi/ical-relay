@@ -18,7 +18,7 @@ func notifyChanges(id string) error {
 	requestLogger := log.WithFields(log.Fields{"notifier": id})
 	requestLogger.Infoln("Running Notifier!")
 
-	n := dataStore.getNotifier(id)
+	n := dataStore.GetNotifier(id)
 
 	notifystore := conf.Server.StoragePath + "notifystore/"
 
@@ -125,7 +125,7 @@ func NotifierTiming(id string, interval time.Duration) {
 // starts a heartbeat notifier in a sub-routine
 func NotifierStartup() {
 	log.Info("Starting Notifiers")
-	for id, n := range dataStore.getNotifiers() {
+	for id, n := range dataStore.GetNotifiers() {
 		interval, err := time.ParseDuration(n.Interval)
 		if err != nil {
 			log.Error("Failed to parse duration for notifier " + id + ": " + n.Interval)
@@ -135,7 +135,7 @@ func NotifierStartup() {
 }
 
 func RunNotifier(id string) error {
-	if !dataStore.notifierExists(id) {
+	if !dataStore.NotifierExists(id) {
 		return fmt.Errorf("notifier not found")
 	}
 	return notifyChanges(id)

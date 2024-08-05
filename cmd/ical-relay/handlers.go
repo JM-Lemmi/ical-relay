@@ -9,6 +9,7 @@ import (
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
+	"github.com/jm-lemmi/ical-relay/database"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
@@ -109,13 +110,13 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("edit view request")
 	profileName := vars["profile"]
 
-	if !dataStore.profileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		requestLogger.Errorln(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	profile := dataStore.getProfileByName(profileName)
+	profile := dataStore.GetProfileByName(profileName)
 
 	// find event by uid in profile
 	uid := vars["uid"]
@@ -144,12 +145,12 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("rules view request")
 	profileName := vars["profile"]
 
-	if !dataStore.profileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	profile := dataStore.getProfileByName(profileName)
+	profile := dataStore.GetProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["Rules"] = profile.Rules
 	data["ProfileName"] = profileName
@@ -161,12 +162,12 @@ func newEntryHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("Create Event request")
 	profileName := vars["profile"]
-	if !dataStore.profileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	profile := dataStore.getProfileByName(profileName)
+	profile := dataStore.GetProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["ProfileName"] = profileName
 	data["Profile"] = profile
@@ -178,12 +179,12 @@ func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("calendar view request")
 	profileName := vars["profile"]
-	if !dataStore.profileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	profile := dataStore.getProfileByName(profileName)
+	profile := dataStore.GetProfileByName(profileName)
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
@@ -268,17 +269,17 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("New Request!")
 	profileName := vars["profile"]
 
-	if !dataStore.profileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	profile := dataStore.getProfileByName(profileName)
+	profile := dataStore.GetProfileByName(profileName)
 
 	// load params
 	time := r.URL.Query().Get("reminder")
 	if time != "" {
-		profile.Rules = append(profile.Rules, Rule{
+		profile.Rules = append(profile.Rules, database.Rule{
 			Filters: []map[string]string{
 				{"type": "all"},
 			},
@@ -308,7 +309,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 	profileNames := strings.Split(vars["profiles"], "+")
 
 	for _, profileName := range profileNames {
-		if !dataStore.profileExists(profileName) {
+		if !dataStore.ProfileExists(profileName) {
 			err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 			tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 			return
@@ -322,7 +323,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	for i, profileName := range profileNames {
-		profile := dataStore.getProfileByName(profileName)
+		profile := dataStore.GetProfileByName(profileName)
 		if i == 0 {
 			// first source gets assigned to base calendar
 			log.Debug("Loading source ", profileName, " as base calendar")

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/jm-lemmi/ical-relay/database"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	"github.com/jm-lemmi/ical-relay/modules"
 	"github.com/juliangruber/go-intersect/v2" // requires go1.18
@@ -24,7 +25,7 @@ type profileMetadata struct {
 
 func getProfilesMetadata() []profileMetadata {
 	profiles := make([]profileMetadata, 0)
-	for _, name := range dataStore.getPublicProfileNames() {
+	for _, name := range dataStore.GetPublicProfileNames() {
 		// FIXME: any name with "/" will break the URL
 		viewUrl, err := router.Get("calendarView").URL("profile", name)
 		if err != nil {
@@ -50,7 +51,7 @@ func getProfilesMetadata() []profileMetadata {
 	return profiles
 }
 
-func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, error) {
+func getProfileCalendar(profile database.Profile, profileName string) (*ics.Calendar, error) {
 	var calendar *ics.Calendar
 
 	// get all sources
@@ -222,10 +223,10 @@ func getSource(source string) (*ics.Calendar, error) {
 		}
 	case "profile":
 		profileName := strings.Split(source, "://")[1]
-		if !dataStore.profileExists(profileName) {
+		if !dataStore.ProfileExists(profileName) {
 			return nil, fmt.Errorf("Profile does not exist: %s", profileName)
 		}
-		calendar, err = getProfileCalendar(dataStore.getProfileByName(profileName), profileName)
+		calendar, err = getProfileCalendar(dataStore.GetProfileByName(profileName), profileName)
 		if err != nil {
 			return nil, err
 		}

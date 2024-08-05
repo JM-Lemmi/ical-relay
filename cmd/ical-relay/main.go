@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/jm-lemmi/ical-relay/helpers"
 	"html/template"
 	"net/http"
 	"os"
+
+	"github.com/jm-lemmi/ical-relay/database"
+	"github.com/jm-lemmi/ical-relay/helpers"
 
 	"github.com/alexflint/go-arg"
 	"github.com/gorilla/mux"
@@ -15,7 +17,7 @@ var version = "2.0.0-beta.7.3"
 
 var configPath string
 var conf Config
-var dataStore DataStore
+var dataStore database.DataStore
 
 var router *mux.Router
 
@@ -88,9 +90,9 @@ func main() {
 
 	if !args.LiteMode && len(conf.Server.DB.Host) > 0 {
 		// connect to DB
-		connect()
-		log.Tracef("%#v", db)
-		dataStore = DatabaseDataStore{}
+		database.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
+		log.Tracef("%#v", database.Db)
+		dataStore = database.DatabaseDataStore{}
 
 		if args.ImportData {
 			conf.importToDB()

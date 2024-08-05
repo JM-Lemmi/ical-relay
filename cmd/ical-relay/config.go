@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jm-lemmi/ical-relay/database"
+
 	"github.com/thanhpk/randstr"
 
 	log "github.com/sirupsen/logrus"
@@ -18,10 +20,10 @@ import (
 
 // Config represents configuration for the application
 type Config struct {
-	Version   int                 `yaml:"version"`
-	Server    serverConfig        `yaml:"server"`
-	Profiles  map[string]profile  `yaml:"profiles,omitempty"`
-	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
+	Version   int                          `yaml:"version"`
+	Server    serverConfig                 `yaml:"server"`
+	Profiles  map[string]database.Profile  `yaml:"profiles,omitempty"`
+	Notifiers map[string]database.Notifier `yaml:"notifiers,omitempty"`
 }
 
 type serverConfig struct {
@@ -145,19 +147,19 @@ func (c Config) importToDB() {
 		profile.Name = name
 		// Write the profile to the db, adding tokens and modules afterwards
 		log.Debug("Importing profile " + name)
-		dbWriteProfile(profile)
+		database.DbWriteProfile(profile)
 		for _, source := range profile.Sources {
-			if !dbProfileSourceExists(profile, source) {
-				dbAddProfileSource(profile, source)
+			if !database.DbProfileSourceExists(profile, source) {
+				database.DbAddProfileSource(profile, source)
 			}
 		}
 		for _, token := range profile.Tokens {
-			dbWriteProfileToken(profile, token.Token, token.Note)
+			database.DbWriteProfileToken(profile, token.Token, token.Note)
 		}
 		for _, rule := range profile.Rules {
-			if !dbProfileRuleExists(profile, rule) {
+			if !database.DbProfileRuleExists(profile, rule) {
 				log.Debug("Adding rule " + rule.Action["type"])
-				dbAddProfileRule(profile, rule)
+				database.DbAddProfileRule(profile, rule)
 			}
 		}
 	}
@@ -166,16 +168,16 @@ func (c Config) importToDB() {
 		notifier.Name = name
 		log.Debug("Importing notifier " + name)
 		// Write the notifier to the db, adding recipients afterwards
-		dbWriteNotifier(notifier)
+		database.DbWriteNotifier(notifier)
 		for _, recipient := range notifier.Recipients {
-			dbAddNotifierRecipient(notifier, recipient)
+			database.DbAddNotifierRecipient(notifier, recipient)
 		}
 	}
 }
 
 // CONFIG DataStore FUNCTIONS
 
-func (c Config) getPublicProfileNames() []string {
+func (c Config) GetPublicProfileNames() []string {
 	var cal []string
 	for p := range c.Profiles {
 		if c.Profiles[p].Public {
@@ -185,7 +187,7 @@ func (c Config) getPublicProfileNames() []string {
 	return cal
 }
 
-func (c Config) getAllProfileNames() []string {
+func (c Config) GetAllProfileNames() []string {
 	var cal []string
 	for p := range c.Profiles {
 		log.Debug("Adding profile " + p + " to list")
@@ -194,29 +196,29 @@ func (c Config) getAllProfileNames() []string {
 	return cal
 }
 
-func (c Config) profileExists(name string) bool {
+func (c Config) ProfileExists(name string) bool {
 	_, ok := c.Profiles[name]
 	return ok
 }
 
-func (c Config) getProfileByName(name string) profile {
+func (c Config) GetProfileByName(name string) database.Profile {
 	c.populateRuleIds(name)
 	return c.Profiles[name]
 }
 
 // add a profile without tokens and without rules
-func (c Config) addProfile(name string, sources []string, public bool, immutablepast bool) {
-	c.Profiles[name] = profile{
+func (c Config) AddProfile(name string, sources []string, public bool, immutablepast bool) {
+	c.Profiles[name] = database.Profile{
 		Sources:       sources,
 		Public:        public,
 		ImmutablePast: immutablepast,
-		Tokens:        []token{},
-		Rules:         []Rule{},
+		Tokens:        []database.Token{},
+		Rules:         []database.Rule{},
 	}
 }
 
-func (c Config) editProfile(name string, sources []string, public bool, immutablepast bool) {
-	c.Profiles[name] = profile{
+func (c Config) EditProfile(name string, sources []string, public bool, immutablepast bool) {
+	c.Profiles[name] = database.Profile{
 		Sources:       sources,
 		Public:        public,
 		ImmutablePast: immutablepast,
@@ -225,8 +227,8 @@ func (c Config) editProfile(name string, sources []string, public bool, immutabl
 	}
 }
 
-func (c Config) addSource(profileName string, src string) error {
-	if !c.profileExists(profileName) {
+func (c Config) AddSource(profileName string, src string) error {
+	if !c.ProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	p := c.Profiles[profileName]
@@ -235,8 +237,8 @@ func (c Config) addSource(profileName string, src string) error {
 	return nil
 }
 
-func (c Config) removeSource(profileName string, src string) error {
-	if !c.profileExists(profileName) {
+func (c Config) RemoveSource(profileName string, src string) error {
+	if !c.ProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	p := c.Profiles[profileName]
@@ -249,32 +251,32 @@ func (c Config) removeSource(profileName string, src string) error {
 	return nil
 }
 
-func (c Config) addRule(profileName string, rule Rule) error {
-	if !c.profileExists(profileName) {
+func (c Config) AddRule(profileName string, rule database.Rule) error {
+	if !c.ProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	p := c.Profiles[profileName]
-	rule.id = len(c.Profiles[profileName].Rules)
+	rule.Id = len(c.Profiles[profileName].Rules)
 	p.Rules = append(c.Profiles[profileName].Rules, rule)
 	c.Profiles[profileName] = p
 	return nil
 }
 
-func (c Config) removeRule(profileName string, rule Rule) {
-	log.Info("Removing rule at position " + fmt.Sprint(rule.id+1) + " from profile " + profileName)
+func (c Config) RemoveRule(profileName string, rule database.Rule) {
+	log.Info("Removing rule at position " + fmt.Sprint(rule.Id+1) + " from profile " + profileName)
 	p := c.Profiles[profileName]
-	p.Rules = append(p.Rules[:rule.id], p.Rules[rule.id+1:]...)
+	p.Rules = append(p.Rules[:rule.Id], p.Rules[rule.Id+1:]...)
 	c.Profiles[profileName] = p
 	c.populateRuleIds(profileName)
 }
 
-func (c Config) createToken(profileName string, note *string) error {
+func (c Config) CreateToken(profileName string, note *string) error {
 	tokenString := randstr.Base62(64)
-	if !c.profileExists(profileName) {
+	if !c.ProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	p := c.Profiles[profileName]
-	p.Tokens = append(c.Profiles[profileName].Tokens, token{
+	p.Tokens = append(c.Profiles[profileName].Tokens, database.Token{
 		Token: tokenString,
 		Note:  note,
 	})
@@ -282,18 +284,18 @@ func (c Config) createToken(profileName string, note *string) error {
 	return nil
 }
 
-func (c Config) modifyTokenNote(profileName string, tokenString string, note *string) error {
-	if !c.profileExists(profileName) {
+func (c Config) ModifyTokenNote(profileName string, tokenString string, note *string) error {
+	if !c.ProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	for i := range c.Profiles[profileName].Tokens {
-		c.Profiles[profileName].Tokens[i] = token{Token: tokenString, Note: note}
+		c.Profiles[profileName].Tokens[i] = database.Token{Token: tokenString, Note: note}
 	}
 	return nil
 }
 
-func (c Config) deleteToken(profileName string, token string) error {
-	if !c.profileExists(profileName) {
+func (c Config) DeleteToken(profileName string, token string) error {
+	if !c.ProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
 	p := c.Profiles[profileName]
@@ -306,29 +308,29 @@ func (c Config) deleteToken(profileName string, token string) error {
 	return nil
 }
 
-func (c Config) deleteProfile(name string) {
+func (c Config) DeleteProfile(name string) {
 	delete(c.Profiles, name)
 }
 
-func (c Config) notifierExists(name string) bool {
+func (c Config) NotifierExists(name string) bool {
 	_, ok := c.Notifiers[name]
 	return ok
 }
 
-func (c Config) addNotifier(notifier notifier) {
+func (c Config) AddNotifier(notifier database.Notifier) {
 	c.Notifiers[notifier.Name] = notifier
 }
 
-func (c Config) getNotifiers() map[string]notifier {
+func (c Config) GetNotifiers() map[string]database.Notifier {
 	return c.Notifiers
 }
 
-func (c Config) getNotifier(notifierName string) notifier {
+func (c Config) GetNotifier(notifierName string) database.Notifier {
 	return c.Notifiers[notifierName]
 }
 
-func (c Config) addNotifyRecipient(notifierName string, recipient string) error {
-	if !c.notifierExists(notifierName) {
+func (c Config) AddNotifyRecipient(notifierName string, recipient string) error {
+	if !c.NotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
 	n := c.Notifiers[notifierName]
@@ -337,8 +339,8 @@ func (c Config) addNotifyRecipient(notifierName string, recipient string) error 
 	return nil
 }
 
-func (c Config) removeNotifyRecipient(notifierName string, recipient string) error {
-	if !c.notifierExists(notifierName) {
+func (c Config) RemoveNotifyRecipient(notifierName string, recipient string) error {
+	if !c.NotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
 	n := c.Notifiers[notifierName]
@@ -357,7 +359,7 @@ func (c Config) removeNotifyRecipient(notifierName string, recipient string) err
 func (c Config) populateRuleIds(profileName string) {
 	p := c.Profiles[profileName]
 	for id := range p.Rules {
-		p.Rules[id].id = id
+		p.Rules[id].Id = id
 	}
 }
 
@@ -365,7 +367,7 @@ func (c Config) populateRuleIds(profileName string) {
 
 // TODO: move this function into the application code
 func (c Config) addNotifierFromProfile(name string) {
-	c.addNotifier(notifier{
+	c.AddNotifier(database.Notifier{
 		Name:       name,
 		Source:     c.Server.URL + "/profiles/" + name,
 		Interval:   "1h",
@@ -374,7 +376,7 @@ func (c Config) addNotifierFromProfile(name string) {
 }
 
 func (c Config) RunCleanup() {
-	if db.DB != nil {
+	if database.Db.DB != nil {
 		log.Error("RunCleanup currently not supported on db") // TODO: implement
 	} else {
 		for p := range c.Profiles {
@@ -385,7 +387,7 @@ func (c Config) RunCleanup() {
 						log.Errorf("RunCleanup could not parse the expiry time: %s", err.Error())
 					}
 					if time.Now().After(exp) {
-						c.removeRule(p, Rule{id: i})
+						c.RemoveRule(p, database.Rule{Id: i})
 					}
 				}
 			}
@@ -395,7 +397,7 @@ func (c Config) RunCleanup() {
 
 // checks if a rule is valid.
 // returns true if rule is valid, false if not
-func checkRuleIntegrity(rule Rule) bool {
+func checkRuleIntegrity(rule database.Rule) bool {
 	// TODO implement!
 	return true
 }
