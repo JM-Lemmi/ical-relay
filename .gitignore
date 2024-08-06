@@ -16,3 +16,4 @@ __debug_bin*
 cmd/ical-relay/db/*
 .vscode/*
 VERSION
+tools
