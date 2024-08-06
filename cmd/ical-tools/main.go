@@ -33,8 +33,6 @@ func (args) Version() string {
 }
 
 func main() {
-	log.Debug("Welcome to ical-tools, version " + version)
-
 	var args args
 	arg.MustParse(&args)
 
@@ -45,11 +43,15 @@ func main() {
 	if args.Superverbose {
 		log.SetLevel(log.TraceLevel)
 	}
+	log.Debug("Debug log enabled")
+	log.Trace("Trace log enabled")
 
 	// starting subcommands
 	switch {
 	case args.Compare != nil:
 		cmdCompare(*args.Compare)
+	case args.EventInfo != nil:
+		cmdEventinfo(*args.EventInfo)
 	}
 }
 

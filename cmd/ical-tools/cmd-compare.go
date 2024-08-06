@@ -14,7 +14,7 @@ type compareCmd struct {
 }
 
 func cmdCompare(compareArgs compareCmd) {
-	log.Debug("Comparing ical files %s and %s", compareArgs.Base, compareArgs.Incoming)
+	log.Debugf("Comparing ical files %s and %s", compareArgs.Base, compareArgs.Incoming)
 
 	base, err := getSource(compareArgs.Base)
 	if err != nil {
