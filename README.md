@@ -45,19 +45,6 @@ Run a notifier manually:
 /usr/bin/ical-relay --notifier <name> --config config.yml
 ```
 
-## Docker Container
-
-```
-docker run -d -p 8080:80 -v ~/ical-relay/:/etc/ical-relay/ ghcr.io/jm-lemmi/ical-relay
-```
-
-## Build from Source
-
-Clone this repo then either:
-
-* Run from source: `go run .`
-* Build and run: `go build . && ./ical-relay`
-
 # Config
 
 ```yaml

@@ -1,3 +1,22 @@
+# 2.0.0-beta.8.3
+
+- remove startup of notifiers (in preparation for rework and due to crashing)
+
+# 2.0.0-beta.8.2
+
+- fix critical bug in upstream library that exponentially escaped backslashes
+
+# 2.0.0-beta.8
+
+- Small Stability Fixes and Bugfixes
+- Update Dependencies for Bugfixes
+- Show next week on Sundays
+- Add Events via Drag & Drop
+
+# 2.0.0-beta.7.4
+
+- Fix critical bug in Databse query for Rule Filters
+
 # 2.0.0-beta.7.3
 
 - Implement PUT /api/profiles/<profile> (editProfile) for DB
