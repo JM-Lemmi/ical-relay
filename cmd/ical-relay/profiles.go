@@ -24,7 +24,7 @@ type profileMetadata struct {
 
 func getProfilesMetadata() []profileMetadata {
 	profiles := make([]profileMetadata, 0)
-	for _, name := range conf.getPublicCalendars() {
+	for _, name := range dataStore.getPublicProfileNames() {
 		// FIXME: any name with "/" will break the URL
 		viewUrl, err := router.Get("calendarView").URL("profile", name)
 		if err != nil {
@@ -222,8 +222,10 @@ func getSource(source string) (*ics.Calendar, error) {
 		}
 	case "profile":
 		profileName := strings.Split(source, "://")[1]
-		conf.ensureProfileLoaded(profileName)
-		calendar, err = getProfileCalendar(conf.Profiles[profileName], profileName)
+		if !dataStore.profileExists(profileName) {
+			return nil, fmt.Errorf("Profile does not exist: %s", profileName)
+		}
+		calendar, err = getProfileCalendar(dataStore.getProfileByName(profileName), profileName)
 		if err != nil {
 			return nil, err
 		}

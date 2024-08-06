@@ -19,13 +19,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func checkAuthoriziation(token string, profileName string) bool {
-	conf.ensureProfileLoaded(profileName)
-	if helpers.Contains(conf.Profiles[profileName].Tokens, token) || checkSuperAuthorization(token) {
-		return true
-	} else {
+func checkAuthorization(tokenString string, profileName string) bool {
+	if !dataStore.profileExists(profileName) {
+		log.Errorf("profile '%s' doesn't exist", profileName)
 		return false
 	}
+	for _, token := range dataStore.getProfileByName(profileName).Tokens {
+		if token.Token == tokenString {
+			return true
+		}
+	}
+	return checkSuperAuthorization(tokenString)
 }
 
 func checkSuperAuthorization(token string) bool {
@@ -44,16 +48,16 @@ func calendarlistApiHandler(w http.ResponseWriter, r *http.Request) {
 	var callist []string
 	token := r.Header.Get("Authorization")
 	if !checkSuperAuthorization(token) {
-		callist = conf.getPublicCalendars()
+		callist = dataStore.getPublicProfileNames()
 	} else {
-		callist = conf.getAllCalendars()
+		callist = dataStore.getAllProfileNames()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	caljson, err := json.Marshal(callist)
 	if err != nil {
 		requestLogger.Errorln(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Write(caljson)
@@ -94,14 +98,14 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if conf.profileExists(profileName) {
+		if dataStore.profileExists(profileName) {
 			requestLogger.Errorln("Profile already exists!")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Error: Profile already exists!\n")
 			return
 		}
 
-		conf.addProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+		dataStore.addProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
 
 		requestLogger.Infoln("Created new profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
@@ -122,14 +126,14 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !conf.profileExists(profileName) {
+		if !dataStore.profileExists(profileName) {
 			requestLogger.Errorln("Profile doesnt exist!")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
 			return
 		}
 
-		conf.editProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+		dataStore.editProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
 
 		requestLogger.Infoln("Edited profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
@@ -137,35 +141,19 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodDelete:
 		// Delete profile
-		if !conf.profileExists(profileName) {
+		if !dataStore.profileExists(profileName) {
 			requestLogger.Errorln("Profile does not exist!")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Error: Profile does not exist!\n")
 			return
 		}
 
-		conf.deleteProfile(profileName)
+		dataStore.deleteProfile(profileName)
 
 		requestLogger.Infoln("Deleted profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Deleted profile: "+profileName+"\n")
 	}
-}
-
-// Path: /api/reloadconfig
-func reloadConfigApiHandler(w http.ResponseWriter, r *http.Request) {
-	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.URL.Path})
-	requestLogger.Infoln("New API-Request!")
-
-	err := reloadConfig()
-	if err != nil {
-		requestLogger.Errorln(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Error: "+err.Error()+"\n")
-		return
-	}
-
-	ok(w, requestLogger)
 }
 
 // Path: /api/notifier/{notifier}/recipient
@@ -174,9 +162,9 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("New API-Request!")
 
 	notifier := mux.Vars(r)["notifier"]
-	if !conf.notifierExists(notifier) {
+	if !dataStore.notifierExists(notifier) {
 		requestLogger.Warnln("Notifier does not exist")
-		if !conf.profileExists(notifier) {
+		if !dataStore.profileExists(notifier) {
 			requestLogger.Errorln("Profile does not exist either.")
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "Error: Profile and Notifier does not exist\n")
@@ -197,7 +185,7 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		err := conf.addNotifyRecipient(notifier, mail)
+		err := dataStore.addNotifyRecipient(notifier, mail)
 		if err != nil {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -209,7 +197,7 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "Added "+mail+" to "+notifier+"\n")
 		}
 	case http.MethodDelete:
-		err := conf.removeNotifyRecipient(notifier, mail)
+		err := dataStore.removeNotifyRecipient(notifier, mail)
 		if err != nil {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -234,14 +222,14 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
 		return
 	}
 
-	if !checkAuthoriziation(token, profileName) {
+	if !checkAuthorization(token, profileName) {
 		requestLogger.Warnln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
@@ -306,7 +294,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 			rule.Action["new-description"] = entry["description"].(string)
 		}
 
-		conf.addRule(profileName, rule)
+		dataStore.addRule(profileName, rule)
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Added Rule with filter-type 'id' to profile "+profileName+"\n")
@@ -324,7 +312,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 			},
 			Action: map[string]string{"type": "delete"},
 		}
-		conf.addRule(profileName, rule)
+		dataStore.addRule(profileName, rule)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Added Rule to delete entry with id "+id+"\n")
 	}
@@ -339,14 +327,14 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
 		return
 	}
 
-	if !checkAuthoriziation(token, profileName) {
+	if !checkAuthorization(token, profileName) {
 		requestLogger.Warnln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
@@ -423,7 +411,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		source := "base64://" + base64.StdEncoding.EncodeToString([]byte(cal.Serialize()))
 
 		// create source
-		conf.addSource(profileName, source)
+		dataStore.addSource(profileName, source)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		fmt.Fprint(w, "Wrong method!\n")
@@ -439,14 +427,14 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
 		return
 	}
 
-	if !checkAuthoriziation(token, profileName) {
+	if !checkAuthorization(token, profileName) {
 		requestLogger.Warnln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
@@ -478,7 +466,7 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 			file.Close()
 			b64file := base64.StdEncoding.EncodeToString(buf.Bytes())
 
-			// Check if file can be pased
+			// Check if file can be parsed
 			_, parse_err := ics.ParseCalendar(bytes.NewReader(buf.Bytes()))
 
 			if parse_err != nil {
@@ -490,8 +478,7 @@ func newentryfileApiHandler(w http.ResponseWriter, r *http.Request) {
 			// create source
 			source := "base64://" + b64file
 			log.Debug("Adding source " + source)
-			conf.addSource(profileName, source)
-
+			dataStore.addSource(profileName, source)
 			ok(w, requestLogger)
 		}
 	default:
@@ -509,14 +496,14 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
 		return
 	}
 
-	if !checkAuthoriziation(token, profileName) {
+	if !checkAuthorization(token, profileName) {
 		requestLogger.Warnln("Authorization not successful!")
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized!\n")
@@ -549,7 +536,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		conf.addRule(profileName, rule)
+		dataStore.addRule(profileName, rule)
 	case http.MethodDelete:
 		id := r.URL.Query().Get("id")
 
@@ -566,7 +553,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		conf.removeRuleFromProfile(profileName, idint)
+		dataStore.removeRule(profileName, Rule{id: idint})
 	}
 }
 
@@ -579,14 +566,14 @@ func checkAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
 		return
 	}
 
-	if checkAuthoriziation(token, profileName) {
+	if checkAuthorization(token, profileName) {
 		requestLogger.Infoln("Authorization successful!")
 		ok(w, requestLogger)
 	} else {
@@ -614,6 +601,7 @@ func checkSuperAuthorizationApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Path: /api/profiles/{profile}/tokens
 func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
@@ -626,16 +614,14 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		requestLogger.Infoln("Profile " + profileName + " not found!")
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Profile "+profileName+" not found!\n")
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
 
 	var bodyData map[string]interface{}
 	if r.Method != http.MethodGet {
@@ -645,7 +631,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 		}
 		err = json.Unmarshal(body, &bodyData)
 		if err != nil {
-			requestLogger.Errorln(err)
+			requestLogger.Errorf("Error while parsing json body in tokenEndpoint -- failed with %s", err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -654,15 +640,21 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.Header().Set("Content-Type", "application/json")
-		tokens, err := json.Marshal(conf.Profiles[profileName].NTokens)
+		tokens, err := json.Marshal(dataStore.getProfileByName(profileName).Tokens)
 		if err != nil {
 			requestLogger.Errorln(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Write(tokens)
 	case http.MethodPut:
-		err := conf.createToken(profileName, bodyData["note"].(string))
+		note, noteExists := bodyData["note"].(string)
+		var err error
+		if noteExists {
+			err = dataStore.createToken(profileName, &note)
+		} else {
+			err = dataStore.createToken(profileName, nil)
+		}
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -670,7 +662,13 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 			ok(w, requestLogger)
 		}
 	case http.MethodPatch:
-		err := conf.modifyTokenNote(profileName, bodyData["token"].(string), bodyData["note"].(string))
+		note, noteExists := bodyData["note"].(string)
+		var err error
+		if noteExists {
+			err = dataStore.modifyTokenNote(profileName, bodyData["token"].(string), &note)
+		} else {
+			err = dataStore.modifyTokenNote(profileName, bodyData["token"].(string), nil)
+		}
 		if err != nil {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -678,7 +676,7 @@ func tokenEndpoint(w http.ResponseWriter, r *http.Request) {
 			ok(w, requestLogger)
 		}
 	case http.MethodDelete:
-		err := conf.deleteToken(profileName, bodyData["token"].(string))
+		err := dataStore.deleteToken(profileName, bodyData["token"].(string))
 		if err != nil {
 			requestLogger.Errorln(err)
 			if strings.Contains(err.Error(), "does not exist") {

@@ -37,7 +37,7 @@ Install with your package manager:
 apt install ./ical-relay_1.3.0_amd64.deb
 ```
 
-This will create a systemd service called `ical-relay.service` which can be started with `systemctl start ical-relay.service`. The defualt configuration file is located at `/etc/ical-relay/config.yml`.
+This will create a systemd service called `ical-relay.service` which can be started with `systemctl start ical-relay.service`. The default configuration file is located at `/etc/ical-relay/config.yml`.
 
 Run a notifier manually:
 
@@ -107,6 +107,7 @@ The rule are executed in the order they are listed. You can create multiple rule
 | ical-relay version | config version |
 |--------------------|----------------|
 | 2.0.0-beta.5       | 2              |
+| ?                  | 3              |
 
 ### database versioning
 

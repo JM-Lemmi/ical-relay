@@ -110,7 +110,7 @@ func setDbVersion(dbVersion int) {
 
 // these structs are only used for reading
 type dbRule struct {
-	Id               int64      `db:"id"`
+	Id               int        `db:"id"`
 	Operator         string     `db:"operator"`
 	ActionType       string     `db:"action_type"`
 	ActionParameters string     `db:"action_parameters"`
@@ -146,17 +146,6 @@ func dbListPublicProfiles() []string {
 	return profiles
 }
 
-func dbListAllProfiles() []string {
-	var profiles []string
-
-	err := db.Select(&profiles, `SELECT name FROM profile`)
-	if err != nil {
-		panic(err)
-	}
-
-	return profiles
-}
-
 func dbListProfiles() []string {
 	var profiles []string
 
@@ -182,11 +171,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = db.Select(&profile.Tokens, "SELECT token FROM admin_tokens WHERE profile = $1", profileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Select(&profile.NTokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
+	err = db.Select(&profile.Tokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -201,6 +186,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	log.Tracef("%#v\n", dbRules)
 	for _, dbRule := range dbRules {
 		rule := new(Rule)
+		rule.id = dbRule.Id
 		rule.Operator = dbRule.Operator
 		if dbRule.Expiry != nil {
 			rule.Expiry = dbRule.Expiry.Format(time.RFC3339)
@@ -246,6 +232,14 @@ ON CONFLICT (name) DO UPDATE SET public = excluded.public, immutable_past = excl
 	}
 }
 
+func dbDeleteProfile(profile profile) {
+	_, err := db.Exec(`DELETE FROM profile WHERE name=$1`, profile.Name)
+	if err != nil {
+		panic(err)
+	}
+	dbCleanupOrphanSources()
+}
+
 func dbProfileSourceExists(profile profile, source string) bool {
 	var profileSourceExists bool
 
@@ -259,7 +253,7 @@ JOIN profile_sources ps ON id = ps.source WHERE profile = $1 AND url = $2)`, pro
 }
 
 func dbAddProfileSource(profile profile, source string) {
-	var sourceId int64
+	var sourceId int
 	err := db.Get(&sourceId, `INSERT INTO source (url) VALUES ($1) RETURNING id`, source)
 	if err != nil {
 		log.Fatal(err)
@@ -290,10 +284,37 @@ func dbRemoveAllProfileSources(profile profile) {
 	}
 }
 
-// TODO: fix this, leaves orphans currently
-func dbRemoveProfileSource(profile profile, sourceId int64) {
+// TODO: Expose sourceId, like we do for rules, to avoid this potentially expensive search
+func dbRemoveProfileSourceByUrl(profile profile, sourceUrl string) {
+	var sourceIds []int
+	err := db.Select(&sourceIds, `SELECT id FROM source WHERE url = $1`,
+		sourceUrl)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	if len(sourceIds) == 0 {
+		log.Trace("no sources found for searchString sU:'", sourceUrl, "' p:'", profile.Name, "'")
+	}
+	for _, sourceId := range sourceIds {
+		dbRemoveProfileSource(profile, sourceId) //Note: This will only remove the source if it belongs to the profile
+	}
+}
+
+func dbRemoveProfileSource(profile profile, sourceId int) {
 	_, err := db.Exec(`DELETE FROM profile_sources WHERE profile = $1 AND source = $2`,
 		profile.Name, sourceId)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	dbCleanupOrphanSources()
+}
+
+func dbCleanupOrphanSources() {
+	_, err := db.Exec(
+		`DELETE FROM source WHERE (SELECT COUNT(*) FROM profile_sources WHERE profile_sources.source=source.id) < 1`,
+	)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -313,7 +334,7 @@ func dbProfileRuleExists(profile profile, rule Rule) bool {
 		panic(err)
 	}
 
-	var ruleIds []int64
+	var ruleIds []int
 	if rule.Expiry != "" { // stored as true NULL in db
 		err = db.Select(
 			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2
@@ -327,7 +348,7 @@ AND action_type = $3 AND action_parameters = $4 AND expiry IS NULL`,
 	}
 	if len(ruleIds) == 0 {
 		log.Trace("rule not found with pN:'", profile.Name, "' rOp:'", rule.Operator,
-			" 'aT:'", actionType, "' aP:", string(parametersJson), " rE:'", rule.Expiry, "'")
+			"' aT:'", actionType, "' aP:", string(parametersJson), " rE:'", rule.Expiry, "'")
 		return false
 	}
 	if err != nil {
@@ -377,7 +398,7 @@ func dbAddProfileRule(profile profile, rule Rule) {
 
 	var expiry sql.NullString
 	expiry.String = rule.Expiry
-	var ruleId int64
+	var ruleId int
 	err = db.QueryRow(
 		`INSERT INTO rule (profile, operator, action_type, action_parameters, expiry) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
 		profile.Name, rule.Operator, actionType, parametersJson, expiry).Scan(&ruleId)
@@ -390,7 +411,7 @@ func dbAddProfileRule(profile profile, rule Rule) {
 	}
 }
 
-func dbAddRuleFilter(ruleId int64, filter map[string]string) {
+func dbAddRuleFilter(ruleId int, filter map[string]string) {
 	filterType := filter["type"]
 	delete(filter, "type") //TODO: possibly deep-copy
 	parametersJson, err := json.Marshal(filter)
@@ -405,18 +426,11 @@ func dbAddRuleFilter(ruleId int64, filter map[string]string) {
 	}
 }
 
-// TODO: replace with dbRemoveRule (by id only)
-// this is currently somewhat expensive, since we need to find the module by the full parameters
-func dbRemoveProfileModule(profile profile, module map[string]string) {
-	name := module["name"]
-	delete(module, "name")
-	parametersJson, err := json.Marshal(module)
-	if err != nil {
-		panic(err)
-	}
-	_, err = db.Exec(
-		`DELETE FROM module WHERE profile=$1 AND name=$2 AND parameters=$3`,
-		profile.Name, name, parametersJson)
+func dbRemoveRule(profile profile, ruleId int) {
+	//TODO: ignore profile passed here, ruleIds are unique
+	_, err := db.Exec(
+		`DELETE FROM rule WHERE profile=$1 AND id=$2`,
+		profile.Name, ruleId)
 	if err != nil {
 		panic(err)
 	}
@@ -530,6 +544,18 @@ func dbDeleteNotifier(notifier notifier) {
 	_, err := db.Exec(`DELETE FROM notifier WHERE name=$1`, notifier.Name)
 	if err != nil {
 		panic(err)
+	}
+	dbCleanupOrphanRecipients()
+}
+
+func dbCleanupOrphanRecipients() {
+	_, err := db.Exec(
+		`DELETE FROM recipients WHERE
+        	(SELECT COUNT(*) FROM notifier_recipients WHERE notifier_recipients.recipient=recipients.email) < 1`,
+	)
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
 }
 

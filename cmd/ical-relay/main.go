@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jm-lemmi/ical-relay/helpers"
+
 	"github.com/alexflint/go-arg"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -18,6 +20,7 @@ var version string // If you are here due to a compile error, run go generate
 
 var configPath string
 var conf Config
+var dataStore DataStore
 
 var router *mux.Router
 
@@ -29,9 +32,9 @@ func main() {
 		Notifier     string `help:"Run notifier with given ID"`
 		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
-		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
+		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
-		Ephemeral    bool   `arg:"-e" help:"Enable ephemeral mode. Running only in Memory, no Database needed."`
+		LiteMode     bool   `arg:"-l, --lite-mode" help:"Enable lite mode. Running only in Memory, no Database needed."`
 	}
 	arg.MustParse(&args)
 
@@ -40,7 +43,7 @@ func main() {
 	if args.Verbose {
 		log.SetLevel(log.DebugLevel)
 	}
-	if args.Superverbose {
+	if args.SuperVerbose {
 		log.SetLevel(log.TraceLevel)
 	}
 
@@ -51,7 +54,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !args.Verbose && !args.Superverbose {
+	if !args.Verbose && !args.SuperVerbose {
 		// only set the level from config, if not set by flags
 		log.SetLevel(conf.Server.LogLevel)
 	}
@@ -59,6 +62,21 @@ func main() {
 	log.Trace("Trace log is enabled") // only shows if Trace is actually enabled
 
 	log.Tracef("%+v\n", conf)
+
+	if !helpers.DirectoryExists(conf.Server.StoragePath + "notifystore/") {
+		log.Info("Creating notifystore directory")
+		err = os.MkdirAll(conf.Server.StoragePath+"notifystore/", 0750)
+		if err != nil {
+			log.Fatalf("Error creating notifystore: %v", err)
+		}
+	}
+	if !helpers.DirectoryExists(conf.Server.StoragePath + "calstore/") {
+		log.Info("Creating calstore directory")
+		err = os.MkdirAll(conf.Server.StoragePath+"calstore/", 0750)
+		if err != nil {
+			log.Fatalf("Error creating calstore: %v", err)
+		}
+	}
 
 	// run notifier if specified
 	if args.Notifier != "" {
@@ -73,20 +91,18 @@ func main() {
 		log.Debug("Server mode.")
 	}
 
-	if !args.Ephemeral {
-		if len(conf.Server.DB.Host) > 0 {
-			// connect to DB
-			connect()
-			log.Tracef("%#v", db)
+	if !args.LiteMode && len(conf.Server.DB.Host) > 0 {
+		// connect to DB
+		connect()
+		log.Tracef("%#v", db)
+		dataStore = DatabaseDataStore{}
 
-			if args.ImportData {
-				conf.importToDB()
-			}
-		} else {
-			log.Fatal("No database configured. Did you mean to start in ephemeral mode?")
+		if args.ImportData {
+			conf.importToDB()
 		}
 	} else {
-		log.Warn("Running in ephemeral-mode. Changes to the config will not persist!!")
+		log.Warn("Running in lite mode. No changes (via api or frontend) will be persisted!")
+		dataStore = conf
 	}
 
 	// setup template path

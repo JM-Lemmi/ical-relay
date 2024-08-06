@@ -13,7 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var templatePath string
 var htmlTemplates *template.Template
 
 type eventData map[string]interface{}
@@ -34,7 +33,6 @@ func initHandlers() {
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
 
-	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
 	router.HandleFunc("/api/calendars", calendarlistApiHandler)
 	router.HandleFunc("/api/profiles/{profile}", profileApiHandler)
 	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
@@ -111,14 +109,13 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("edit view request")
 	profileName := vars["profile"]
 
-	if !dbProfileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		requestLogger.Errorln(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := dataStore.getProfileByName(profileName)
 
 	// find event by uid in profile
 	uid := vars["uid"]
@@ -147,13 +144,12 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("rules view request")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := dataStore.getProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["Rules"] = profile.Rules
 	data["ProfileName"] = profileName
@@ -165,12 +161,12 @@ func newEntryHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("Create Event request")
 	profileName := vars["profile"]
-	profile, ok := conf.Profiles[profileName]
-	if !ok {
+	if !dataStore.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
+	profile := dataStore.getProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["ProfileName"] = profileName
 	data["Profile"] = profile
@@ -182,13 +178,12 @@ func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("calendar view request")
 	profileName := vars["profile"]
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := dataStore.getProfileByName(profileName)
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
@@ -265,13 +260,12 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("New Request!")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.profileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := dataStore.getProfileByName(profileName)
 
 	// load params
 	time := r.URL.Query().Get("reminder")
@@ -306,7 +300,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 	profileNames := strings.Split(vars["profiles"], "+")
 
 	for _, profileName := range profileNames {
-		if !conf.profileExists(profileName) {
+		if !dataStore.profileExists(profileName) {
 			err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 			tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 			return
@@ -320,7 +314,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	for i, profileName := range profileNames {
-		profile := conf.Profiles[profileName]
+		profile := dataStore.getProfileByName(profileName)
 		if i == 0 {
 			// first source gets assigned to base calendar
 			log.Debug("Loading source ", profileName, " as base calendar")
