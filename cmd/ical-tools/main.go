@@ -18,10 +18,12 @@ import (
 // CLI Flags
 // subcommands are defined in the respective files
 type args struct {
-	Compare      *compareCmd   `arg:"subcommand:compare" help:"Compare two ical files"`
-	EventInfo    *eventinfoCmd `arg:"subcommand:eventinfo" help:"Get info for a specific event in a calendar"`
-	Verbose      bool          `arg:"-v,--verbose" help:"verbosity level Debug"`
-	Superverbose bool          `arg:"--superverbose" help:"verbosity level Trace"`
+	Compare      *compareCmd    `arg:"subcommand:compare" help:"Compare two ical files"`
+	EventInfo    *eventinfoCmd  `arg:"subcommand:eventinfo" help:"Get info for a specific event in a calendar"`
+	Cherrypick   *cherrypickCmd `arg:"subcommand:cherry-pick" help:"Cherrypick events from one calendar to another"`
+	Add          *addCmd        `arg:"subcommand:add" help:"Add events to a calendar"`
+	Verbose      bool           `arg:"-v,--verbose" help:"verbosity level Debug"`
+	Superverbose bool           `arg:"--superverbose" help:"verbosity level Trace"`
 }
 
 //go:generate ../../.github/scripts/generate-version.sh
@@ -52,6 +54,12 @@ func main() {
 		cmdCompare(*args.Compare)
 	case args.EventInfo != nil:
 		cmdEventinfo(*args.EventInfo)
+	case args.Cherrypick != nil:
+		cmdCherrypick(*args.Cherrypick)
+	case args.Add != nil:
+		cmdAdd(*args.Add)
+	default:
+		log.Fatal("No subcommand given")
 	}
 }
 
@@ -67,9 +75,6 @@ func getSource(source string) (*ics.Calendar, error) {
 		}
 		if response.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("HTTP error: %s", response.Status)
-		}
-		if err != nil {
-			return nil, err
 		}
 		calendar, err = ics.ParseCalendar(response.Body)
 		if err != nil {
