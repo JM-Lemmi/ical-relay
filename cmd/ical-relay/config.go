@@ -27,18 +27,20 @@ type Config struct {
 }
 
 type serverConfig struct {
-	Addr          string     `yaml:"addr"`
-	URL           string     `yaml:"url"`
-	LogLevel      log.Level  `yaml:"loglevel"`
-	StoragePath   string     `yaml:"storagepath"`
-	TemplatePath  string     `yaml:"templatepath"`
-	FaviconPath   string     `yaml:"faviconpath,omitempty"`
-	Name          string     `yaml:"name,omitempty"`
-	Imprint       string     `yaml:"imprintlink"`
-	PrivacyPolicy string     `yaml:"privacypolicylink"`
-	DB            dbConfig   `yaml:"db,omitempty"`
-	Mail          mailConfig `yaml:"mail,omitempty"`
-	SuperTokens   []string   `yaml:"super-tokens,omitempty"`
+	Addr            string     `yaml:"addr"`
+	URL             string     `yaml:"url"`
+	LogLevel        log.Level  `yaml:"loglevel"`
+	StoragePath     string     `yaml:"storagepath"`
+	LiteMode        bool       `yaml:"litemode,omitempty"`
+	DisableFrontend bool       `yaml:"disable-frontend,omitempty"`
+	TemplatePath    string     `yaml:"templatepath"`
+	FaviconPath     string     `yaml:"faviconpath,omitempty"`
+	Name            string     `yaml:"name,omitempty"`
+	Imprint         string     `yaml:"imprintlink"`
+	PrivacyPolicy   string     `yaml:"privacypolicylink"`
+	DB              dbConfig   `yaml:"db,omitempty"`
+	Mail            mailConfig `yaml:"mail,omitempty"`
+	SuperTokens     []string   `yaml:"super-tokens,omitempty"`
 }
 
 type dbConfig struct {

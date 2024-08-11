@@ -35,7 +35,6 @@ func main() {
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
-		LiteMode     bool   `arg:"-l, --lite-mode" help:"Enable lite mode. Running only in Memory, no Database needed."`
 	}
 	arg.MustParse(&args)
 
@@ -95,7 +94,7 @@ func main() {
 	// setup router. Will be configured depending on FULL or LITE mode
 	router = mux.NewRouter()
 
-	if !args.LiteMode {
+	if !conf.Server.LiteMode {
 		// RUNNING FULL MODE
 		if len(conf.Server.DB.Host) > 0 {
 			// connect to DB
@@ -107,13 +106,15 @@ func main() {
 				conf.importToDB()
 			}
 
-			// setup template path
-			htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
-
 			// setup routes
 			initHandlersProfile()
 			initHandlersApi()
-			initHandlersFrontend()
+
+			if !conf.Server.DisableFrontend {
+				htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
+
+				initHandlersFrontend()
+			}
 
 			// start cleanup
 			CleanupStartup()

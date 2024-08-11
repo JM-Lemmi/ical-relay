@@ -54,14 +54,18 @@ server:
   addr: ":80"
   loglevel: "info"
   url: "https://cal.julian-lemmerich.de"
+  litemode: false
+  disable-frontend: false
   templatepath: /opt/ical-relay/templates
+  faviconpath: /static/media/favicon.svg
+  name: "Calendar"
   imprintlink: "https://your-imprint"
   privacypolicylink: "http://your-data-privacy-policy"
   db:
-    host: localhost
+    host: postgres
     db-name: ical_relay
     user: dbuser
-    password: "optional-password"
+    password: password
   mail:
     smtp_server: "mailout.julian-lemmerich.de"
     smtp_port: 25
@@ -115,11 +119,11 @@ The rule are executed in the order they are listed. You can create multiple rule
 |--------------------|------------|
 | 2.0.0-beta.6       | 4          |
 
-## Database / Ephemeral-Mode
+## Lite-Mode
 
-If you want the configuration changes from the frontend to persist, you have to use a postgres database. You can also run in ephemeral mode (`--ephemeral`), which will read the config, but not write to a DB or to the config file.
+Running in Lite-Mode disables the frontend and api and doesnt need a database. It reads the profiles and rules from the `config.yaml`.
 
-Immutable-Past Files are not affected by ephemeral mode
+Immutable-Past Files are still written to file in lite mode.
 
 ## immutable-past
 
