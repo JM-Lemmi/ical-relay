@@ -96,6 +96,7 @@ func main() {
 
 	if !conf.Server.LiteMode {
 		// RUNNING FULL MODE
+		log.Debug("Running in full mode.")
 		if len(conf.Server.DB.Host) > 0 {
 			// connect to DB
 			database.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
