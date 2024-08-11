@@ -97,29 +97,31 @@ func main() {
 	if !conf.Server.LiteMode {
 		// RUNNING FULL MODE
 		log.Debug("Running in full mode.")
-		if len(conf.Server.DB.Host) > 0 {
-			// connect to DB
-			database.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
-			log.Tracef("%#v", database.Db)
-			dataStore = database.DatabaseDataStore{}
-
-			if args.ImportData {
-				conf.importToDB()
-			}
-
-			// setup routes
-			initHandlersProfile()
-			initHandlersApi()
-
-			if !conf.Server.DisableFrontend {
-				htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
-
-				initHandlersFrontend()
-			}
-
-			// start cleanup
-			CleanupStartup()
+		if conf.Server.DB.Host == "" {
+			log.Fatal("DB configuration missing")
 		}
+
+		// connect to DB
+		database.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
+		log.Tracef("%#v", database.Db)
+		dataStore = database.DatabaseDataStore{}
+
+		if args.ImportData {
+			conf.importToDB()
+		}
+
+		// setup routes
+		initHandlersProfile()
+		initHandlersApi()
+
+		if !conf.Server.DisableFrontend {
+			htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
+
+			initHandlersFrontend()
+		}
+
+		// start cleanup
+		CleanupStartup()
 	} else {
 		log.Warn("Running in lite mode. No changes will be saved.")
 		dataStore = conf
