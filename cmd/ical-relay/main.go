@@ -92,29 +92,39 @@ func main() {
 		log.Debug("Server mode.")
 	}
 
-	if !args.LiteMode && len(conf.Server.DB.Host) > 0 {
-		// connect to DB
-		database.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
-		log.Tracef("%#v", database.Db)
-		dataStore = database.DatabaseDataStore{}
+	// setup router. Will be configured depending on FULL or LITE mode
+	router = mux.NewRouter()
 
-		if args.ImportData {
-			conf.importToDB()
+	if !args.LiteMode {
+		// RUNNING FULL MODE
+		if len(conf.Server.DB.Host) > 0 {
+			// connect to DB
+			database.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
+			log.Tracef("%#v", database.Db)
+			dataStore = database.DatabaseDataStore{}
+
+			if args.ImportData {
+				conf.importToDB()
+			}
+
+			// setup template path
+			htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
+
+			// setup routes
+			initHandlersProfile()
+			initHandlersApi()
+			initHandlersFrontend()
+
+			// start cleanup
+			CleanupStartup()
 		}
 	} else {
-		log.Warn("Running in lite mode. No changes (via api or frontend) will be persisted!")
+		log.Warn("Running in lite mode. No changes will be saved.")
 		dataStore = conf
+
+		// setup routes
+		initHandlersProfile()
 	}
-
-	// setup template path
-	htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
-
-	// setup routes
-	router = mux.NewRouter()
-	initHandlers()
-
-	// start cleanup
-	CleanupStartup()
 
 	// start server
 	address := conf.Server.Addr

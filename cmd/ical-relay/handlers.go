@@ -19,7 +19,26 @@ var htmlTemplates *template.Template
 type eventData map[string]interface{}
 type calendarDataByDay map[string][]eventData
 
-func initHandlers() {
+func initHandlersProfile() {
+	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
+	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
+
+	router.HandleFunc("/api/calendars", calendarlistApiHandler) // listed here because it lists all profiles and is a read only API
+}
+
+func initHandlersApi() {
+	router.HandleFunc("/api/profiles/{profile}", profileApiHandler)
+	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
+	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
+	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler).Name("apiCheckAuth")
+	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
+	router.HandleFunc("/api/profiles/{profile}/rules", rulesApiHandler).Name("rules")
+	router.HandleFunc("/api/profiles/{profile}/newentryjson", newentryjsonApiHandler).Name("newentryjson")
+	router.HandleFunc("/api/profiles/{profile}/newentryfile", newentryfileApiHandler).Name("newentryfile")
+	router.HandleFunc("/api/profiles/{profile}/tokens", tokenEndpoint).Name("tokens")
+}
+
+func initHandlersFrontend() {
 	router.HandleFunc("/", indexHandler)
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.Server.TemplatePath+"static/"))))
 	router.HandleFunc("/view/{profile}", calendarViewHandler).Name("calendarView")
@@ -31,19 +50,6 @@ func initHandlers() {
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
 	router.HandleFunc("/howto-users", howtoUsersHandler).Name("howtoUsers")
 	router.HandleFunc("/admin", adminHandler).Name("admin")
-	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
-	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
-
-	router.HandleFunc("/api/calendars", calendarlistApiHandler)
-	router.HandleFunc("/api/profiles/{profile}", profileApiHandler)
-	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
-	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
-	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler).Name("apiCheckAuth")
-	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
-	router.HandleFunc("/api/profiles/{profile}/rules", rulesApiHandler).Name("rules")
-	router.HandleFunc("/api/profiles/{profile}/newentryjson", newentryjsonApiHandler).Name("newentryjson")
-	router.HandleFunc("/api/profiles/{profile}/newentryfile", newentryfileApiHandler).Name("newentryfile")
-	router.HandleFunc("/api/profiles/{profile}/tokens", tokenEndpoint).Name("tokens")
 }
 
 func getGlobalTemplateData() map[string]interface{} {
