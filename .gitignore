@@ -8,6 +8,7 @@ addical.ics
 config.toml
 config.yml
 config*.yml
+!.github/sys-tests/*/config.yml
 /tmp/
 .debpkg/
 calstore/

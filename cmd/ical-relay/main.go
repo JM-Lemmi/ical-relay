@@ -115,7 +115,7 @@ func main() {
 		initHandlersApi()
 
 		if !conf.Server.DisableFrontend {
-			htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
+			htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html")) // TODO: fail more gracefully than segfault
 
 			initHandlersFrontend()
 		}
