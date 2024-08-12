@@ -24,6 +24,8 @@ func initHandlersProfile() {
 	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
 
 	router.HandleFunc("/api/calendars", calendarlistApiHandler) // listed here because it lists all profiles and is a read only API
+
+	router.HandleFunc("/health", healthHandler).Name("healthcheck")
 }
 
 func initHandlersApi() {
@@ -403,4 +405,12 @@ func howtoUsersHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("New Request!")
 	data := getGlobalTemplateData()
 	htmlTemplates.ExecuteTemplate(w, "howto-users.html", data)
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Debugln("New Request!")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "OK")
+	// TODO: gather some more information about the health of the application
 }

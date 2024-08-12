@@ -45,6 +45,12 @@ Run a notifier manually:
 /usr/bin/ical-relay --notifier <name> --config config.yml
 ```
 
+## Docker
+
+Docker images are availible in arm and x64 variants.
+
+The default health check only works, when ical-relay is listening on port 80 (inside the container)
+
 # Config
 
 ```yaml
