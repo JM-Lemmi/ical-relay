@@ -1,4 +1,4 @@
-version: 2
+version: 4
 
 server:
   addr: ":80"
@@ -22,30 +22,3 @@ server:
     sender: "calnotification@julian-lemmerich.de"
   super-tokens:
     - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
-
-profiles:
-  relay:
-    source: "https://example.com/calendar.ics"
-    public: true
-    immutable-past: true
-    admin-tokens:
-      - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
-    rules:
-      - filters:
-          - type: "regex"
-            regex: "testentry"
-            target: "summary"
-          - type: "timeframe"
-            from: "2021-12-02T00:00:00Z"
-            until: "2021-12-31T00:00:00Z"
-        action:
-          type: "delete"
-        expires: "2022-12-31T00:00:00Z"
-
-notifiers:
-  relay:
-    source: "http://localhost/relay"
-    interval: "15m"
-    admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
-    recipients:
-      - "jm.lemmerich@gmail.com"

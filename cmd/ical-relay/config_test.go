@@ -20,7 +20,7 @@ func TestParseConfig(t *testing.T) {
 	}
 
 	test_conf := Config{
-		Version: 3,
+		Version: 4,
 		Server: serverConfig{
 			Addr:          ":80",
 			FaviconPath:   "/static/media/favicon.svg",
@@ -61,17 +61,19 @@ func TestExampleConfig(t *testing.T) {
 	}
 
 	test_conf := Config{
-		Version: 3,
+		Version: 4,
 		Server: serverConfig{
-			Addr:          ":80",
-			FaviconPath:   "/static/media/favicon.svg",
-			Imprint:       "https://your-imprint",
-			LogLevel:      4,
-			Name:          "Calendar",
-			PrivacyPolicy: "http://your-data-privacy-policy",
-			StoragePath:   "./",
-			TemplatePath:  "/opt/ical-relay/templates/",
-			URL:           "https://cal.julian-lemmerich.de",
+			Addr:            ":80",
+			FaviconPath:     "/static/media/favicon.svg",
+			Imprint:         "https://your-imprint",
+			LogLevel:        4,
+			LiteMode:        false,
+			DisableFrontend: false,
+			Name:            "Calendar",
+			PrivacyPolicy:   "http://your-data-privacy-policy",
+			StoragePath:     "./",
+			TemplatePath:    "/opt/ical-relay/templates/",
+			URL:             "https://cal.julian-lemmerich.de",
 			DB: dbConfig{
 				Host:     "postgres",
 				DbName:   "ical_relay",
