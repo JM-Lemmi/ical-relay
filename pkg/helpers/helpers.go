@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"io/ioutil"
 	"net/http"
 	"net/mail"
@@ -75,6 +77,12 @@ func PrettyPrint(e ics.VEvent) string {
 	}
 
 	return output
+}
+
+// returns the MD5 hash of a string
+func GetMD5Hash(text string) string {
+	hash := md5.Sum([]byte(text))
+	return hex.EncodeToString(hash[:])
 }
 
 func Contains(s []string, str string) bool {
