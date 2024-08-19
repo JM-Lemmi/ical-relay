@@ -74,7 +74,19 @@ func PrettyPrint(e ics.VEvent) string {
 		output += "Description: " + e.GetProperty(ics.ComponentPropertyDescription).Value + "\n"
 	}
 
+	output += "UID: " + e.Id() + "\n"
+
 	return output
+}
+
+func GetEventFromCalByID(cal *ics.Calendar, id string) (ics.VEvent, error) {
+	// TODO: problematic with recurring events!
+	for _, event := range cal.Events() {
+		if event.Id() == id {
+			return *event, nil
+		}
+	}
+	return ics.VEvent{}, nil
 }
 
 func Contains(s []string, str string) bool {
