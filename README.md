@@ -136,6 +136,9 @@ To import data into a DB when running full mode, use the `--import-data` flag.
 
 Running in Lite-Mode disables the frontend and api and doesnt need a database. It reads the profiles and rules from the `data.yaml`.
 
+You can use litemode either with the --lite-mode flag or with the config option "lite-mode: true".
+By default ical-relay will start in full mode.
+
 Immutable-Past Files are still written to file in lite mode.
 
 ## immutable-past
