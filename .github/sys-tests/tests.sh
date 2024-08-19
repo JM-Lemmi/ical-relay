@@ -5,6 +5,9 @@
 
 success=1
 
+# build common docker image in preparation
+docker build -t ical-relay:test -f ../../cmd/ical-relay/Dockerfile ../../
+
 for d in */; do
     n=${d#testcase-}; n=${n%/} # remove prefix to get test-id
 
@@ -24,6 +27,7 @@ for d in */; do
     fi
 
     ./cleanup.sh
+    cd ..
 done
 
 if [[ $success -eq 1 ]]; then

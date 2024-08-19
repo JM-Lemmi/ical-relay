@@ -1,28 +1,10 @@
 services:
   ical-relay:
-    build:
-      context: ../../../
-      dockerfile: cmd/ical-relay/Dockerfile
+    image: ical-relay:test
     command: /usr/bin/ical-relay --verbose --config /etc/ical-relay/config.yml
     ports:
       - "127.0.0.1:8080:80"
     volumes:
       - ./config.yml:/etc/ical-relay/config.yml
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - ./data.yml:/etc/ical-relay/data.yml
     restart: on-failure
-  postgres:
-    image: postgres:latest
-    environment:
-      POSTGRES_USER: dbuser
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: ical_relay
-    ports:
-      - 127.0.0.1:5432:5432
-    healthcheck:
-      test: ["CMD-SHELL", "su", "-", "postgres", "pg_isready", "-d", "ical_relay"]
-      interval: 30s
-      timeout: 60s
-      retries: 5
-      start_period: 80s
