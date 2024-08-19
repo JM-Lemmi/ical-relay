@@ -9,17 +9,38 @@ import (
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
-var templatePath string
 var htmlTemplates *template.Template
 
 type eventData map[string]interface{}
 type calendarDataByDay map[string][]eventData
 
-func initHandlers() {
+func initHandlersProfile() {
+	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
+	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
+
+	router.HandleFunc("/api/calendars", calendarlistApiHandler) // listed here because it lists all profiles and is a read only API
+
+	router.HandleFunc("/health", healthHandler).Name("healthcheck")
+}
+
+func initHandlersApi() {
+	router.HandleFunc("/api/profiles/{profile}", profileApiHandler)
+	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
+	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
+	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler).Name("apiCheckAuth")
+	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
+	router.HandleFunc("/api/profiles/{profile}/rules", rulesApiHandler).Name("rules")
+	router.HandleFunc("/api/profiles/{profile}/newentryjson", newentryjsonApiHandler).Name("newentryjson")
+	router.HandleFunc("/api/profiles/{profile}/newentryfile", newentryfileApiHandler).Name("newentryfile")
+	router.HandleFunc("/api/profiles/{profile}/tokens", tokenEndpoint).Name("tokens")
+}
+
+func initHandlersFrontend() {
 	router.HandleFunc("/", indexHandler)
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(conf.Server.TemplatePath+"static/"))))
 	router.HandleFunc("/view/{profile}", calendarViewHandler).Name("calendarView")
@@ -31,20 +52,6 @@ func initHandlers() {
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
 	router.HandleFunc("/howto-users", howtoUsersHandler).Name("howtoUsers")
 	router.HandleFunc("/admin", adminHandler).Name("admin")
-	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
-	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
-
-	router.HandleFunc("/api/reloadconfig", reloadConfigApiHandler)
-	router.HandleFunc("/api/calendars", calendarlistApiHandler)
-	router.HandleFunc("/api/profiles/{profile}", profileApiHandler)
-	router.HandleFunc("/api/checkSuperAuth", checkSuperAuthorizationApiHandler)
-	router.HandleFunc("/api/notifier/{notifier}/recipient", NotifyRecipientApiHandler).Name("notifier")
-	router.HandleFunc("/api/profiles/{profile}/checkAuth", checkAuthorizationApiHandler).Name("apiCheckAuth")
-	router.HandleFunc("/api/profiles/{profile}/calentry", calendarEntryApiHandler).Name("calentry")
-	router.HandleFunc("/api/profiles/{profile}/rules", rulesApiHandler).Name("rules")
-	router.HandleFunc("/api/profiles/{profile}/newentryjson", newentryjsonApiHandler).Name("newentryjson")
-	router.HandleFunc("/api/profiles/{profile}/newentryfile", newentryfileApiHandler).Name("newentryfile")
-	router.HandleFunc("/api/profiles/{profile}/tokens", tokenEndpoint).Name("tokens")
 }
 
 func getGlobalTemplateData() map[string]interface{} {
@@ -111,14 +118,13 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("edit view request")
 	profileName := vars["profile"]
 
-	if !dbProfileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		requestLogger.Errorln(err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := dataStore.GetProfileByName(profileName)
 
 	// find event by uid in profile
 	uid := vars["uid"]
@@ -147,13 +153,12 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("rules view request")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := dataStore.GetProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["Rules"] = profile.Rules
 	data["ProfileName"] = profileName
@@ -165,12 +170,12 @@ func newEntryHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("Create Event request")
 	profileName := vars["profile"]
-	profile, ok := conf.Profiles[profileName]
-	if !ok {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
+	profile := dataStore.GetProfileByName(profileName)
 	data := getGlobalTemplateData()
 	data["ProfileName"] = profileName
 	data["Profile"] = profile
@@ -182,13 +187,12 @@ func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "profile": vars["profile"]})
 	requestLogger.Infoln("calendar view request")
 	profileName := vars["profile"]
-	if !conf.profileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := dataStore.GetProfileByName(profileName)
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	if err != nil {
 		tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
@@ -265,18 +269,17 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("New Request!")
 	profileName := vars["profile"]
 
-	if !conf.profileExists(profileName) {
+	if !dataStore.ProfileExists(profileName) {
 		err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 		tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 		return
 	}
-	conf.ensureProfileLoaded(profileName)
-	profile := conf.Profiles[profileName]
+	profile := dataStore.GetProfileByName(profileName)
 
 	// load params
 	time := r.URL.Query().Get("reminder")
 	if time != "" {
-		profile.Rules = append(profile.Rules, Rule{
+		profile.Rules = append(profile.Rules, datastore.Rule{
 			Filters: []map[string]string{
 				{"type": "all"},
 			},
@@ -306,7 +309,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 	profileNames := strings.Split(vars["profiles"], "+")
 
 	for _, profileName := range profileNames {
-		if !conf.profileExists(profileName) {
+		if !dataStore.ProfileExists(profileName) {
 			err := fmt.Errorf("profile '%s' doesn't exist", profileName)
 			tryRenderErrorOrFallback(w, r, http.StatusNotFound, err, err.Error())
 			return
@@ -320,7 +323,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	for i, profileName := range profileNames {
-		profile := conf.Profiles[profileName]
+		profile := dataStore.GetProfileByName(profileName)
 		if i == 0 {
 			// first source gets assigned to base calendar
 			log.Debug("Loading source ", profileName, " as base calendar")
@@ -402,4 +405,12 @@ func howtoUsersHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger.Infoln("New Request!")
 	data := getGlobalTemplateData()
 	htmlTemplates.ExecuteTemplate(w, "howto-users.html", data)
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
+	requestLogger.Debugln("New Healthcheck request!")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "OK")
+	// TODO: gather some more information about the health of the application
 }

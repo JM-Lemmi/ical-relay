@@ -4,4 +4,5 @@ use (
 	./cmd/ical-relay
 	./pkg/compare
 	./pkg/modules
+	./pkg/datastore
 )

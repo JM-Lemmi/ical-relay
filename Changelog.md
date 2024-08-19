@@ -1,3 +1,11 @@
+# 2.0.0-beta.9
+
+- !! legacy config upgrades not supported!
+- data.yml file for profile and notifier information (follows old config.yml format)
+- config.yml now only contains server configuration information
+- remove cleanup timers (not implemented anyway)
+- import data now takes data.yml file as argument to import into DB
+
 # 2.0.0-beta.8.3
 
 - remove startup of notifiers (in preparation for rework and due to crashing)

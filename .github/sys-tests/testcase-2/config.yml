@@ -1,0 +1,10 @@
+version: 4
+server:
+  addr: :80
+  url: https://cal.julian-lemmerich.de
+  litemode: true
+  loglevel: debug
+  imprintlink: ""
+  privacypolicylink: ""
+  super-tokens:
+    - "supersecret"
