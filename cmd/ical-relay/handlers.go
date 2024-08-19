@@ -409,7 +409,7 @@ func howtoUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r)})
-	requestLogger.Debugln("New Request!")
+	requestLogger.Debugln("New Healthcheck request!")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "OK")
 	// TODO: gather some more information about the health of the application
