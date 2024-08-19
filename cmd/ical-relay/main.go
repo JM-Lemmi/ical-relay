@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"strconv"
 
 	"html/template"
 	"net/http"
@@ -35,6 +36,7 @@ func main() {
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   string `arg:"--import-data" help:"Import Data from Data.yml into DB"`
+		DisableTele  bool   `arg:"--disable-telemetry" help:"Disables reporting its own existence"`
 	}
 	arg.MustParse(&args)
 
@@ -130,6 +132,17 @@ func main() {
 
 		// setup routes
 		initHandlersProfile()
+	}
+
+	if !args.DisableTele {
+		go func() {
+			_, err := http.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
+			if err == nil {
+				log.Trace("Sent telemetry successfully")
+			} else {
+				log.Tracef("Sending telemetry failed: %s", err)
+			}
+		}()
 	}
 
 	// start server

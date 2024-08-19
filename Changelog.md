@@ -5,6 +5,7 @@
 - config.yml now only contains server configuration information
 - remove cleanup timers (not implemented anyway)
 - import data now takes data.yml file as argument to import into DB
+- add reporting on startup to get a sense of how many instances are in use. disable via `--disable-telemetry`
 
 # 2.0.0-beta.8.3
 
