@@ -17,9 +17,12 @@ for d in */; do
         echo "[✘] Test ${n} failed"
         success=0
         if [[ "${1}" == "-e" ]]; then
+            ./cleanup.sh
             exit 1
         fi
     fi
+
+    ./cleanup.sh
 done
 
 if [[ $success -eq 1 ]]; then
