@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	"github.com/jm-lemmi/ical-relay/modules"
 	"github.com/juliangruber/go-intersect/v2" // requires go1.18
@@ -23,7 +24,7 @@ type profileMetadata struct {
 
 func getProfilesMetadata() []profileMetadata {
 	profiles := make([]profileMetadata, 0)
-	for _, name := range conf.getPublicCalendars() {
+	for _, name := range dataStore.GetPublicProfileNames() {
 		// FIXME: any name with "/" will break the URL
 		viewUrl, err := router.Get("calendarView").URL("profile", name)
 		if err != nil {
@@ -49,7 +50,7 @@ func getProfilesMetadata() []profileMetadata {
 	return profiles
 }
 
-func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, error) {
+func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Calendar, error) {
 	var calendar *ics.Calendar
 
 	// get all sources
@@ -137,7 +138,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 
 		// load history file
-		log.Debug("Loading history file")
+		log.Debugf("Loading history file %s", historyFilename)
 		historyCal, err := helpers.LoadCalFile(historyFilename)
 		if err != nil {
 			log.Errorln(err)
@@ -167,7 +168,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 
 		//saving history file
-		log.Debug("Saving history file")
+		log.Debugf("Saving history file %s", historyFilename)
 		err = helpers.WriteCalFile(calendar, historyFilename)
 		if err != nil {
 			log.Errorln(err)
@@ -211,8 +212,10 @@ func getSource(source string) (*ics.Calendar, error) {
 		}
 	case "profile":
 		profileName := strings.Split(source, "://")[1]
-		conf.ensureProfileLoaded(profileName)
-		calendar, err = getProfileCalendar(conf.Profiles[profileName], profileName)
+		if !dataStore.ProfileExists(profileName) {
+			return nil, fmt.Errorf("Profile does not exist: %s", profileName)
+		}
+		calendar, err = getProfileCalendar(dataStore.GetProfileByName(profileName), profileName)
 		if err != nil {
 			return nil, err
 		}

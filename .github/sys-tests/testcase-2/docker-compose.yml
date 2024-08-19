@@ -1,0 +1,10 @@
+services:
+  ical-relay:
+    image: ical-relay:test
+    command: /usr/bin/ical-relay --verbose --config /etc/ical-relay/config.yml
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./config.yml:/etc/ical-relay/config.yml
+      - ./data.yml:/etc/ical-relay/data.yml
+    restart: on-failure

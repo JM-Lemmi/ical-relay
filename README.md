@@ -37,7 +37,7 @@ Install with your package manager:
 apt install ./ical-relay_1.3.0_amd64.deb
 ```
 
-This will create a systemd service called `ical-relay.service` which can be started with `systemctl start ical-relay.service`. The defualt configuration file is located at `/etc/ical-relay/config.yml`.
+This will create a systemd service called `ical-relay.service` which can be started with `systemctl start ical-relay.service`. The default configuration file is located at `/etc/ical-relay/config.yml`.
 
 Run a notifier manually:
 
@@ -45,30 +45,45 @@ Run a notifier manually:
 /usr/bin/ical-relay --notifier <name> --config config.yml
 ```
 
+## Docker
+
+Docker images are availible in arm and x64 variants.
+
+The default health check only works, when ical-relay is listening on port 80 (inside the container)
+
 # Config
 
-```yaml
-version: 2
+`config.yml` contains all the general server configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
 
+```yaml
+version: 4
 server:
   addr: ":80"
   loglevel: "info"
   url: "https://cal.julian-lemmerich.de"
+  litemode: false
+  disable-frontend: false
   templatepath: /opt/ical-relay/templates
+  faviconpath: /static/media/favicon.svg
+  name: "Calendar"
   imprintlink: "https://your-imprint"
   privacypolicylink: "http://your-data-privacy-policy"
   db:
-    host: localhost
+    host: postgres
     db-name: ical_relay
     user: dbuser
-    password: "optional-password"
+    password: password
   mail:
     smtp_server: "mailout.julian-lemmerich.de"
     smtp_port: 25
     sender: "calnotification@julian-lemmerich.de"
   super-tokens:
     - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
+```
 
+Profile Data is stored in `data.yml` or in a database:
+
+```
 profiles:
   relay:
     source: "https://example.com/calendar.ics"
@@ -97,16 +112,19 @@ notifiers:
       - "jm.lemmerich@gmail.com"
 ```
 
-The `server` section contains the configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
 You can list as many profiles as you want. Each profile has to have a source.
 You can then add as many rules as you want. The `name:` filed specifies the module, the rule references. All other fields are dependent on the module.
 The rule are executed in the order they are listed. You can create multiple rules from one module.
+
+To import data into a DB when running full mode, use the `--import-data` flag.
 
 ### config versioning
 
 | ical-relay version | config version |
 |--------------------|----------------|
 | 2.0.0-beta.5       | 2              |
+| ?                  | 3              |
+| 2.0.0-beta.9       | 4 !            |
 
 ### database versioning
 
@@ -114,11 +132,14 @@ The rule are executed in the order they are listed. You can create multiple rule
 |--------------------|------------|
 | 2.0.0-beta.6       | 4          |
 
-## Database / Ephemeral-Mode
+## Lite-Mode
 
-If you want the configuration changes from the frontend to persist, you have to use a postgres database. You can also run in ephemeral mode (`--ephemeral`), which will read the config, but not write to a DB or to the config file.
+Running in Lite-Mode disables the frontend and api and doesnt need a database. It reads the profiles and rules from the `data.yaml`.
 
-Immutable-Past Files are not affected by ephemeral mode
+You can use litemode either with the --lite-mode flag or with the config option "lite-mode: true".
+By default ical-relay will start in full mode.
+
+Immutable-Past Files are still written to file in lite mode.
 
 ## immutable-past
 

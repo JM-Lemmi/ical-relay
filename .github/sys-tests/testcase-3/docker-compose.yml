@@ -1,15 +1,12 @@
-version: '3'
-
 services:
   ical-relay:
-    build:
-      context: .
-      dockerfile: ./cmd/ical-relay/Dockerfile
-    command: /usr/bin/ical-relay --config /etc/ical-relay/config.yml --import-data
+    image: ical-relay:test
+    command: /usr/bin/ical-relay --verbose --config /etc/ical-relay/config.yml --import-data /etc/ical-relay/data.yml
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8080:80"
     volumes:
-      - ./cmd/ical-relay/config.yml:/etc/ical-relay/config.yml
+      - ./config.yml:/etc/ical-relay/config.yml
+      - ./data.yml:/etc/ical-relay/data.yml
     depends_on:
       postgres:
         condition: service_healthy
@@ -22,8 +19,6 @@ services:
       POSTGRES_DB: ical_relay
     ports:
       - 127.0.0.1:5432:5432
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "su", "-", "postgres", "pg_isready", "-d", "ical_relay"]
       interval: 30s

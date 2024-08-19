@@ -1,11 +1,11 @@
-name: Go Test
+name: Test
 
 on:
   push:
   pull_request:
 
 jobs:
-  test:
+  go-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,3 +22,15 @@ jobs:
 
       - name: Run tests
         run: go test ./cmd/ical-relay/...
+  
+  system-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run tests
+        run: cd ./.github/sys-tests/; ./tests.sh

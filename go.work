@@ -7,4 +7,5 @@ use (
 	./pkg/compare
 	./pkg/helpers
 	./pkg/modules
+	./pkg/datastore
 )
