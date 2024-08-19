@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jm-lemmi/ical-relay/database"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 
 	"github.com/alexflint/go-arg"
@@ -21,7 +21,7 @@ var version string // If you are here due to a compile error, run go generate
 
 var configPath string
 var conf Config
-var dataStore database.DataStore
+var dataStore datastore.DataStore
 
 var router *mux.Router
 
@@ -34,7 +34,7 @@ func main() {
 		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
-		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
+		ImportData   string `arg:"--import-data" help:"Import Data from Data.yml into DB"`
 	}
 	arg.MustParse(&args)
 
@@ -102,12 +102,14 @@ func main() {
 		}
 
 		// connect to DB
-		database.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
-		log.Tracef("%#v", database.Db)
-		dataStore = database.DatabaseDataStore{}
+		datastore.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
+		dataStore = datastore.DatabaseDataStore{}
 
-		if args.ImportData {
-			conf.importToDB()
+		if args.ImportData != "" {
+			err := datastore.ImportToDB(args.ImportData) // TODO
+			if err != nil {
+				log.Fatalf("Error importing data: %v", err)
+			}
 		}
 
 		// setup routes
@@ -119,12 +121,12 @@ func main() {
 
 			initHandlersFrontend()
 		}
-
-		// start cleanup
-		CleanupStartup()
 	} else {
 		log.Warn("Running in lite mode. No changes will be saved.")
-		dataStore = conf
+		dataStore, err = datastore.ParseDataFile(conf.Server.StoragePath + "data.yml")
+		if err != nil {
+			log.Fatalf("Error loading data file: %v", err)
+		}
 
 		// setup routes
 		initHandlersProfile()

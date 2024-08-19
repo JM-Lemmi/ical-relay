@@ -1,4 +1,4 @@
-package database
+package datastore
 
 import (
 	"fmt"
@@ -11,23 +11,23 @@ type DatabaseDataStore struct {
 }
 
 func (c DatabaseDataStore) GetPublicProfileNames() []string {
-	return DbListPublicProfiles()
+	return dbListPublicProfiles()
 }
 
 func (c DatabaseDataStore) GetAllProfileNames() []string {
-	return DbListProfiles()
+	return dbListProfiles()
 }
 
 func (c DatabaseDataStore) ProfileExists(name string) bool {
-	return DbProfileExists(name)
+	return dbProfileExists(name)
 }
 
 func (c DatabaseDataStore) GetProfileByName(name string) Profile {
-	return *DbReadProfile(name)
+	return *dbReadProfile(name)
 }
 
 func (c DatabaseDataStore) AddProfile(name string, sources []string, public bool, immutablePast bool) {
-	DbWriteProfile(Profile{
+	dbWriteProfile(Profile{
 		Name:          name,
 		Sources:       sources,
 		Public:        public,
@@ -45,78 +45,81 @@ func (c DatabaseDataStore) EditProfile(name string, sources []string, public boo
 		ImmutablePast: immutablePast,
 	}
 
-	DbWriteProfile(tempProfile)
+	dbWriteProfile(tempProfile)
 }
 
 func (c DatabaseDataStore) AddSource(profileName string, src string) error {
-	if !DbProfileExists(profileName) {
+	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	DbAddProfileSource(Profile{Name: profileName}, src)
+	dbAddProfileSource(Profile{Name: profileName}, src)
 	return nil
 }
 
 func (c DatabaseDataStore) RemoveSource(profileName string, src string) error {
-	if !DbProfileExists(profileName) {
+	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	DbRemoveProfileSourceByUrl(Profile{Name: profileName}, src)
+	dbRemoveProfileSourceByUrl(Profile{Name: profileName}, src)
 	return nil
 }
 
 func (c DatabaseDataStore) AddRule(profileName string, rule Rule) error {
-	if !DbProfileExists(profileName) {
+	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	DbAddProfileRule(Profile{Name: profileName}, rule)
+	dbAddProfileRule(Profile{Name: profileName}, rule)
 	return nil
 }
 
 func (c DatabaseDataStore) RemoveRule(profileName string, rule Rule) {
-	DbRemoveRule(Profile{Name: profileName}, rule.Id)
+	dbRemoveRule(Profile{Name: profileName}, rule.Id)
 }
 
 func (c DatabaseDataStore) CreateToken(profileName string, note *string) error {
 	token := randstr.Base62(64)
-	if !DbProfileExists(profileName) {
+	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	DbWriteProfileToken(Profile{Name: profileName}, token, note)
+	dbWriteProfileToken(Profile{Name: profileName}, token, note)
 	return nil
 }
 
 func (c DatabaseDataStore) ModifyTokenNote(profileName string, token string, note *string) error {
-	if !DbProfileExists(profileName) {
+	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	DbWriteProfileToken(Profile{Name: profileName}, token, note)
+	dbWriteProfileToken(Profile{Name: profileName}, token, note)
 	return nil
 }
 
 func (c DatabaseDataStore) DeleteToken(profileName string, token string) error {
-	if !DbProfileExists(profileName) {
+	if !dbProfileExists(profileName) {
 		return fmt.Errorf("profile " + profileName + " does not exist")
 	}
-	DbRemoveProfileToken(Profile{Name: profileName}, token)
+	dbRemoveProfileToken(Profile{Name: profileName}, token)
 	return nil
 }
 
 func (c DatabaseDataStore) DeleteProfile(name string) {
-	panic("DB Delete Profile not implemented yet!") // TODO: implement
+	if dbProfileExists(name) {
+		profile := *dbReadProfile(name)
+		dbDeleteProfile(profile)
+	}
 }
 
 func (c DatabaseDataStore) NotifierExists(name string) bool {
-	return DbNotifierExists(name)
+	return dbNotifierExists(name)
 }
 
 func (c DatabaseDataStore) AddNotifier(notifier Notifier) {
-	DbWriteNotifier(notifier)
+	dbWriteNotifier(notifier)
 }
 
 func (c DatabaseDataStore) GetNotifiers() map[string]Notifier {
 	notifiers := make(map[string]Notifier)
-	for _, notifierName := range DbListNotifiers() {
-		notifier, err := DbReadNotifier(notifierName, false)
+	for _, notifierName := range dbListNotifiers() {
+		notifier, err := dbReadNotifier(notifierName, false)
 		if err != nil {
 			log.Warnf("`dbReadNotifier` failed with %s", err.Error())
 		}
@@ -126,7 +129,7 @@ func (c DatabaseDataStore) GetNotifiers() map[string]Notifier {
 }
 
 func (c DatabaseDataStore) GetNotifier(notifierName string) Notifier {
-	notifier, err := DbReadNotifier(notifierName, true)
+	notifier, err := dbReadNotifier(notifierName, true)
 	if err != nil {
 		log.Warnf("`dbReadNotifier` faild with %s", err.Error())
 	}
@@ -134,17 +137,17 @@ func (c DatabaseDataStore) GetNotifier(notifierName string) Notifier {
 }
 
 func (c DatabaseDataStore) AddNotifyRecipient(notifierName string, recipient string) error {
-	if !DbNotifierExists(notifierName) {
+	if !dbNotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
-	DbAddNotifierRecipient(Notifier{Name: notifierName}, recipient)
+	dbAddNotifierRecipient(Notifier{Name: notifierName}, recipient)
 	return nil
 }
 
 func (c DatabaseDataStore) RemoveNotifyRecipient(notifierName string, recipient string) error {
-	if !DbNotifierExists(notifierName) {
+	if !dbNotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
-	DbRemoveNotifierRecipient(Notifier{Name: notifierName}, recipient)
+	dbRemoveNotifierRecipient(Notifier{Name: notifierName}, recipient)
 	return nil
 }

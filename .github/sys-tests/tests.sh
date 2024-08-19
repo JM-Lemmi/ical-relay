@@ -15,6 +15,7 @@ for d in */; do
         echo "[✔] Test ${n} passed"
     else
         echo "[✘] Test ${n} failed"
+        ./logs.sh
         success=0
         if [[ "${1}" == "-e" ]]; then
             ./cleanup.sh

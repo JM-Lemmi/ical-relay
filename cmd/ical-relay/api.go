@@ -14,7 +14,7 @@ import (
 	ics "github.com/arran4/golang-ical"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/jm-lemmi/ical-relay/database"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 
 	log "github.com/sirupsen/logrus"
@@ -172,7 +172,8 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			requestLogger.Infoln("Profile exists, but not the notifier. Creating notifier...")
-			conf.addNotifierFromProfile(notifier)
+			//TODO: fix in notifier branch
+			//dataStore.addNotifierFromProfile(notifier)
 		}
 	}
 
@@ -257,7 +258,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		rule := database.Rule{
+		rule := datastore.Rule{
 			Filters: []map[string]string{
 				{
 					"type": "id",
@@ -304,7 +305,7 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotImplemented)
 		fmt.Fprint(w, "Not implemented yet!\n")
 	case http.MethodDelete:
-		rule := database.Rule{
+		rule := datastore.Rule{
 			Filters: []map[string]string{
 				{
 					"type": "id",
@@ -517,7 +518,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotImplemented)
 		fmt.Fprint(w, "Not implemented yet!\n")
 	case http.MethodPost:
-		var rule database.Rule
+		var rule datastore.Rule
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -531,7 +532,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// TODO implement
-		if !checkRuleIntegrity(rule) {
+		if !rule.CheckRuleIntegrity() {
 			requestLogger.Errorln("Rule is invalid!")
 			http.Error(w, "Rule is invalid!", http.StatusBadRequest)
 			return
@@ -554,7 +555,7 @@ func rulesApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		dataStore.RemoveRule(profileName, database.Rule{Id: idint})
+		dataStore.RemoveRule(profileName, datastore.Rule{Id: idint})
 	}
 }
 

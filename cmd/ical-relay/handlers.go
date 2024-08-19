@@ -9,7 +9,7 @@ import (
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/gorilla/mux"
-	"github.com/jm-lemmi/ical-relay/database"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
@@ -279,7 +279,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	// load params
 	time := r.URL.Query().Get("reminder")
 	if time != "" {
-		profile.Rules = append(profile.Rules, database.Rule{
+		profile.Rules = append(profile.Rules, datastore.Rule{
 			Filters: []map[string]string{
 				{"type": "all"},
 			},

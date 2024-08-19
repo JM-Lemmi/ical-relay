@@ -28,14 +28,14 @@ require (
 
 require (
 	github.com/alexflint/go-scalar v1.2.0 // indirect
-	github.com/jm-lemmi/ical-relay/database v0.0.0-00010101000000-000000000000
+	github.com/jm-lemmi/ical-relay/datastore v0.0.0-00010101000000-000000000000
 	golang.org/x/sys v0.17.0 // indirect
 )
 
 replace (
 	github.com/arran4/golang-ical => ../../pkg/golang-ical
 	github.com/jm-lemmi/ical-relay/compare => ../../pkg/compare
-	github.com/jm-lemmi/ical-relay/database => ../../pkg/database
+	github.com/jm-lemmi/ical-relay/datastore => ../../pkg/datastore
 	github.com/jm-lemmi/ical-relay/helpers => ../../pkg/helpers
 	github.com/jm-lemmi/ical-relay/modules => ../../pkg/modules
 )

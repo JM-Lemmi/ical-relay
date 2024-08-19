@@ -1,8 +1,6 @@
 package main
 
 import (
-	"github.com/jm-lemmi/ical-relay/database"
-
 	"fmt"
 	"reflect"
 	"testing"
@@ -87,41 +85,6 @@ func TestExampleConfig(t *testing.T) {
 			},
 			SuperTokens: []string{
 				"rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB",
-			},
-		},
-		Profiles: map[string]database.Profile{
-			// 	"relay": profile{
-			"relay": {
-				Name:          "",
-				Sources:       nil,
-				Public:        true,
-				ImmutablePast: true,
-				Tokens: []database.Token{
-					{
-						Token: "eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt",
-					},
-				},
-				Rules: []database.Rule{
-					{
-						Filters: []map[string]string{
-							{"regex": "testentry", "target": "summary", "type": "regex"},
-							{"from": "2021-12-02T00:00:00Z", "type": "timeframe", "until": "2021-12-31T00:00:00Z"},
-						},
-						Operator: "",
-						Action:   map[string]string{"type": "delete"},
-						Expiry:   "",
-					},
-				},
-			},
-		},
-		Notifiers: map[string]database.Notifier{
-			"relay": {
-				Name:     "",
-				Source:   "http://localhost/relay",
-				Interval: "15m",
-				Recipients: []string{
-					"jm.lemmerich@gmail.com",
-				},
 			},
 		},
 	}

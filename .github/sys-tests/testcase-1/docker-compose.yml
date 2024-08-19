@@ -1,11 +1,9 @@
-version: '3'
-
 services:
   ical-relay:
     build:
       context: ../../../
       dockerfile: cmd/ical-relay/Dockerfile
-    command: /usr/bin/ical-relay --verbose --config /etc/ical-relay/config.yml --import-data
+    command: /usr/bin/ical-relay --verbose --config /etc/ical-relay/config.yml
     ports:
       - "127.0.0.1:8080:80"
     volumes:

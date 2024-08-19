@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	ics "github.com/arran4/golang-ical"
-	"github.com/jm-lemmi/ical-relay/database"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	"github.com/jm-lemmi/ical-relay/modules"
 	"github.com/juliangruber/go-intersect/v2" // requires go1.18
@@ -51,7 +51,7 @@ func getProfilesMetadata() []profileMetadata {
 	return profiles
 }
 
-func getProfileCalendar(profile database.Profile, profileName string) (*ics.Calendar, error) {
+func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Calendar, error) {
 	var calendar *ics.Calendar
 
 	// get all sources

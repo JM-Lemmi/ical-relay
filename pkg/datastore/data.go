@@ -1,4 +1,4 @@
-package database
+package datastore
 
 type DataStore interface {
 	GetPublicProfileNames() []string
@@ -58,4 +58,13 @@ type Notifier struct {
 	Source     string   `yaml:"source" db:"source"`
 	Interval   string   `yaml:"interval" db:"interval"`
 	Recipients []string `yaml:"recipients"`
+}
+
+// Data Integrity Functions
+
+// checks if a rule is valid.
+// returns true if rule is valid, false if not
+func (rule Rule) CheckRuleIntegrity() bool {
+	// TODO implement!
+	return true
 }
