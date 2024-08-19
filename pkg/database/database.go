@@ -227,6 +227,21 @@ func DbWriteProfile(profile Profile) {
 		`INSERT INTO profile (name, public, immutable_past) VALUES (:name, :public, :immutable_past)
 ON CONFLICT (name) DO UPDATE SET public = excluded.public, immutable_past = excluded.immutable_past`,
 		profile)
+
+	DbRemoveAllProfileSources(profile)
+	for _, source := range profile.Sources {
+		if !DbProfileSourceExists(profile, source) {
+			DbAddProfileSource(profile, source)
+		}
+	}
+
+	DbRemoveAllProfileRules(profile)
+	for _, rule := range profile.Rules {
+		if !DbProfileRuleExists(profile, rule) {
+			DbAddProfileRule(profile, rule)
+		}
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -315,6 +330,14 @@ func dbCleanupOrphanSources() {
 	_, err := Db.Exec(
 		`DELETE FROM source WHERE (SELECT COUNT(*) FROM profile_sources WHERE profile_sources.source=source.id) < 1`,
 	)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
+
+func DbRemoveAllProfileRules(profile Profile) {
+	_, err := Db.Exec(`DELETE FROM rule WHERE profile = $1`, profile.Name)
 	if err != nil {
 		log.Fatal(err)
 		return

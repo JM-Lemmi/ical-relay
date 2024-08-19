@@ -45,13 +45,7 @@ func (c DatabaseDataStore) EditProfile(name string, sources []string, public boo
 		ImmutablePast: immutablePast,
 	}
 
-	DbRemoveAllProfileSources(tempProfile)
 	DbWriteProfile(tempProfile)
-	for _, source := range tempProfile.Sources {
-		if !DbProfileSourceExists(tempProfile, source) {
-			DbAddProfileSource(tempProfile, source)
-		}
-	}
 }
 
 func (c DatabaseDataStore) AddSource(profileName string, src string) error {
