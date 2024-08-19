@@ -25,7 +25,7 @@ services:
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "ical_relay"]
+      test: ["CMD-SHELL", "su", "-", "postgres", "pg_isready", "-d", "ical_relay"]
       interval: 30s
       timeout: 60s
       retries: 5

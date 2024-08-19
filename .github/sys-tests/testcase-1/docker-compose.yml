@@ -21,7 +21,7 @@ services:
     ports:
       - 127.0.0.1:5432:5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "ical_relay"]
+      test: ["CMD-SHELL", "su", "-", "postgres", "pg_isready", "-d", "ical_relay"]
       interval: 30s
       timeout: 60s
       retries: 5
