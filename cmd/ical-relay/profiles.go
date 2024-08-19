@@ -139,7 +139,7 @@ func getProfileCalendar(profile database.Profile, profileName string) (*ics.Cale
 		}
 
 		// load history file
-		log.Debug("Loading history file")
+		log.Debugf("Loading history file %s", historyFilename)
 		historyCal, err := helpers.LoadCalFile(historyFilename)
 		if err != nil {
 			log.Errorln(err)
@@ -169,7 +169,7 @@ func getProfileCalendar(profile database.Profile, profileName string) (*ics.Cale
 		}
 
 		//saving history file
-		log.Debug("Saving history file")
+		log.Debugf("Saving history file %s", historyFilename)
 		err = helpers.WriteCalFile(calendar, historyFilename)
 		if err != nil {
 			log.Errorln(err)
