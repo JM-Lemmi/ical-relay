@@ -53,9 +53,10 @@ The default health check only works, when ical-relay is listening on port 80 (in
 
 # Config
 
-```yaml
-version: 2
+`config.yml` contains all the general server configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
 
+```yaml
+version: 4
 server:
   addr: ":80"
   loglevel: "info"
@@ -78,7 +79,11 @@ server:
     sender: "calnotification@julian-lemmerich.de"
   super-tokens:
     - rA4nhdhmr34lL6x6bLyGoJSHE9o9cA2BwjsMOeqV5SEzm61apcRRzWybtGVjLKiB
+```
 
+Profile Data is stored in `data.yml` or in a database:
+
+```
 profiles:
   relay:
     source: "https://example.com/calendar.ics"
@@ -107,10 +112,11 @@ notifiers:
       - "jm.lemmerich@gmail.com"
 ```
 
-The `server` section contains the configuration for the HTTP server. You can change the loglevel to "debug" to get more information.
 You can list as many profiles as you want. Each profile has to have a source.
 You can then add as many rules as you want. The `name:` filed specifies the module, the rule references. All other fields are dependent on the module.
 The rule are executed in the order they are listed. You can create multiple rules from one module.
+
+To import data into a DB when running full mode, use the `--import-data` flag.
 
 ### config versioning
 
@@ -118,6 +124,7 @@ The rule are executed in the order they are listed. You can create multiple rule
 |--------------------|----------------|
 | 2.0.0-beta.5       | 2              |
 | ?                  | 3              |
+| 2.0.0-beta.9       | 4 !            |
 
 ### database versioning
 
@@ -127,7 +134,7 @@ The rule are executed in the order they are listed. You can create multiple rule
 
 ## Lite-Mode
 
-Running in Lite-Mode disables the frontend and api and doesnt need a database. It reads the profiles and rules from the `config.yaml`.
+Running in Lite-Mode disables the frontend and api and doesnt need a database. It reads the profiles and rules from the `data.yaml`.
 
 Immutable-Past Files are still written to file in lite mode.
 
