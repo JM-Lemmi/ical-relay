@@ -45,6 +45,9 @@ func Connect(dbUser string, dbPassword string, dbHost string, dbName string) {
 		setDbVersion(CurrentDbVersion)
 		dbVersion = CurrentDbVersion
 	}
+	if dbVersion > CurrentDbVersion {
+		log.Panicf("Found db with dbVersion %d but I only know dbVersion %d", dbVersion, CurrentDbVersion)
+	}
 	if dbVersion != CurrentDbVersion {
 		doDbUpgrade(dbVersion)
 	}

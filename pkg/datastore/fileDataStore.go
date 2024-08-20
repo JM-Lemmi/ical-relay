@@ -10,7 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const CurrentDataFileVersion = 1
+
 type DataFile struct {
+	Version   int                 `yaml:"version"`
 	Profiles  map[string]Profile  `yaml:"profiles,omitempty"`
 	Notifiers map[string]Notifier `yaml:"notifiers,omitempty"`
 }
@@ -29,6 +32,14 @@ func ParseDataFile(path string) (DataFile, error) {
 	if err != nil {
 		log.Fatalf("Error Parsing Data File: %v", err)
 		return tmpConfig, err
+	}
+
+	if tmpConfig.Version != CurrentDataFileVersion {
+		if tmpConfig.Version > CurrentDbVersion {
+			log.Panicf("Found data file with version %d but I only know up to version %d",
+				tmpConfig.Version, CurrentDataFileVersion)
+		}
+		// in the future upgrade here
 	}
 
 	return tmpConfig, nil
