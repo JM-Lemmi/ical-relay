@@ -14,7 +14,7 @@ import (
 
 var db sqlx.DB
 
-const CurrentDbVersion = 4
+const CurrentDbVersion = 5
 
 // startup connection function
 func Connect(dbUser string, dbPassword string, dbHost string, dbName string) {
@@ -96,6 +96,14 @@ func doDbUpgrade(fromDbVersion int) {
 		}
 		initTables()
 		setDbVersion(4)
+	}
+	if fromDbVersion < 5 {
+		_, err := db.Exec(`ALTER TABLE rule DROP CONSTRAINT rule_profile_fkey;
+ALTER TABLE rule ADD CONSTRAINT rule_profile_fkey FOREIGN KEY (profile) REFERENCES profile(name) ON DELETE CASCADE;`)
+		if err != nil {
+			log.Panic("Failed to upgrade db", err)
+		}
+		setDbVersion(5)
 	}
 }
 
