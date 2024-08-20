@@ -9,6 +9,7 @@ config.toml
 config.yml
 config*.yml
 !.github/sys-tests/*/config.yml
+noitifier-config.yml
 /tmp/
 .debpkg/
 calstore/

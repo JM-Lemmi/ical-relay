@@ -27,6 +27,8 @@ If you want to run the beta version, you can use the `testing` repository. Repla
 
 This installs the ical-relay as a systemd service. Change the configuration in `/etc/ical-relay/config.yml` and start the service with `systemctl start ical-relay`.
 
+The package also includes the ical-notifier. If you `systemctl enable ical-notifier.timer` the notifier will run every 15 minutes.
+
 ## Install Package from Github
 
 Download the package from the latest release.
