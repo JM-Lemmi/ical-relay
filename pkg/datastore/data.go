@@ -56,6 +56,7 @@ type Rule struct {
 type Notifier struct {
 	Name       string   `db:"name"`
 	Source     string   `yaml:"source" db:"source"`
+	Type       string   `yaml:"type" db:"type"`
 	Interval   string   `yaml:"interval" db:"interval"`
 	Recipients []string `yaml:"recipients"`
 }

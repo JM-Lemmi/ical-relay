@@ -14,7 +14,7 @@ import (
 
 var db sqlx.DB
 
-const CurrentDbVersion = 4
+const CurrentDbVersion = 5
 
 // startup connection function
 func Connect(dbUser string, dbPassword string, dbHost string, dbName string) {
@@ -96,6 +96,32 @@ func doDbUpgrade(fromDbVersion int) {
 		}
 		initTables()
 		setDbVersion(4)
+	}
+	if fromDbVersion < 5 {
+		// add column type with default value to add type email to all existing notifiers
+		// remove default as we do not want to have it and recreate the unique index including the notifier type
+		log.Info("running upgrade to db version 5")
+		_, err := db.Exec("ALTER TABLE notifier ADD COLUMN type text NOT NULL DEFAULT 'email'")
+		if err != nil {
+			log.Panic("Failed to add column type to notifier table on upgrade to db version 5")
+		}
+		_, err = db.Exec("ALTER TABLE notifier ALTER COLUMN type DROP DEFAULT")
+		if err != nil {
+			log.Panic("Failed to remove default of column type of table notifier on upgrade to db version 5")
+		}
+		_, err = db.Exec("ALTER TABLE notifier DROP CONSTRAINT notifier_source_interval_key")
+		if err != nil {
+			log.Panic("Failed to drop notifier unique(source,interval) constraint")
+		}
+		_, err = db.Exec("ALTER TABLE notifier ADD CONSTRAINT notifier_source_interval_type_key UNIQUE (source,interval,type)")
+		if err != nil {
+			log.Panic("Failed to recreate notifier unique constraint")
+		}
+		_, err = db.Exec("ALTER TABLE recipients RENAME email to destination")
+		if err != nil {
+			log.Panic("Failed to rename recipients column email to destination")
+		}
+		setDbVersion(5)
 	}
 }
 
@@ -543,8 +569,8 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*Notifier, error
 	if fetchRecipients {
 		err = db.Select(
 			&readNotifier.Recipients,
-			`SELECT email FROM recipients
-JOIN notifier_recipients nr ON email = nr.recipient
+			`SELECT destination FROM recipients
+JOIN notifier_recipients nr ON destination = nr.recipient
 JOIN notifier ON nr.notifier = notifier.name WHERE nr.notifier = $1`,
 			notifierName)
 	}
@@ -575,7 +601,7 @@ func dbDeleteNotifier(notifier Notifier) {
 func dbCleanupOrphanRecipients() {
 	_, err := db.Exec(
 		`DELETE FROM recipients WHERE
-        	(SELECT COUNT(*) FROM notifier_recipients WHERE notifier_recipients.recipient=recipients.email) < 1`,
+        	(SELECT COUNT(*) FROM notifier_recipients WHERE notifier_recipients.recipient=recipients.destination) < 1`,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -584,7 +610,7 @@ func dbCleanupOrphanRecipients() {
 }
 
 func dbAddNotifierRecipient(notifier Notifier, recipient string) {
-	_, err := db.Exec(`INSERT INTO recipients (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`, recipient)
+	_, err := db.Exec(`INSERT INTO recipients (destination) VALUES ($1) ON CONFLICT (destination) DO NOTHING`, recipient)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -612,7 +638,7 @@ func dbRemoveRecipient(recipient string) {
 	//It is too expensive to go through all cached notifiers and remove the recipient, we simply invalidate the cache.
 	//(The db is much more efficient doing a cascading deletion)
 	//TODO: invalidate cache
-	_, err := db.Exec(`DELETE FROM recipients WHERE email = $1`, recipient)
+	_, err := db.Exec(`DELETE FROM recipients WHERE destination = $1`, recipient)
 	if err != nil {
 		log.Fatal(err)
 		return

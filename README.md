@@ -85,7 +85,7 @@ server:
 
 Profile Data is stored in `data.yml` or in a database:
 
-```
+```yaml
 profiles:
   relay:
     source: "https://example.com/calendar.ics"
@@ -108,6 +108,7 @@ profiles:
 notifiers:
   relay:
     source: "http://localhost/relay"
+    type: email
     interval: "15m"
     admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     recipients:
