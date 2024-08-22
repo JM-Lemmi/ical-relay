@@ -23,7 +23,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.bin }}_${{ matrix.arch }}
-          path: ./bin/${{ matrix.bin }}_${{ matrix.arch }}
+          path: ./bin/${{ matrix.bin }}
 
   Package-deb:
     needs: Compile
