@@ -63,8 +63,8 @@ jobs:
           name: ical-notifier_${{ matrix.arch }}
       - run: |
           mkdir -p cmd/ical-relay/.debpkg/usr/bin
-          cp ${{steps.download_ir.outputs.download-path}}/ical-relay_${{ matrix.arch }} cmd/ical-relay/.debpkg/usr/bin/ical-relay
-          cp ${{steps.download_in.outputs.download-path}}/ical-notifier_${{ matrix.arch }} cmd/ical-relay/.debpkg/usr/bin/ical-notifier
+          cp ${{steps.download_ir.outputs.download-path}}/ical-relay cmd/ical-relay/.debpkg/usr/bin/ical-relay
+          cp ${{steps.download_in.outputs.download-path}}/ical-notifier cmd/ical-relay/.debpkg/usr/bin/ical-notifier
           chmod +x cmd/ical-relay/.debpkg/usr/bin/ical-relay
           chmod +x cmd/ical-relay/.debpkg/usr/bin/ical-notifier
       - uses: jiro4989/build-deb-action@v2
