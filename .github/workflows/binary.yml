@@ -46,7 +46,7 @@ jobs:
           mkdir -p cmd/ical-relay/.debpkg/etc/systemd/system/
           cp cmd/ical-relay/misc/ical-relay.service cmd/ical-relay/.debpkg/etc/systemd/system/
           cp cmd/ical-notifier/misc/ical-notifier.service cmd/ical-relay/.debpkg/etc/systemd/system/
-          cp cmd/ical-relay/misc/ical-relay.timer cmd/ical-relay/.debpkg/etc/systemd/system/
+          cp cmd/ical-notifier/misc/ical-notifier.timer cmd/ical-relay/.debpkg/etc/systemd/system/
 
           mkdir -p cmd/ical-relay/.debpkg/DEBIAN
           cp cmd/ical-relay/misc/postinstall.sh cmd/ical-relay/.debpkg/DEBIAN/postinst
