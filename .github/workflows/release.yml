@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  compile:
+    uses: ./.github/workflows/binary.yml
+  release:
+    runs-on: ubuntu-latest
+    needs: compile
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        id: download
+        with:
+          merge-multiple: true
+          path: ./assets
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          sparse-checkout: Changelog.md
+      - name: Create Changelog
+        run: sed -n '/^#/{:a;N;/^#/b;p;ba}' Changelog.md > Changelog.md.tmp
+      - run: echo "CHANGELOG=$(cat Changelog.md.tmp)" >> $GITHUB_OUTPUT
+        id: changelog
+      - uses: actions/create-release@v1
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: ${{ steps.changelog.outputs.CHANGELOG }}
+          prerelease: true #change this once merged to main
+      - name: Upload Release Assets
+        id: upload-release-assets
+        uses: dwenegar/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.release.outputs.id }}
+          assets_path: ./assets
