@@ -1,5 +1,8 @@
 name: Release
 
+# a release is automatically triggered when a tag beginning with 'v' is pushed
+# changelog is taken between the first two headers of the Changelog.md file.
+
 on:
   push:
     tags:
