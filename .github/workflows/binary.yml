@@ -21,7 +21,7 @@ jobs:
           go-version: '1.18.0' # The Go version to download (if necessary) and use.
       - run: go generate cmd/${{ matrix.bin }}/main.go
       - run: env GOOS=linux GOARCH=${{ matrix.arch }} go build -o ./bin/${{ matrix.bin }} ./cmd/${{ matrix.bin }}/
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.bin }}_${{ matrix.arch }}
           path: ./bin/${{ matrix.bin }}
@@ -54,12 +54,12 @@ jobs:
           cp cmd/ical-relay/misc/postinstall.sh cmd/ical-relay/.debpkg/DEBIAN/postinst
           chmod +x cmd/ical-relay/.debpkg/DEBIAN/postinst
       - name: Download binary ical-relay
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         id: download_ir
         with:
           name: ical-relay_${{ matrix.arch }}
       - name: Download binary ical-notifier
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         id: download_in
         with:
           name: ical-notifier_${{ matrix.arch }}
@@ -82,7 +82,7 @@ jobs:
           version: ${{ steps.version.outputs.X_VERSION }} # refs/tags/v*.*.*
           arch: '${{ matrix.arch }}'
           desc: 'Relay ical urls and edit them on the fly with different modules.'
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ical-relay_${{ steps.version.outputs.X_VERSION }}_${{ matrix.arch }}.deb
           path: ${{steps.package.outputs.file_name}}
