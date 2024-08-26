@@ -23,8 +23,7 @@ jobs:
           merge-multiple: true
           path: ./assets
       - name: Create Changelog
-        run: sed -n '/^#/{:a;N;/^#/b;p;ba}' Changelog.md > Changelog.md.tmp
-      - run: cat Changelog.md.tmp
+        run: sed -n '1,/# /{/# /{x;/./{x;q};x};x;p}' Changelog.md | sed '1,3d' > Changelog.md.tmp
       - uses: ncipollo/release-action@v1
         with:
           bodyFile: "Changelog.md.tmp"
