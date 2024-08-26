@@ -83,5 +83,5 @@ jobs:
           desc: 'Relay ical urls and edit them on the fly with different modules.'
       - uses: actions/upload-artifact@v3
         with:
-          name: ical-relay_${{ github.ref }}_${{ matrix.arch }}.deb
+          name: ical-relay_${{ steps.version.outputs.X_VERSION }}_${{ matrix.arch }}.deb
           path: ${{steps.package.outputs.file_name}}
