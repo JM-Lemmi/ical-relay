@@ -12,22 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: compile
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: Changelog.md
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         id: download
         with:
           merge-multiple: true
           path: ./assets
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          sparse-checkout: Changelog.md
       - name: Create Changelog
         run: sed -n '/^#/{:a;N;/^#/b;p;ba}' Changelog.md > Changelog.md.tmp
-      - run: ls -R
+      - run: cat Changelog.md.tmp
       - uses: ncipollo/release-action@v1
         with:
           bodyFile: "Changelog.md.tmp"
           prerelease: true
-          artifacts: "assets/*"
+          artifacts: "assets/*.deb"
