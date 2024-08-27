@@ -10,6 +10,7 @@ import (
 
 	"github.com/alexflint/go-arg"
 	ics "github.com/arran4/golang-ical"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,6 +21,7 @@ var version string // If you are here due to a compile error, run go generate
 
 var configPath string
 var conf Config
+var dataStore datastore.DataStore
 
 func main() {
 	log.Info("Welcome to ical-notifier, version " + version)
@@ -30,6 +32,7 @@ func main() {
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
+		// TODO: add data path
 	}
 	arg.MustParse(&args)
 
@@ -59,10 +62,40 @@ func main() {
 
 	log.Tracef("%+v\n", conf)
 
+	if !helpers.DirectoryExists(conf.General.StoragePath + "notifystore/") {
+		log.Info("Creating notifystore directory")
+		err = os.MkdirAll(conf.General.StoragePath+"notifystore/", 0750)
+		if err != nil {
+			log.Fatalf("Error creating notifystore: %v", err)
+		}
+	}
+
+	// load data
+
+	if !conf.General.LiteMode {
+		// RUNNING FULL MODE
+		log.Debug("Running in full mode.")
+		if conf.General.DB.Host == "" {
+			log.Fatal("DB configuration missing")
+		}
+
+		// connect to DB
+		datastore.Connect(conf.General.DB.User, conf.General.DB.Password, conf.General.DB.Host, conf.General.DB.DbName)
+		dataStore = datastore.DatabaseDataStore{}
+
+	} else {
+		log.Warn("Running in lite mode. No connection with ical-relay assumed. No dynamic unsubscription possible.")
+		// TODO: add dynamic data path
+		dataStore, err = datastore.ParseDataFile(conf.General.StoragePath + "data.yml")
+		if err != nil {
+			log.Fatalf("Error loading data file: %v", err)
+		}
+	}
+
 	// APPLICATION LOGIC
 	// get all notifiers to iterate
 
-	for notifierName, notifier := range conf.Notifiers {
+	for notifierName, notifier := range dataStore.GetNotifiers() {
 		err = notifyChanges(notifierName, notifier)
 		if err != nil {
 			log.Error("Failed to run notifier ", notifierName, ": ", err)

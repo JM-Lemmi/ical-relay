@@ -30,8 +30,9 @@ func main() {
 
 	// CLI Flags
 	var args struct {
-		Notifier     string `help:"Run notifier with given ID"`
-		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
+		Notifier   string `help:"Run notifier with given ID"`
+		ConfigPath string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
+		// TODO: add data path
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   string `arg:"--import-data" help:"Import Data from Data.yml into DB"`
@@ -63,13 +64,6 @@ func main() {
 
 	log.Tracef("%+v\n", conf)
 
-	if !helpers.DirectoryExists(conf.Server.StoragePath + "notifystore/") {
-		log.Info("Creating notifystore directory")
-		err = os.MkdirAll(conf.Server.StoragePath+"notifystore/", 0750)
-		if err != nil {
-			log.Fatalf("Error creating notifystore: %v", err)
-		}
-	}
 	if !helpers.DirectoryExists(conf.Server.StoragePath + "calstore/") {
 		log.Info("Creating calstore directory")
 		err = os.MkdirAll(conf.Server.StoragePath+"calstore/", 0750)

@@ -15,11 +15,3 @@ general:
     smtp_server: "mailout.julian-lemmerich.de"
     smtp_port: 25
     sender: "calnotification@julian-lemmerich.de"
-
-notifiers:
-  mycalendar:
-    source: "http://localhost/profiles/mycalendar"
-    recipients:
-      mail:
-        - "jm.lemmerich@gmail.com"
-      rss:

@@ -12,11 +12,12 @@ import (
 	ics "github.com/arran4/golang-ical"
 	"github.com/gopherlibs/feedhub/feedhub"
 	"github.com/jm-lemmi/ical-relay/compare"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
-func notifyChanges(notifierName string, notifier notifier) error {
+func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 	requestLogger := log.WithFields(log.Fields{"notifier": notifierName})
 	requestLogger.Infoln("Running Notifier!")
 
@@ -42,34 +43,36 @@ func notifyChanges(notifierName string, notifier notifier) error {
 	if len(added)+len(deleted)+len(changed) == 0 {
 		log.Info("No changes detected.")
 		return nil
-	} else {
-		log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed)) + " changed")
+	}
+	log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed)) + " changed")
 
-		// iterate over all recipients by type
-		for rectype, recipients := range notifier.Recipients {
-			switch rectype {
-			case "mail":
-				sendNotifyMails(notifierName, recipients, added, deleted, changed)
+	// iterate over all recipients by type
+	for _, rec := range notifier.Recipients {
+		var err error
+		switch rec.Type {
+		case "mail":
+			err = sendNotifyMail(notifierName, rec.Recipient, added, deleted, changed)
 
-			case "rss":
-				err := sendRSSFeed(notifierName, added, deleted, changed)
-				if err != nil {
-					log.Error("Failed to send RSS feed for notifier", notifierName, err)
-				}
+		case "rss":
+			err = sendRSSFeed(notifierName, rec.Recipient, added, deleted, changed)
 
-			case "webhook":
-				// TODO: implement webhook
-				continue
-			}
+		case "webhook":
+			// TODO: implement webhook
+			continue
 		}
 
-		// save updated calendar
-		helpers.WriteCalFile(historyICS, historyFilename)
-		return nil
+		if err != nil {
+			log.Error("Failed to devliver notifier "+notifierName+" for recipient "+" recipient "+rec.Recipient, err)
+		}
 	}
+
+	// save updated calendar
+	helpers.WriteCalFile(historyICS, historyFilename)
+	return nil
+
 }
 
-func sendNotifyMails(notifierName string, recipients []string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) {
+func sendNotifyMail(notifierName string, recipient string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
 	var body string
 
 	if len(added) > 0 {
@@ -88,35 +91,29 @@ func sendNotifyMails(notifierName string, recipients []string, added []ics.VEven
 		}
 	}
 
-	for _, recipient := range recipients {
-		m := gomail.NewMessage()
-		m.SetHeader("From", conf.General.Mail.Sender)
-		m.SetHeader("To", recipient)
-		m.SetHeader("Subject", "Calendar Notification for "+notifierName)
+	m := gomail.NewMessage()
+	m.SetHeader("From", conf.General.Mail.Sender)
+	m.SetHeader("To", recipient)
+	m.SetHeader("Subject", "Calendar Notification for "+notifierName)
 
-		if !conf.General.LiteMode {
-			unsubscribeURL := conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
-			m.SetHeader("List-Unsubscribe", unsubscribeURL)
-			bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
-			m.SetBody("text/plain", string(bodyunsubscribe))
-		}
-
-		d := gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort}
-		if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
-			d = gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort, Username: conf.General.Mail.SMTPUser, Password: conf.General.Mail.SMTPPass}
-		}
-		log.Info("Sending Mail Notification to " + recipient)
-
-		err := d.DialAndSend(m)
-		if err != nil {
-			log.Errorln("error sending mail: " + err.Error())
-		}
+	if !conf.General.LiteMode {
+		unsubscribeURL := conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
+		m.SetHeader("List-Unsubscribe", unsubscribeURL)
+		bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
+		m.SetBody("text/plain", string(bodyunsubscribe))
 	}
+
+	d := gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort}
+	if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
+		d = gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort, Username: conf.General.Mail.SMTPUser, Password: conf.General.Mail.SMTPPass}
+	}
+	log.Info("Sending Mail Notification to " + recipient)
+
+	err := d.DialAndSend(m)
+	return err
 }
 
-func sendRSSFeed(notifierName string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
-	filename := conf.General.StoragePath + "rssstore/" + notifierName + ".rss"
-
+func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
 	feed, err := helpers.LoadRSSFeed(filename)
 	if err != nil {
 		if os.IsNotExist(err) {

@@ -16,9 +16,8 @@ import (
 
 // Config represents static configuration for the application
 type Config struct {
-	Version   int                 `yaml:"version"`
-	General   generalConfig       `yaml:"general"`
-	Notifiers map[string]notifier `yaml:"notifiers,omitempty"`
+	Version int           `yaml:"version"`
+	General generalConfig `yaml:"general"`
 }
 
 type generalConfig struct {
@@ -44,11 +43,6 @@ type mailConfig struct {
 	Sender     string `yaml:"sender"`
 	SMTPUser   string `yaml:"smtp_user,omitempty"`
 	SMTPPass   string `yaml:"smtp_pass,omitempty"`
-}
-
-type notifier struct {
-	Source     string              `yaml:"source"`
-	Recipients map[string][]string `yaml:"recipients"`
 }
 
 // CONFIG MANAGEMENT FUNCTIONS
