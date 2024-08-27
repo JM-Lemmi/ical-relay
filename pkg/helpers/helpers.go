@@ -139,3 +139,28 @@ func AddEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 	}
 	return count
 }
+
+// Fixes calendars where the timezone is just set once instead of in every VEvent
+func FixTimezone(cal *ics.Calendar) {
+	var property *ics.CalendarProperty
+	for _, prop := range cal.CalendarProperties {
+		if prop.IANAToken == "TIMEZONE" || prop.IANAToken == "X-WR-TIMEZONE" {
+			property = &prop
+			break
+		}
+	}
+	// no default timezone for the calendar found
+	if property == nil {
+		return
+	}
+	for _, event := range cal.Events() {
+		for _, prop := range event.Properties {
+			if prop.IANAToken == "DTSTART" || prop.IANAToken == "DTEND" {
+				// set timezone only if no timezone is already set
+				if _, ok := prop.ICalParameters["TZID"]; !ok {
+					prop.ICalParameters["TZID"] = []string{property.Value}
+				}
+			}
+		}
+	}
+}

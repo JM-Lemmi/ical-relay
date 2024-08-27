@@ -10,7 +10,7 @@ RUN go build -o ./cmd/ical-relay/ical-relay ./cmd/ical-relay/
 
 FROM alpine AS run
 
-RUN apk --update add ca-certificates curl
+RUN apk --update add ca-certificates curl tzdata
 COPY --from=build /app/cmd/ical-relay/ical-relay /usr/bin/ical-relay
 
 RUN mkdir -p /etc/ical-relay/calstore/

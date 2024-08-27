@@ -68,6 +68,7 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 				// first source gets assigned to base calendar
 				log.Debug("Loading source ", s, " as base calendar")
 				calendar, err = getSource(s)
+				helpers.FixTimezone(calendar)
 				if err != nil {
 					return nil, err
 				}
@@ -75,6 +76,7 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 				// all other calendars only load events
 				log.Debug("Loading source ", s, " as additional calendar")
 				ncalendar, err = getSource(s)
+				helpers.FixTimezone(ncalendar)
 				if err != nil {
 					return nil, err
 				}
