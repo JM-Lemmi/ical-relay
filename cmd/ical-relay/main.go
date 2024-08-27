@@ -134,9 +134,11 @@ func main() {
 		initHandlersProfile()
 	}
 
+	// Telemetry
 	if !args.DisableTele {
+		// in own thread, to avoid hanging up the startup, if telemetry fails for some reason
 		go func() {
-			_, err := http.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
+			_, err := http.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name+conf.Server.URL) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
 			if err == nil {
 				log.Trace("Sent telemetry successfully")
 			} else {
