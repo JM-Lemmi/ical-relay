@@ -106,6 +106,7 @@ jobs:
           version: ${{ github.ref }} # refs/tags/v*.*.*
           arch: '${{ matrix.arch }}'
           desc: 'Relay ical urls and edit them on the fly with different modules.'
+          depends: 'tzdata'
       - uses: actions/upload-artifact@v3
         with:
           name: ical-relay_${{ matrix.arch }}.deb
