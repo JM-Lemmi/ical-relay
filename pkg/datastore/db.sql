@@ -45,18 +45,16 @@ CREATE TABLE IF NOT EXISTS admin_tokens (
 
 CREATE TABLE IF NOT EXISTS notifier (
     name     text NOT NULL PRIMARY KEY,
-    UNIQUE   (source, interval, type),
-    source   text NOT NULL,
-    type text NOT NULL,
-    interval interval HOUR TO SECOND NOT NULL
+    source   text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS recipients (
-    destination text PRIMARY KEY
+    recipient     text PRIMARY KEY,
+    type            text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS notifier_recipients (
     notifier  text REFERENCES notifier(name) ON DELETE CASCADE NOT NULL,
-    recipient text REFERENCES recipients(destination) ON DELETE CASCADE NOT NULL,
+    recipient text REFERENCES recipients(recipient) ON DELETE CASCADE NOT NULL,
     UNIQUE    (notifier, recipient)
 );

@@ -237,7 +237,7 @@ func (c DataFile) GetNotifier(notifierName string) Notifier {
 	return c.Notifiers[notifierName]
 }
 
-func (c DataFile) AddNotifyRecipient(notifierName string, recipient string) error {
+func (c DataFile) AddNotifyRecipient(notifierName string, recipient Recipient) error {
 	if !c.NotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
@@ -247,7 +247,7 @@ func (c DataFile) AddNotifyRecipient(notifierName string, recipient string) erro
 	return nil
 }
 
-func (c DataFile) RemoveNotifyRecipient(notifierName string, recipient string) error {
+func (c DataFile) RemoveNotifyRecipient(notifierName string, recipient Recipient) error {
 	if !c.NotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}

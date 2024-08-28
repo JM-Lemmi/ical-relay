@@ -187,7 +187,7 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		err := dataStore.AddNotifyRecipient(notifier, mail)
+		err := dataStore.AddNotifyRecipient(notifier, datastore.Recipient{Recipient: mail, Type: "email"})
 		if err != nil {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -199,7 +199,7 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "Added "+mail+" to "+notifier+"\n")
 		}
 	case http.MethodDelete:
-		err := dataStore.RemoveNotifyRecipient(notifier, mail)
+		err := dataStore.RemoveNotifyRecipient(notifier, datastore.Recipient{Recipient: mail, Type: "email"})
 		if err != nil {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusInternalServerError)

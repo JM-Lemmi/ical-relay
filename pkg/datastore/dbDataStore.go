@@ -136,7 +136,7 @@ func (c DatabaseDataStore) GetNotifier(notifierName string) Notifier {
 	return *notifier
 }
 
-func (c DatabaseDataStore) AddNotifyRecipient(notifierName string, recipient string) error {
+func (c DatabaseDataStore) AddNotifyRecipient(notifierName string, recipient Recipient) error {
 	if !dbNotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
@@ -144,7 +144,7 @@ func (c DatabaseDataStore) AddNotifyRecipient(notifierName string, recipient str
 	return nil
 }
 
-func (c DatabaseDataStore) RemoveNotifyRecipient(notifierName string, recipient string) error {
+func (c DatabaseDataStore) RemoveNotifyRecipient(notifierName string, recipient Recipient) error {
 	if !dbNotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}

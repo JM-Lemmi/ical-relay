@@ -27,8 +27,8 @@ type DataStore interface {
 	// getNotifiers returns a map of notifier (potentially WITHOUT the recipients populated!)
 	GetNotifiers() map[string]Notifier
 	GetNotifier(notifierName string) Notifier
-	AddNotifyRecipient(notifierName string, recipient string) error
-	RemoveNotifyRecipient(notifierName string, recipient string) error
+	AddNotifyRecipient(notifierName string, recipient Recipient) error
+	RemoveNotifyRecipient(notifierName string, recipient Recipient) error
 }
 
 type Token struct {
@@ -60,8 +60,8 @@ type Notifier struct {
 }
 
 type Recipient struct {
-	Type      string `yaml:"type"`
-	Recipient string `yaml:"recipient"`
+	Type      string `yaml:"type" db:"type"`
+	Recipient string `yaml:"recipient" db:"recipient"`
 }
 
 // Data Integrity Functions
