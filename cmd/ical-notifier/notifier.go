@@ -63,6 +63,7 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 
 		if err != nil {
 			log.Error("Failed to devliver notifier "+notifierName+" for recipient "+" recipient "+rec.Recipient, err)
+			// TODO fail this upwards. maybe not return here, but let other notifiers run?
 		}
 	}
 

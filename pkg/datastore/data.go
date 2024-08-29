@@ -56,7 +56,7 @@ type Rule struct {
 type Notifier struct {
 	Name       string      `db:"name"`
 	Source     string      `yaml:"source" db:"source"`
-	Recipients []Recipient `yaml:"recipients,omitemtpy"`
+	Recipients []Recipient `yaml:"recipients"`
 }
 
 type Recipient struct {

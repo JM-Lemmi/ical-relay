@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +20,7 @@ type Config struct {
 }
 
 type generalConfig struct {
-	LiteMode    bool       `yaml:"lite"`          // if used in conjunction with ical-relay, this should be false.
+	LiteMode    bool       `yaml:"litemode"`      // if used in conjunction with ical-relay, this should be false.
 	URL         string     `yaml:"url,omitempty"` // if used in conjunction with ical-relay, this should be the same as in ical-relay
 	LogLevel    log.Level  `yaml:"loglevel"`
 	StoragePath string     `yaml:"storagepath"` // should be the same as in ical-relay, if used in conjunction with ical-relay
@@ -51,7 +50,7 @@ type mailConfig struct {
 func ParseConfig(path string) (Config, error) {
 	var tmpConfig Config
 
-	yamlFile, err := ioutil.ReadFile(path)
+	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("Error Reading Config: %v ", err)
 		return tmpConfig, err

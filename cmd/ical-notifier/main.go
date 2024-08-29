@@ -90,6 +90,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error loading data file: %v", err)
 		}
+		log.Tracef("%+v\n", dataStore)
 	}
 
 	// APPLICATION LOGIC
