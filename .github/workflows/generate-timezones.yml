@@ -1,0 +1,79 @@
+name: Generate Timezone Files
+
+on:
+    workflow_dispatch:
+    workflow_call:
+    push:
+
+
+jobs:
+    generate-timezones:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  repository: libical/vzic
+            - run: sudo apt install -y gcc libgtk-3-dev pkg-config make
+            - run: |
+                cat <<'EOF' > vzic-makefile.patch
+                diff --git a/Makefile b/Makefile
+                index 3b77cb1..ebb60b3 100644
+                --- a/Makefile
+                +++ b/Makefile
+                @@ -7,13 +7,13 @@
+                 # You will need to set this to the directory that the Olson timezone data
+                 # files are in.
+                 #
+                -OLSON_DIR ?= tzdata2021a
+                +OLSON_DIR ?= tzdata2024a
+                
+                
+                 # This is used as the PRODID property on the iCalendar files output.
+                 # It identifies the product which created the iCalendar objects.
+                 # So you need to substitute your own organization name and product.
+                -PRODUCT_ID ?= -//citadel.org//NONSGML Citadel calendar//EN
+                +PRODUCT_ID ?= -//jm-lemmi//ical-relay-timezones//EN
+                
+                 # This is what libical-evolution uses.
+                 #PRODUCT_ID = -//Ximian//NONSGML Evolution Olson-VTIMEZONE Converter//EN
+                @@ -27,7 +27,7 @@ PRODUCT_ID ?= -//citadel.org//NONSGML Citadel calendar//EN
+                 # gets expanded to today's date. There is also a vzic-merge.pl which can be
+                 # used to merge changes into a master set of VTIMEZONEs. If a VTIMEZONE has
+                 # changed, it bumps the version number on the end of this prefix. */
+                -TZID_PREFIX ?= /citadel.org/%D_1/
+                +TZID_PREFIX =
+                
+                 # This is what libical-evolution uses.
+                 #TZID_PREFIX = /softwarestudio.org/Olson_%D_1/
+                EOF
+            - run: git apply vzic-makefile.patch
+            - run: make -B
+            - run: ./vzic
+            - run: |
+                cat <<'EOF' > vzic-combine-icsvtzimezones.sh
+                #!/bin/bash
+
+                # Clear the output file if it exists
+                > "combined_vtimezones.ics"
+
+                # Find all .ics files in the directory and subdirectories
+                find "./zoneinfo/" -type f -name "*.ics" | while read -r file; do
+                    # Extract content between BEGIN:VTIMEZONE and END:VTIMEZONE
+                    awk '/BEGIN:VTIMEZONE/,/END:VTIMEZONE/' "$file" >> "combined_vtimezones.ics"
+                done
+
+                # Add a single BEGIN:VCALENDAR at the start and END:VCALENDAR at the end
+                sed -i '1iVERSION:2.0' "combined_vtimezones.ics"
+                sed -i '1iPRODID:-//jm-lemmi//ical-relay-timezones//EN' "combined_vtimezones.ics"
+                sed -i '1iBEGIN:VCALENDAR' "combined_vtimezones.ics"
+                echo "END:VCALENDAR" >> "combined_vtimezones.ics"
+
+                echo "Combined VTIMEZONE sections have been saved to combined_vtimezones.ics"
+                EOF
+            - run: chmod +x vzic-combine-icsvtzimezones.sh
+            - run: ./vzic-combine-icsvtzimezones.sh
+            - uses: actions/upload-artifact@v4
+              with:
+                name: combined_vtimezones.ics
+                path: ./combined_vtimezones.ics
+                if-no-files-found: error
