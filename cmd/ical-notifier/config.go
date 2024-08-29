@@ -42,6 +42,7 @@ type mailConfig struct {
 	Sender     string `yaml:"sender"`
 	SMTPUser   string `yaml:"smtp_user,omitempty"`
 	SMTPPass   string `yaml:"smtp_pass,omitempty"`
+	SMTPSSL    bool   `yaml:"smtp_ssl,omitempty"`
 }
 
 // CONFIG MANAGEMENT FUNCTIONS

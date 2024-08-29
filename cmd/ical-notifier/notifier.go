@@ -104,9 +104,21 @@ func sendNotifyMail(notifierName string, recipient string, added []ics.VEvent, d
 		m.SetBody("text/plain", string(bodyunsubscribe))
 	}
 
-	d := gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort}
+	var d gomail.Dialer
 	if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
-		d = gomail.Dialer{Host: conf.General.Mail.SMTPServer, Port: conf.General.Mail.SMTPPort, Username: conf.General.Mail.SMTPUser, Password: conf.General.Mail.SMTPPass}
+		d = gomail.Dialer{
+			Host:     conf.General.Mail.SMTPServer,
+			Port:     conf.General.Mail.SMTPPort,
+			Username: conf.General.Mail.SMTPUser,
+			Password: conf.General.Mail.SMTPPass,
+			SSL:      conf.General.Mail.SMTPSSL,
+		}
+	} else {
+		d = gomail.Dialer{
+			Host: conf.General.Mail.SMTPServer,
+			Port: conf.General.Mail.SMTPPort,
+			SSL:  conf.General.Mail.SMTPSSL,
+		}
 	}
 	log.Info("Sending Mail Notification to " + recipient)
 
