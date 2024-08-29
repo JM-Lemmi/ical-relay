@@ -54,7 +54,8 @@ func getProfilesMetadata() []profileMetadata {
 func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Calendar, error) {
 	var calendar *ics.Calendar
 
-	// get all sources
+	// SOURCES
+
 	if len(profile.Sources) == 0 {
 		log.Debug("No sources, creating empty calendar")
 		calendar = ics.NewCalendar()
@@ -68,7 +69,6 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 				// first source gets assigned to base calendar
 				log.Debug("Loading source ", s, " as base calendar")
 				calendar, err = getSource(s)
-				helpers.FixTimezone(calendar)
 				if err != nil {
 					return nil, err
 				}
@@ -76,7 +76,6 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 				// all other calendars only load events
 				log.Debug("Loading source ", s, " as additional calendar")
 				ncalendar, err = getSource(s)
-				helpers.FixTimezone(ncalendar)
 				if err != nil {
 					return nil, err
 				}
@@ -85,7 +84,8 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 		}
 	}
 
-	// apply rules
+	// RULES
+
 	for i, rule := range profile.Rules {
 		log.Debug("Executing Rule ", i)
 
@@ -125,7 +125,8 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 		log.Trace("Finished action!")
 	}
 
-	// immutable past:
+	// IMMUTABLE PAST
+
 	historyFilename := conf.Server.StoragePath + "calstore/" + profileName + "-past.ics"
 	if profile.ImmutablePast {
 		// check if file exists, if not download for the first time
@@ -179,6 +180,17 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 		}
 	}
 	// it may be neccesary to run delete-duplicates here to avoid duplicates from the history file
+
+	// GENERAL COMPATIBILITY
+
+	if modules.CheckXWRTimezone(calendar) {
+		log.Debug("Calendar has X-WR-Timezone format, converting to VTIMEZONE")
+		err := modules.ActionXWRTimezoneToVTimezone(calendar)
+		if err != nil {
+			log.Errorln(err)
+			return calendar, fmt.Errorf("error converting X-WR-Timezone to VTIMEZONE: %s", err.Error())
+		}
+	}
 
 	return calendar, nil
 }

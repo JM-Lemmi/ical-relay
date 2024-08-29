@@ -3,10 +3,14 @@ package helpers
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/mail"
 	"os"
+	"strings"
+
+	_ "embed"
 
 	ics "github.com/arran4/golang-ical"
 )
@@ -140,27 +144,25 @@ func AddEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 	return count
 }
 
-// Fixes calendars where the timezone is just set once instead of in every VEvent
-func FixTimezone(cal *ics.Calendar) {
-	var property *ics.CalendarProperty
-	for _, prop := range cal.CalendarProperties {
-		if prop.IANAToken == "TIMEZONE" || prop.IANAToken == "X-WR-TIMEZONE" {
-			property = &prop
-			break
+// if youre here because of a compile error, get the latest combined_vtimezones.ics from github action artifacts
+//
+//go:embed "combined_vtimezones.ics"
+var combinedVTimezones string
+
+// returns the VTimezone with the given tzString as id. For example: "Europe/Berlin" or "Etc/GMT+6"
+func GetVTimezoneFromString(tzString string) (ics.VTimezone, error) {
+	// read file
+	combinedVTimezoneReader := strings.NewReader(combinedVTimezones)
+	cal, err := ics.ParseCalendar(combinedVTimezoneReader)
+	if err != nil {
+		return ics.VTimezone{}, err
+	}
+
+	// find the right timezone
+	for _, tz := range cal.Timezones() {
+		if tz.GetProperty(ics.ComponentPropertyTzid).Value == tzString {
+			return *tz, nil
 		}
 	}
-	// no default timezone for the calendar found
-	if property == nil {
-		return
-	}
-	for _, event := range cal.Events() {
-		for _, prop := range event.Properties {
-			if prop.IANAToken == "DTSTART" || prop.IANAToken == "DTEND" {
-				// set timezone only if no timezone is already set
-				if _, ok := prop.ICalParameters["TZID"]; !ok {
-					prop.ICalParameters["TZID"] = []string{property.Value}
-				}
-			}
-		}
-	}
+	return ics.VTimezone{}, fmt.Errorf("timezone not found: %s", tzString)
 }
