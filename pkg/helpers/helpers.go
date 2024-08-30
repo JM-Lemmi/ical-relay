@@ -3,14 +3,12 @@ package helpers
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/xml"
 	"io/ioutil"
 	"net/http"
 	"net/mail"
 	"os"
 
 	ics "github.com/arran4/golang-ical"
-	"github.com/gopherlibs/feedhub/feedhub"
 )
 
 func ReadCalURL(url string) (*ics.Calendar, error) {
@@ -41,27 +39,6 @@ func LoadCalFile(filename string) (*ics.Calendar, error) {
 		return cal, err
 	}
 	return cal, nil
-}
-
-func LoadRSSFeed(filename string) (feedhub.RssFeedXml, error) {
-	var feed feedhub.RssFeedXml
-	// read file
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return feed, err
-	}
-
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return feed, err
-	}
-
-	// Parse the RSS feed
-	err = xml.Unmarshal(data, &feed)
-	if err != nil {
-		return feed, err
-	}
-
-	return feed, nil
 }
 
 func DirectoryExists(filename string) bool {

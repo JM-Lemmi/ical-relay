@@ -1,6 +1,6 @@
 [submodule "pkg/golang-ical"]
 	path = pkg/golang-ical
 	url = https://github.com/jm-lemmi/golang-ical/
-[submodule "pkg/feedhub"]
-	path = pkg/feedhub
-	url = https://github.com/JM-Lemmi/feedhub
+[submodule "pkg/golang-rss-rw"]
+	path = pkg/golang-rss-rw
+	url = https://github.com/JM-Lemmi/golang-rss-rw

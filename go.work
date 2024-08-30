@@ -1,11 +1,12 @@
 go 1.19
 
 use (
-	./cmd/ical-relay
 	./cmd/ical-notifier
-	./pkg/golang-ical
+	./cmd/ical-relay
 	./pkg/compare
+	./pkg/datastore
+	./pkg/golang-ical
+	./pkg/golang-rss-rw
 	./pkg/helpers
 	./pkg/modules
-	./pkg/datastore
 )

@@ -1,16 +1,16 @@
 package main
 
 import (
-	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
+	"rss"
 	"time"
 
 	"gopkg.in/gomail.v2"
 
 	ics "github.com/arran4/golang-ical"
-	"github.com/gopherlibs/feedhub/feedhub"
 	"github.com/jm-lemmi/ical-relay/compare"
 	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
@@ -127,60 +127,65 @@ func sendNotifyMail(notifierName string, recipient string, added []ics.VEvent, d
 }
 
 func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
-	feed, err := helpers.LoadRSSFeed(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			log.Info("RSS feed does not exist, creating new one")
-			// create new feed
-			// TODO: maybe create earlier (when history file is downloaded?)
-			newfeed := feedhub.Feed{
-				Title:       notifierName + " Change Tracking",
-				Link:        &feedhub.Link{Href: conf.General.URL + "/rss/" + notifierName + ".rss"},
-				Description: "Calendar Change Tracking for " + conf.General.Name + " " + notifierName,
-				Created:     time.Now(),
-			}
-			newfeed.Add(&feedhub.Item{
-				Title:       "Initial Feed Creation",
-				Description: "This is the initial loading for " + notifierName + ". Possible changes before this time could not be tracked.",
-				Created:     time.Now(),
-			})
+	var feed rss.Rss
 
-			feedRss, err := newfeed.ToRss()
-			if err != nil {
-				return err
-			}
+	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+		log.Info("RSS feed does not exist, creating new one")
+		// create new feed
+		feed = rss.Rss{
+			Title:       "Calendar Notification for " + notifierName,
+			Description: "This is a notification feed for changes in the calendar " + notifierName,
+			Link:        conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/rss",
+			Version:     "2.0",
+			Item: []rss.Item{
+				{
+					Title:       "Feed created",
+					Description: "The feed was created. Changes before this date were not recorded.",
+					PubDate:     time.Now().Format(time.RFC1123Z),
+				},
+			},
+		}
 
-			// Write the new RSS feed to the file
-			fhandle, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
-			if err != nil {
-				return err
-			}
-
-			_, err = fhandle.Write([]byte(feedRss))
-			return err
-		} else {
-			log.Error("Failed to load RSS feed for notifier", notifierName, err)
+		// Write the new RSS feed to the file
+		file, err := os.Create(filename)
+		if err != nil {
 			return err
 		}
+		feed.WriteRSS(file)
+
+		return err
+	} else {
+		file, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+
+		// parse existing feed
+		feed, err = rss.ParseRSS(file)
+		file.Close()
+		if err != nil {
+			return err
+		}
+
 	}
 
 	// add new items
 	for _, event := range added {
-		feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
+		feed.AddItem(rss.Item{
 			Title:       "Added " + event.GetProperty(ics.ComponentPropertySummary).Value,
 			Description: helpers.PrettyPrint(event),
 			PubDate:     time.Now().Format(time.RFC1123Z),
 		})
 	}
 	for _, event := range deleted {
-		feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
+		feed.AddItem(rss.Item{
 			Title:       "Deleted " + event.GetProperty(ics.ComponentPropertySummary).Value,
 			Description: helpers.PrettyPrint(event),
 			PubDate:     time.Now().Format(time.RFC1123Z),
 		})
 	}
 	for _, event := range changed {
-		feed.Channel.Items = append(feed.Channel.Items, &feedhub.RssItem{
+		feed.AddItem(rss.Item{
 			Title:       "Changed " + event.GetProperty(ics.ComponentPropertySummary).Value,
 			Description: helpers.PrettyPrint(event),
 			PubDate:     time.Now().Format(time.RFC1123Z),
@@ -188,17 +193,13 @@ func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, delet
 	}
 
 	// Write the updated RSS feed to the file
-	// TODO: rss is currently not perfect, its removing the xml header and stuff...
-	xmlData, err := xml.MarshalIndent(feed, "", "  ")
+	file, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
 
-	fhandle, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
+	err = feed.WriteRSS(file)
+	file.Close()
 
-	_, err = fhandle.Write(xmlData)
 	return err
 }
