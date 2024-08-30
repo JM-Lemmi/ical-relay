@@ -1,6 +1,7 @@
 ical-relay
 relay
 !ical-relay/
+notifier
 /dist
 rice-box.go
 .devcontainer
