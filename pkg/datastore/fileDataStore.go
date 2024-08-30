@@ -229,6 +229,11 @@ func (c DataFile) AddNotifier(notifier Notifier) {
 	c.Notifiers[notifier.Name] = notifier
 }
 
+func (c DataFile) AddNotifierFromProfile(profileName string, ownURL string) error {
+	// NOT IMPLEMENTED
+	return fmt.Errorf("not implemented")
+}
+
 func (c DataFile) GetNotifiers() map[string]Notifier {
 	return c.Notifiers
 }
