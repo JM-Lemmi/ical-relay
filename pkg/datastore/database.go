@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -310,7 +311,7 @@ func dbAddProfileSource(profile Profile, source string) {
 }
 
 func dbRemoveAllProfileSources(profile Profile) {
-	log.Info(profile.Name)
+	log.Trace("dbRemoveAllProfileSources: " + profile.Name)
 	// Note: The following SQL statement is needlessly complicated due to the db supporting a n:n relation between
 	// source and profile over profile_sources.
 	// This n:n connection was used before db schema version 4, but since we support base64 events and can no longer
@@ -571,11 +572,11 @@ JOIN notifier ON nr.notifier = notifier.name WHERE nr.notifier = $1`,
 // Important: Does not write the notifier recipients to db! This has to be done manually through dbAddNotifierRecipient!
 func dbWriteNotifier(notifier Notifier) {
 	_, err := db.NamedExec(
-		`INSERT INTO notifier (name, source,) VALUES (:name, :source)
+		`INSERT INTO notifier (name, source) VALUES (:name, :source)
 ON CONFLICT (name) DO UPDATE SET source = excluded.source`,
 		notifier)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("dbWriteNotifier: %s", err))
 		return
 	}
 }
@@ -600,17 +601,18 @@ func dbCleanupOrphanRecipients() {
 }
 
 func dbAddNotifierRecipient(notifier Notifier, recipient Recipient) {
+	// TODO: if it already exists: sql: converting argument $1 type: unsupported type datastore.Recipient, a struct  exit status 1
 	_, err := db.Exec(`INSERT INTO recipients (recipient, type) VALUES (:recipient, :type) ON CONFLICT (recipient) DO NOTHING`, recipient)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("dbAddNotifierRecipient (1): %s", err))
 		return
 	}
 	_, err = db.Exec(
 		`INSERT INTO notifier_recipients (notifier, recipient) VALUES ($1, $2)
 ON CONFLICT (notifier, recipient) DO NOTHING`,
-		notifier.Name, recipient)
+		notifier.Name, recipient.Recipient)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("dbAddNotifierRecipient (2): %s", err))
 		return
 	}
 }

@@ -53,7 +53,7 @@ func ImportToDB(path string) error {
 		// Write profile name into object
 		profile.Name = name
 		// Write the profile to the db, adding tokens and modules afterwards
-		log.Debug("Importing profile " + name)
+		log.Info("Importing profile " + name)
 		dbWriteProfile(profile)
 		for _, source := range profile.Sources {
 			if !dbProfileSourceExists(profile, source) {
@@ -73,7 +73,7 @@ func ImportToDB(path string) error {
 	for name, notifier := range data.Notifiers {
 		// Write notifier name into object
 		notifier.Name = name
-		log.Debug("Importing notifier " + name)
+		log.Info("Importing notifier " + name)
 		// Write the notifier to the db, adding recipients afterwards
 		dbWriteNotifier(notifier)
 		for _, recipient := range notifier.Recipients {
