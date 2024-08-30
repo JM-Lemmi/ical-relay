@@ -12,11 +12,11 @@ FROM alpine AS run
 
 RUN apk --update add ca-certificates curl
 COPY --from=build /app/cmd/ical-notifier/ical-notifier /usr/bin/ical-notifier
+COPY ./cmd/ical-notifier/misc/ical-notifier.cron /etc/crontabs/root
 
-RUN mkdir -p /etc/ical-relay/calstore/
-RUN mkdir /etc/ical-relay/notifystore/
+RUN mkdir -p /etc/ical-relay/notifystore/
 
 WORKDIR /etc/ical-relay
 VOLUME /etc/ical-relay/
 
-CMD /usr/bin/ical-notifier --config /etc/ical-relay/config.yml
+CMD crond -f -d 8

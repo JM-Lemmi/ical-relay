@@ -1,4 +1,4 @@
-name: Package
+name: Docker
 
 # Run workflow on tags starting with v (eg. v2, v1.2.0)
 on:
@@ -7,8 +7,11 @@ on:
       - v*
 
 jobs:
-  Package-Docker:
+  docker-build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bin: [ical-relay, ical-notifier]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -20,7 +23,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ghcr.io/${{ github.repository }}
+            ghcr.io/${{ matrix.bin }}
           # generate Docker tags based on the following events/attributes
           tags: |
             type=semver,pattern={{raw}}
@@ -39,7 +42,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
-          file: ./cmd/ical-relay/Dockerfile
+          file: ./cmd/${{ matrix.bin }}/Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm
           push: true # Will only build if this is not here
           tags: ${{ steps.meta.outputs.tags }}
