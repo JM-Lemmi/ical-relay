@@ -24,6 +24,7 @@ type DataStore interface {
 
 	NotifierExists(name string) bool
 	AddNotifier(notifier Notifier)
+	AddNotifierFromProfile(profileName string, ownURL string) error // takes the conf.Server.URL as ownURL, since its not a global variable in this package
 	// getNotifiers returns a map of notifier (potentially WITHOUT the recipients populated!)
 	GetNotifiers() map[string]Notifier
 	GetNotifier(notifierName string) Notifier

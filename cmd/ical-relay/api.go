@@ -162,6 +162,7 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "api": r.Method + " " + r.URL.Path})
 	requestLogger.Infoln("New API-Request!")
 
+	// check if notifier exists; create it, if a matching profile exists
 	notifier := mux.Vars(r)["notifier"]
 	if !dataStore.NotifierExists(notifier) {
 		requestLogger.Warnln("Notifier does not exist")
@@ -172,8 +173,15 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			requestLogger.Infoln("Profile exists, but not the notifier. Creating notifier...")
-			//TODO: fix in notifier branch
-			//dataStore.addNotifierFromProfile(notifier)
+			err := dataStore.AddNotifierFromProfile(notifier, conf.Server.URL)
+			if err != nil {
+				requestLogger.Errorln(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "Error: "+err.Error()+"\n")
+				return
+			} else {
+				requestLogger.Infoln("Notifier created.")
+			}
 		}
 	}
 

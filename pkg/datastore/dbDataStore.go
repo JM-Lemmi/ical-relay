@@ -116,6 +116,19 @@ func (c DatabaseDataStore) AddNotifier(notifier Notifier) {
 	dbWriteNotifier(notifier)
 }
 
+func (c DatabaseDataStore) AddNotifierFromProfile(profileName string, ownURL string) error {
+	if !c.ProfileExists(profileName) {
+		return fmt.Errorf("profile %s does not exist", profileName)
+	}
+
+	notifier := Notifier{
+		Name:   profileName,
+		Source: ownURL + "/profile/" + profileName,
+	}
+	dbWriteNotifier(notifier)
+	return nil
+}
+
 func (c DatabaseDataStore) GetNotifiers() map[string]Notifier {
 	notifiers := make(map[string]Notifier)
 	for _, notifierName := range dbListNotifiers() {
