@@ -1,1 +1,1 @@
-0,15,30,45 * * * * ical-notifier --config /etc/ical-relay/config.yml > /proc/1/fd/1 2>/proc/1/fd/2
+0,15,30,45 * * * * ical-notifier --config /etc/ical-relay/noitifer-config.yml > /proc/1/fd/1 2>/proc/1/fd/2

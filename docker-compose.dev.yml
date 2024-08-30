@@ -5,15 +5,28 @@ services:
     build:
       context: .
       dockerfile: ./cmd/ical-relay/Dockerfile
-    command: /usr/bin/ical-relay --config /etc/ical-relay/config.yml --import-data
+    command: /usr/bin/ical-relay --config /etc/ical-relay/config.yml --import-data /etc/ical-relay/data.yml
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./cmd/ical-relay/config.yml:/etc/ical-relay/config.yml
+      - ./cmd/ical-relay/data.yml:/etc/ical-relay/data.yml
     depends_on:
       postgres:
         condition: service_healthy
     restart: on-failure
+  
+  ical-notifier:
+    build:
+      context: .
+      dockerfile: ./cmd/ical-notifier/Dockerfile
+    volumes:
+      - ./cmd/ical-notifier/notifier-config.yml:/etc/ical-relay/notifier-config.yml
+    depends_on:
+      ical-relay:
+        condition: service_healthy
+    restart: on-failure
+  
   postgres:
     image: postgres:latest
     environment:
