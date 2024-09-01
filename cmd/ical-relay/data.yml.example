@@ -13,8 +13,8 @@ profiles:
             regex: "testentry"
             target: "summary"
           - type: "timeframe"
-            from: "2021-12-02T00:00:00Z"
-            until: "2021-12-31T00:00:00Z"
+            after: "2021-12-02T00:00:00Z"
+            before: "2021-12-31T00:00:00Z"
         action:
           type: "delete"
         expires: "2022-12-31T00:00:00Z"
