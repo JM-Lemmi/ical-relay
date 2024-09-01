@@ -1,18 +1,20 @@
 profiles:
   relay:
-    source: "https://example.com/calendar.ics"
+    sources:
+      - "https://example.com/calendar.ics"
     public: true
     immutable-past: true
     admin-tokens:
-      - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+      - token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+        note: An example token
     rules:
       - filters:
           - type: "regex"
             regex: "testentry"
             target: "summary"
           - type: "timeframe"
-            from: "2021-12-02T00:00:00Z"
-            until: "2021-12-31T00:00:00Z"
+            after: "2021-12-02T00:00:00Z"
+            before: "2021-12-31T00:00:00Z"
         action:
           type: "delete"
         expires: "2022-12-31T00:00:00Z"
