@@ -1,6 +1,7 @@
 profiles:
   relay:
-    source: "https://example.com/calendar.ics"
+    sources:
+      - "https://example.com/calendar.ics"
     public: true
     immutable-past: true
     admin-tokens:
