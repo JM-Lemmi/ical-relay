@@ -4,7 +4,8 @@ profiles:
     public: true
     immutable-past: true
     admin-tokens:
-      - eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+      - token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+        note: An example token
     rules:
       - filters:
           - type: "regex"
