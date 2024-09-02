@@ -118,7 +118,7 @@ The rule are executed in the order they are listed. You can create multiple rule
 
 To import data into a DB when running full mode, use the `--import-data` flag.
 
-### config versioning
+### config.yml versioning
 
 | ical-relay version | config version |
 |--------------------|----------------|
@@ -126,11 +126,18 @@ To import data into a DB when running full mode, use the `--import-data` flag.
 | ?                  | 3              |
 | 2.0.0-beta.9       | 4 !            |
 
+## data.yml versioning
+
+| ical-relay version | data version   |
+|--------------------|----------------|
+| 2.0.0-beta.9       | 1              |
+
 ### database versioning
 
 | ical-relay version | db version |
 |--------------------|------------|
 | 2.0.0-beta.6       | 4          |
+| 2.0.0-beta.9       | 5          |
 
 ## Lite-Mode
 
