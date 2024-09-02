@@ -102,10 +102,7 @@ func (c DatabaseDataStore) DeleteToken(profileName string, token string) error {
 }
 
 func (c DatabaseDataStore) DeleteProfile(name string) {
-	if dbProfileExists(name) {
-		profile := *dbReadProfile(name)
-		dbDeleteProfile(profile)
-	}
+	dbDeleteProfile(Profile{Name: name})
 }
 
 func (c DatabaseDataStore) NotifierExists(name string) bool {

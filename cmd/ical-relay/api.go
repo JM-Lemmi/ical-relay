@@ -101,7 +101,7 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 
 		if dataStore.ProfileExists(profileName) {
 			requestLogger.Errorln("Profile already exists!")
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusConflict)
 			fmt.Fprint(w, "Error: Profile already exists!\n")
 			return
 		}

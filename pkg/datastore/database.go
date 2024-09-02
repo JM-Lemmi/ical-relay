@@ -14,7 +14,7 @@ import (
 
 var db sqlx.DB
 
-const CurrentDbVersion = 4
+const CurrentDbVersion = 5
 
 // startup connection function
 func Connect(dbUser string, dbPassword string, dbHost string, dbName string) {
@@ -44,6 +44,9 @@ func Connect(dbUser string, dbPassword string, dbHost string, dbName string) {
 		initTables()
 		setDbVersion(CurrentDbVersion)
 		dbVersion = CurrentDbVersion
+	}
+	if dbVersion > CurrentDbVersion {
+		log.Panicf("Found db with dbVersion %d but I only know dbVersion %d", dbVersion, CurrentDbVersion)
 	}
 	if dbVersion != CurrentDbVersion {
 		doDbUpgrade(dbVersion)
@@ -96,6 +99,14 @@ func doDbUpgrade(fromDbVersion int) {
 		}
 		initTables()
 		setDbVersion(4)
+	}
+	if fromDbVersion < 5 {
+		_, err := db.Exec(`ALTER TABLE rule DROP CONSTRAINT rule_profile_fkey;
+ALTER TABLE rule ADD CONSTRAINT rule_profile_fkey FOREIGN KEY (profile) REFERENCES profile(name) ON DELETE CASCADE;`)
+		if err != nil {
+			log.Panic("Failed to upgrade db", err)
+		}
+		setDbVersion(5)
 	}
 }
 
@@ -222,7 +233,8 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	return profile
 }
 
-// dbWriteProfile writes the profile to the db, silently overwriting if a profile with the same name exists.
+// dbWriteProfile writes the profile options and sources to the db,
+// silently overwriting if a profile with the same name exists.
 func dbWriteProfile(profile Profile) {
 	_, err := db.NamedExec(
 		`INSERT INTO profile (name, public, immutable_past) VALUES (:name, :public, :immutable_past)
@@ -231,16 +243,7 @@ ON CONFLICT (name) DO UPDATE SET public = excluded.public, immutable_past = excl
 
 	dbRemoveAllProfileSources(profile)
 	for _, source := range profile.Sources {
-		if !dbProfileSourceExists(profile, source) {
-			dbAddProfileSource(profile, source)
-		}
-	}
-
-	dbRemoveAllProfileRules(profile)
-	for _, rule := range profile.Rules {
-		if !dbProfileRuleExists(profile, rule) {
-			dbAddProfileRule(profile, rule)
-		}
+		dbAddProfileSource(profile, source)
 	}
 
 	if err != nil {
