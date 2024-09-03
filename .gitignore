@@ -24,4 +24,3 @@ cmd/ical-relay/db/*
 .vscode/*
 VERSION
 combined_vtimezones.ics
-data.yml
