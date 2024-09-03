@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -38,23 +39,30 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 		return nil
 	}
 
-	added, deleted, changed := compare.Compare(historyICS, currentICS)
+	added, deleted, changed_old, changed_new := compare.Compare(historyICS, currentICS)
 
-	if len(added)+len(deleted)+len(changed) == 0 {
+	if len(added)+len(deleted)+len(changed_old) == 0 {
 		log.Info("No changes detected.")
 		return nil
 	}
-	log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed)) + " changed")
+	log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed_old)) + " changed")
 
+	//get notifier including recipients because the method to get all notifiers returns only the notifiers with an empty recipients slice
+	notifierInclRep := dataStore.GetNotifier(notifier.Name)
 	// iterate over all recipients by type
-	for _, rec := range notifier.Recipients {
+	for _, rec := range notifierInclRep.Recipients {
+		log.Debug("notifier " + rec.Recipient)
 		var err error
 		switch rec.Type {
 		case "mail":
-			err = sendNotifyMail(notifierName, rec.Recipient, added, deleted, changed)
+			err = sendNotifyMail(notifierName, rec.Recipient, added, deleted, changed_old)
 
 		case "rss":
-			err = sendRSSFeed(notifierName, rec.Recipient, added, deleted, changed)
+			err = sendRSSFeed(notifierName, rec.Recipient, added, deleted, changed_old)
+
+		case "database":
+			log.Debug("database")
+			err = sendDatabaseHistory(notifierName, rec.Recipient, added, deleted, changed_old, changed_new)
 
 		case "webhook":
 			// TODO: implement webhook
@@ -66,9 +74,9 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 			// TODO fail this upwards. maybe not return here, but let other notifiers run?
 		}
 	}
-
+	log.Debug("save")
 	// save updated calendar
-	helpers.WriteCalFile(historyICS, historyFilename)
+	helpers.WriteCalFile(currentICS, historyFilename)
 	return nil
 
 }
@@ -202,4 +210,56 @@ func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, delet
 	file.Close()
 
 	return err
+}
+
+type dataObject struct {
+	Before ics.VEvent
+	After  ics.VEvent
+}
+
+func sendDatabaseHistory(notifierName string, recipient string, added []ics.VEvent, deleted []ics.VEvent, changed_old []ics.VEvent, changed_new []ics.VEvent) error {
+	changedTime := time.Now()
+	for _, event := range added {
+		object := &dataObject{After: event}
+		jsonB, err := json.Marshal(object)
+		if err != nil {
+			return err
+		}
+		eventTime := getTimeFromEvent(event)
+		dataStore.AddNotifierHistory(notifierName, recipient, "add", eventTime, changedTime, string(jsonB))
+	}
+	for _, event := range deleted {
+		object := &dataObject{Before: event}
+		jsonB, err := json.Marshal(object)
+		if err != nil {
+			return err
+		}
+		eventTime := getTimeFromEvent(event)
+		dataStore.AddNotifierHistory(notifierName, recipient, "delete", eventTime, changedTime, string(jsonB))
+	}
+	for index, oldEvent := range changed_old {
+		newEvent := changed_new[index]
+		if oldEvent.Id() != newEvent.Id() {
+			return fmt.Errorf("failed to save notifier history: oldEvent id does not match newEvent id")
+		}
+		object := &dataObject{Before: oldEvent, After: newEvent}
+		jsonB, err := json.Marshal(object)
+		if err != nil {
+			return err
+		}
+		eventTime := getTimeFromEvent(oldEvent)
+		dataStore.AddNotifierHistory(notifierName, recipient, "change", eventTime, changedTime, string(jsonB))
+	}
+	return nil
+}
+
+func getTimeFromEvent(event ics.VEvent) time.Time {
+	eventTime, err := event.GetStartAt()
+	if err != nil {
+		eventTime, err = event.GetEndAt()
+		if err != nil {
+			eventTime = time.Now()
+		}
+	}
+	return eventTime
 }

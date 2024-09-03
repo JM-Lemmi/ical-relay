@@ -58,3 +58,13 @@ CREATE TABLE IF NOT EXISTS notifier_recipients (
     recipient text REFERENCES recipients(recipient) ON DELETE CASCADE NOT NULL,
     UNIQUE    (notifier, recipient)
 );
+
+CREATE TABLE IF NOT EXISTS notifier_history (
+    id          integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    notifier    text REFERENCES notifier(name) ON DELETE CASCADE NOT NULL,
+    recipient   text REFERENCES recipients(recipient) ON DELETE CASCADE NOT NULL,
+    type        TEXT NOT NULL,
+    eventDate   TIMESTAMP WITH TIME ZONE NOT NULL,
+    modifyDate  TIMESTAMP WITH TIME ZONE NOT NULL,
+    data        JSON NOT NULL
+)

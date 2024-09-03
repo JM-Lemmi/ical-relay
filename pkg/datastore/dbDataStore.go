@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"fmt"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/thanhpk/randstr"
@@ -162,5 +163,13 @@ func (c DatabaseDataStore) RemoveNotifyRecipient(notifierName string, recipient 
 		return fmt.Errorf("notifier does not exist")
 	}
 	dbRemoveNotifierRecipient(Notifier{Name: notifierName}, recipient)
+	return nil
+}
+
+func (c DatabaseDataStore) AddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, changedDate time.Time, data string) error {
+	if !dbNotifierExists(notifierName) {
+		return fmt.Errorf("notifier does not exist")
+	}
+	dbAddNotifierHistory(notifierName, recipient, historyType, eventDate, changedDate, data)
 	return nil
 }

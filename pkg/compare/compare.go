@@ -7,14 +7,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent, []ics.VEvent) {
+func Compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent, []ics.VEvent, []ics.VEvent) {
 	// Compare the two calendars
 	// cal1 is the old calendar, cal2 is the new calendar
-	// Returns array of arrays. Added, Deleted, Changed Events
+	// Returns array of arrays. Added, Deleted, Changed_Old and Changed_New Events
+	// The Old and New Events in the Changed arrays are on the same position.
 
 	var added []ics.VEvent
 	var deleted []ics.VEvent
-	var changed []ics.VEvent
+	var changed_old []ics.VEvent
+	var changed_new []ics.VEvent
 
 	// Create a map of the events
 	cal1Map := make(map[string]*ics.VEvent)
@@ -32,7 +34,8 @@ func Compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent
 			// Event exists in both calendars
 			if !reflect.DeepEqual(event1.GetProperty("Summary"), event2.GetProperty("Summary")) || !reflect.DeepEqual(event1.GetProperty(ics.ComponentPropertyDtStart), event2.GetProperty(ics.ComponentPropertyDtStart)) || !reflect.DeepEqual(event1.GetProperty(ics.ComponentPropertyDtEnd), event2.GetProperty(ics.ComponentPropertyDtEnd)) || !reflect.DeepEqual(event1.GetProperty(ics.ComponentPropertyDescription), event2.GetProperty(ics.ComponentPropertyDescription)) || !reflect.DeepEqual(event1.GetProperty(ics.ComponentPropertyLocation), event2.GetProperty(ics.ComponentPropertyLocation)) {
 				log.Debug("Event changed: ", event1.Id())
-				changed = append(changed, *event1)
+				changed_old = append(changed_old, *event1)
+				changed_new = append(changed_new, *event2)
 			}
 		} else {
 			// Event only exists in cal1
@@ -48,5 +51,5 @@ func Compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent
 		}
 	}
 
-	return added, deleted, changed
+	return added, deleted, changed_old, changed_new
 }

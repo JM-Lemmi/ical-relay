@@ -121,6 +121,7 @@ func doDbUpgrade(fromDbVersion int) {
 		if err != nil {
 			log.Panic("Failed to rename recipients column email to recipient", err)
 		}
+		initTables()
 		setDbVersion(5)
 	}
 }
@@ -635,6 +636,16 @@ func dbRemoveRecipient(recipient Recipient) {
 		log.Fatal(err)
 		return
 	}
+}
+
+func dbAddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, modifyDate time.Time, data string) {
+	_, err := db.Exec(`INSERT INTO notifier_history (notifier, recipient, type, eventDate, modifyDate, data) VALUES ($1, $2, $3, $4, $5, $6)`,
+		notifierName, recipient, historyType, eventDate, modifyDate, data)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	log.Debug("ran add notifier")
 }
 
 // TODO: Database Cleanup somewhere

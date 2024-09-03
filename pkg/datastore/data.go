@@ -1,5 +1,7 @@
 package datastore
 
+import "time"
+
 type DataStore interface {
 	GetPublicProfileNames() []string
 	GetAllProfileNames() []string
@@ -30,6 +32,7 @@ type DataStore interface {
 	GetNotifier(notifierName string) Notifier
 	AddNotifyRecipient(notifierName string, recipient Recipient) error
 	RemoveNotifyRecipient(notifierName string, recipient Recipient) error
+	AddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, changedDate time.Time, data string) error
 }
 
 type Token struct {

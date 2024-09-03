@@ -3,6 +3,7 @@ package datastore
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/thanhpk/randstr"
 	"gopkg.in/yaml.v3"
@@ -265,6 +266,10 @@ func (c DataFile) RemoveNotifyRecipient(notifierName string, recipient Recipient
 		}
 	}
 	return fmt.Errorf("recipient not found")
+}
+
+func (c DataFile) AddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, changedDate time.Time, data string) error {
+	return fmt.Errorf("notifier history with file datastore not supported!")
 }
 
 // internal helper functions
