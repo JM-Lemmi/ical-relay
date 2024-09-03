@@ -1,6 +1,8 @@
 package compare
 
 import (
+	"reflect"
+
 	ics "github.com/arran4/golang-ical"
 	log "github.com/sirupsen/logrus"
 )
@@ -28,7 +30,7 @@ func Compare(cal1 *ics.Calendar, cal2 *ics.Calendar) ([]ics.VEvent, []ics.VEvent
 	for _, event1 := range cal1Map {
 		if event2, ok := cal2Map[event1.Id()]; ok {
 			// Event exists in both calendars
-			if event1.GetProperty("Summary") != event2.GetProperty("Summary") || event1.GetProperty(ics.ComponentPropertyDtStart) != event2.GetProperty(ics.ComponentPropertyDtStart) || event1.GetProperty(ics.ComponentPropertyDtEnd) != event2.GetProperty(ics.ComponentPropertyDtEnd) || event1.GetProperty(ics.ComponentPropertyDescription) != event2.GetProperty(ics.ComponentPropertyDescription) || event1.GetProperty(ics.ComponentPropertyLocation) != event2.GetProperty(ics.ComponentPropertyLocation) {
+			if !reflect.DeepEqual(event1.GetProperty("Summary"), event2.GetProperty("Summary")) || !reflect.DeepEqual(event1.GetProperty(ics.ComponentPropertyDtStart), event2.GetProperty(ics.ComponentPropertyDtStart)) || !reflect.DeepEqual(event1.GetProperty(ics.ComponentPropertyDtEnd), event2.GetProperty(ics.ComponentPropertyDtEnd)) || !reflect.DeepEqual(event1.GetProperty(ics.ComponentPropertyDescription), event2.GetProperty(ics.ComponentPropertyDescription)) || !reflect.DeepEqual(event1.GetProperty(ics.ComponentPropertyLocation), event2.GetProperty(ics.ComponentPropertyLocation)) {
 				log.Debug("Event changed: ", event1.Id())
 				changed = append(changed, *event1)
 			}
