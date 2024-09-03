@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS profile_sources (
 /* TODO: add facility for easy reordering */
 CREATE TABLE IF NOT EXISTS rule (
     id                integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    profile           text references profile(name) NOT NULL,
+    profile           text references profile(name) ON DELETE CASCADE NOT NULL,
     operator          text NOT NULL,
     action_type       text NOT NULL,
     action_parameters jsonb NOT NULL,
