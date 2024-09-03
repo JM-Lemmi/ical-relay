@@ -106,7 +106,7 @@ func sendNotifyMail(notifierName string, recipient string, added []ics.VEvent, d
 	m.SetHeader("Subject", "Calendar Notification for "+notifierName)
 
 	if !conf.General.LiteMode {
-		unsubscribeURL := conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
+		unsubscribeURL := conf.General.URL + "/view/" + url.QueryEscape(notifierName) + "/unsubscribe?mail=" + url.QueryEscape(recipient)
 		m.SetHeader("List-Unsubscribe", unsubscribeURL)
 		bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
 		m.SetBody("text/plain", string(bodyunsubscribe))
@@ -143,7 +143,7 @@ func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, delet
 		feed = rss.Rss{
 			Title:       "Calendar Notification for " + notifierName,
 			Description: "This is a notification feed for changes in the calendar " + notifierName,
-			Link:        conf.General.URL + "/notifier/" + url.QueryEscape(notifierName) + "/rss",
+			Link:        conf.General.URL + "/view/" + url.QueryEscape(notifierName) + "/changefeed",
 			Version:     "2.0",
 			Item: []rss.Item{
 				{

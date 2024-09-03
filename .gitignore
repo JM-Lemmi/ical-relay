@@ -17,6 +17,7 @@ data.yml
 .debpkg/
 calstore/
 notifystore/
+rssstore/
 postgres-data
 __debug_bin*
 cmd/ical-relay/db/*

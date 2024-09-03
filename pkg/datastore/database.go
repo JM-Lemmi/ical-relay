@@ -602,8 +602,7 @@ func dbCleanupOrphanRecipients() {
 }
 
 func dbAddNotifierRecipient(notifier Notifier, recipient Recipient) {
-	// TODO: if it already exists: sql: converting argument $1 type: unsupported type datastore.Recipient, a struct  exit status 1
-	_, err := db.Exec(`INSERT INTO recipients (recipient, type) VALUES (:recipient, :type) ON CONFLICT (recipient) DO NOTHING`, recipient)
+	_, err := db.Exec(`INSERT INTO recipients (recipient, type) VALUES ($1, $2) ON CONFLICT (recipient) DO NOTHING`, recipient.Recipient, recipient.Type) // I know this is not the elegant way, but using just 'recipient' with withe ':recipient, :type' syntax instead of ' $1, $2' will throw an error.
 	if err != nil {
 		log.Fatal(fmt.Errorf("dbAddNotifierRecipient (1): %s", err))
 		return
