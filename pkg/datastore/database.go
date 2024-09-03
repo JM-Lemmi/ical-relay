@@ -560,8 +560,8 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*Notifier, error
 	if fetchRecipients {
 		err = db.Select(
 			&readNotifier.Recipients,
-			`SELECT recipient, type FROM recipients
-JOIN notifier_recipients nr ON recipient = nr.recipient
+			`SELECT recipients.recipient, type FROM recipients
+JOIN notifier_recipients nr ON recipients.recipient = nr.recipient
 JOIN notifier ON nr.notifier = notifier.name WHERE nr.notifier = $1`,
 			notifierName)
 	}
