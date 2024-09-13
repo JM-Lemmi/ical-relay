@@ -23,4 +23,3 @@ services:
         RUN postconf -e 'mydestination=static:all'
         RUN postconf -e 'smtpd_tls_security_level=none'
         CMD postfix start && tail -f /var/log/mail.log
-  

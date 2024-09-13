@@ -108,9 +108,10 @@ func sendNotifyMail(notifierName string, recipient string, added []ics.VEvent, d
 	if !conf.General.LiteMode {
 		unsubscribeURL := conf.General.URL + "/view/" + url.QueryEscape(notifierName) + "/unsubscribe?type=mail&recipient=" + url.QueryEscape(recipient)
 		m.SetHeader("List-Unsubscribe", unsubscribeURL)
-		bodyunsubscribe := body + "\n\nUnsubscribe: " + unsubscribeURL
-		m.SetBody("text/plain", string(bodyunsubscribe))
+		body += "\n\nUnsubscribe: " + unsubscribeURL
 	}
+
+	m.SetBody("text/plain", body)
 
 	var d gomail.Dialer
 	if conf.General.Mail.SMTPUser != "" && conf.General.Mail.SMTPPass != "" {
