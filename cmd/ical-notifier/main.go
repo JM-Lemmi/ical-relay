@@ -32,7 +32,7 @@ func main() {
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
-		// TODO: add data path
+		DataPath     string `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
 	}
 	arg.MustParse(&args)
 
@@ -86,7 +86,7 @@ func main() {
 	} else {
 		log.Warn("Running in lite mode. No connection with ical-relay assumed. No dynamic unsubscription possible.")
 		// TODO: add dynamic data path
-		dataStore, err = datastore.ParseDataFile(conf.General.StoragePath + "data.yml")
+		dataStore, err = datastore.ParseDataFile(args.DataPath)
 		if err != nil {
 			log.Fatalf("Error loading data file: %v", err)
 		}

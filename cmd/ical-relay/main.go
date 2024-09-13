@@ -31,9 +31,9 @@ func main() {
 
 	// CLI Flags
 	var args struct {
-		Notifier   string `help:"Run notifier with given ID"`
-		ConfigPath string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
-		// TODO: add data path
+		Notifier     string `help:"Run notifier with given ID"`
+		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
+		DataPath     string `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   string `arg:"--import-data" help:"Import Data from Data.yml into DB"`
@@ -106,7 +106,7 @@ func main() {
 		}
 	} else {
 		log.Warn("Running in lite mode. No changes will be saved.")
-		dataStore, err = datastore.ParseDataFile(conf.Server.StoragePath + "data.yml")
+		dataStore, err = datastore.ParseDataFile(args.DataPath)
 		if err != nil {
 			log.Fatalf("Error loading data file: %v", err)
 		}
