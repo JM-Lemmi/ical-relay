@@ -45,11 +45,11 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 
 	added, deleted, changed_old, changed_new := compare.Compare(historyICS, currentICS)
 
-	if len(added)+len(deleted)+len(changed_old) == 0 {
+	if len(added)+len(deleted)+len(changed_new) == 0 {
 		log.Info("No changes detected.")
 		return nil
 	}
-	log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed_old)) + " changed")
+	log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed_new)) + " changed")
 
 	// iterate over all recipients by type
 	for _, rec := range notifier.Recipients {
@@ -57,16 +57,16 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 		var err error
 		switch rec.Type {
 		case "mail":
-			err = sendNotifyMail(notifierName, rec.Recipient, added, deleted, changed_old)
+			err = sendNotifyMail(notifierName, rec.Recipient, added, deleted, changed_new)
 
 		case "rss":
-			err = sendRSSFeed(notifierName, rec.Recipient, added, deleted, changed_old)
+			err = sendRSSFeed(notifierName, rec.Recipient, added, deleted, changed_new)
 
 		case "database":
 			err = sendDatabaseHistory(notifierName, rec.Recipient, added, deleted, changed_old, changed_new)
 
 		case "webhook":
-			err = sendNotifyWebhook(notifierName, rec.Recipient, added, deleted, changed_old)
+			err = sendNotifyWebhook(notifierName, rec.Recipient, added, deleted, changed_new)
 		}
 
 		if err != nil {
