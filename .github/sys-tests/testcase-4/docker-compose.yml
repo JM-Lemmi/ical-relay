@@ -8,6 +8,7 @@ services:
       - ./config.yml:/etc/ical-relay/config.yml:ro
       - ./data.yml:/etc/ical-relay/data.yml:ro
       - ../../testdata/basic.ics:/etc/ical-relay/notifystore/test-past.ics:ro
+      - ./test_changed.ics:/etc/ical-relay/test_changed.ics:ro
     depends_on:
       mockmail:
         condition: service_started
@@ -22,6 +23,4 @@ services:
         RUN postconf -e 'mydestination=static:all'
         RUN postconf -e 'smtpd_tls_security_level=none'
         CMD postfix start && tail -f /var/log/mail.log
-  powershell:
-    image: mcr.microsoft.com/powershell
   
