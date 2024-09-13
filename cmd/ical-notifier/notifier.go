@@ -137,6 +137,8 @@ func sendNotifyMail(notifierName string, recipient string, added []ics.VEvent, d
 
 func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
 	var feed rss.Rss
+	var file *os.File
+	var err error
 
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
 		log.Info("RSS feed does not exist, creating new one")
@@ -156,26 +158,22 @@ func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, delet
 		}
 
 		// Write the new RSS feed to the file
-		file, err := os.Create(filename)
+		file, err = os.Create(filename)
 		if err != nil {
 			return err
 		}
-		feed.WriteRSS(file)
 
-		return err
 	} else {
-		file, err := os.Open(filename)
+		file, err = os.Open(filename)
 		if err != nil {
 			return err
 		}
 
 		// parse existing feed
 		feed, err = rss.ParseRSS(file)
-		file.Close()
 		if err != nil {
 			return err
 		}
-
 	}
 
 	// add new items
@@ -201,14 +199,14 @@ func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, delet
 		})
 	}
 
-	// Write the updated RSS feed to the file
-	file, err := os.Open(filename)
+	err = feed.WriteRSS(file)
 	if err != nil {
 		return err
 	}
-
-	err = feed.WriteRSS(file)
-	file.Close()
+	err = file.Close()
+	if err != nil {
+		return err
+	}
 
 	return err
 }
