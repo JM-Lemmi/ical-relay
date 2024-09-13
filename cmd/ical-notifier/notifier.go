@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"rss"
@@ -51,7 +54,7 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 	notifierInclRep := dataStore.GetNotifier(notifier.Name)
 	// iterate over all recipients by type
 	for _, rec := range notifierInclRep.Recipients {
-		log.Debug("notifier " + rec.Recipient)
+		log.Debug("notifier " + rec.Type + " " + rec.Recipient)
 		var err error
 		switch rec.Type {
 		case "mail":
@@ -61,20 +64,18 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 			err = sendRSSFeed(notifierName, rec.Recipient, added, deleted, changed_old)
 
 		case "database":
-			log.Debug("database")
 			err = sendDatabaseHistory(notifierName, rec.Recipient, added, deleted, changed_old, changed_new)
 
 		case "webhook":
-			// TODO: implement webhook
-			continue
+			err = sendNotifyWebhook(notifierName, rec.Recipient, added, deleted, changed_old)
 		}
 
 		if err != nil {
-			log.Error("Failed to devliver notifier "+notifierName+" for recipient "+" recipient "+rec.Recipient, err)
+			log.Errorf("Failed to devliver notifier %s for recipient %s: %v", notifierName, rec.Recipient, err)
 			// TODO fail this upwards. maybe not return here, but let other notifiers run?
 		}
 	}
-	log.Debug("save")
+	log.Debugf("Saving Updated Calendar to %s", historyFilename)
 	// save updated calendar
 	helpers.WriteCalFile(currentICS, historyFilename)
 	return nil
@@ -251,6 +252,93 @@ func sendDatabaseHistory(notifierName string, recipient string, added []ics.VEve
 		dataStore.AddNotifierHistory(notifierName, recipient, "change", eventTime, changedTime, string(jsonB))
 	}
 	return nil
+}
+
+// help: how a discord webhook is structured https://gist.github.com/Birdie0/78ee79402a4301b1faf412ab5f1cdcf9
+type discordWebhook struct {
+	Username string                `json:"username"`
+	Avatar   string                `json:"avatar_url"`
+	Content  string                `json:"content"`
+	Embed    []discordWebhookEmbed `json:"embed"`
+}
+
+type discordWebhookEmbed struct {
+	// TODO: author object skipped
+	Title       string               `json:"title"`
+	URL         string               `json:"url"`
+	Description string               `json:"description"`
+	Color       int                  `json:"color"`
+	Footer      discordWebhookFooter `json:"footer"`
+	// Thumbnail and Image skipped
+}
+
+type discordWebhookFooter struct {
+	Text    string `json:"text"`
+	IconURL string `json:"icon_url"`
+}
+
+func sendNotifyWebhook(notifierName string, recipient string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
+	var embeds []discordWebhookEmbed
+
+	if len(added) > 0 {
+		for _, event := range added {
+			embeds = append(embeds, discordWebhookEmbed{
+				Title:       "Added " + event.GetSummary(),
+				Description: helpers.PrettyPrint(event),
+				Color:       65280, // color green as int (0x00ff00)
+			})
+		}
+	}
+	if len(deleted) > 0 {
+		for _, event := range deleted {
+			embeds = append(embeds, discordWebhookEmbed{
+				Title:       "Deleted " + event.GetSummary(),
+				Description: helpers.PrettyPrint(event),
+				Color:       16711680, // color red as int (0xff0000)
+			})
+		}
+	}
+	if len(changed) > 0 {
+		for _, event := range changed {
+			embeds = append(embeds, discordWebhookEmbed{
+				Title:       "Changed " + event.GetSummary(),
+				Description: "(Displaying new version)\n" + helpers.PrettyPrint(event),
+				Color:       16744192, // color orange as int (0xff6600)
+			})
+		}
+	}
+
+	webhookBody := discordWebhook{
+		Username: "Notifier für " + notifierName,
+		Avatar:   conf.General.URL + "static/media/favicon.svg",
+		Embed:    embeds,
+	}
+	webhookBodyJSON, err := json.Marshal(webhookBody)
+	if err != nil {
+		return fmt.Errorf("error Marshalling webhook json: %v", err)
+	}
+
+	log.Info("Sending Discord Webhook Notification to " + recipient)
+
+	req, err := http.NewRequest(http.MethodPost, recipient, bytes.NewBuffer(webhookBodyJSON))
+	if err != nil {
+		return fmt.Errorf("error creating new Request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Set("User-Agent", "Go-http-client/1.1 (ical-notifier/"+version+"; +"+conf.General.URL)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error doing webhook Request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("received status code %d in webhook request: %s", resp.StatusCode, body)
+	}
+	return err
 }
 
 func getTimeFromEvent(event ics.VEvent) time.Time {
