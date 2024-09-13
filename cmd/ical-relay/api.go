@@ -185,38 +185,43 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	mail := r.URL.Query().Get("mail")
-	if !helpers.ValidMail(mail) {
-		requestLogger.Errorln("Invalid mail address")
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "Error: Invalid mail address\n")
-		return
+	// get URL parameters
+	rectype := r.URL.Query().Get("type")
+	recipient := r.URL.Query().Get("recipient")
+	if rectype == "mail" {
+		// check for valid email address on mail recipient type
+		if !helpers.ValidMail(recipient) {
+			requestLogger.Errorln("Invalid mail address")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error: Invalid mail address\n")
+			return
+		}
 	}
 
 	switch r.Method {
 	case http.MethodPost:
-		err := dataStore.AddNotifyRecipient(notifier, datastore.Recipient{Recipient: mail, Type: "email"})
+		err := dataStore.AddNotifyRecipient(notifier, datastore.Recipient{Recipient: recipient, Type: rectype})
 		if err != nil {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, "Error: "+err.Error()+"\n")
 			return
 		} else {
-			requestLogger.Infoln("Added " + mail + " to " + notifier)
+			requestLogger.Infoln("Added " + rectype + " " + recipient + " to " + notifier)
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, "Added "+mail+" to "+notifier+"\n")
+			fmt.Fprint(w, "Added "+rectype+" "+recipient+" to "+notifier+"\n")
 		}
 	case http.MethodDelete:
-		err := dataStore.RemoveNotifyRecipient(notifier, datastore.Recipient{Recipient: mail, Type: "email"})
+		err := dataStore.RemoveNotifyRecipient(notifier, datastore.Recipient{Recipient: recipient, Type: rectype})
 		if err != nil {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, "Error: "+err.Error()+"\n")
 			return
 		} else {
-			requestLogger.Infoln("Removed " + mail + " from " + notifier)
+			requestLogger.Infoln("Removed " + rectype + " " + recipient + " from " + notifier)
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, "Removed "+mail+" from "+notifier+"\n")
+			fmt.Fprint(w, "Removed "+rectype+" "+recipient+" from "+notifier+"\n")
 		}
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

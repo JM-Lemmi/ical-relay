@@ -370,7 +370,8 @@ func notifierSubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// load params
 	data := getGlobalTemplateData()
-	data["mail"] = r.URL.Query().Get("mail")
+	data["recipient"] = r.URL.Query().Get("recipient")
+	data["type"] = r.URL.Query().Get("type")
 	data["notifier"] = notifier
 	data["ProfileName"] = notifier // this is vor the nav header to not break
 
@@ -390,7 +391,8 @@ func notifierUnsubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// load params
 	data := getGlobalTemplateData()
-	data["mail"] = r.URL.Query().Get("mail")
+	data["recipient"] = r.URL.Query().Get("recipient")
+	data["type"] = r.URL.Query().Get("type")
 	data["notifier"] = notifier
 	data["ProfileName"] = notifier // this is vor the nav header to not break
 
