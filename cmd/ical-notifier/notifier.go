@@ -24,6 +24,7 @@ import (
 func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 	requestLogger := log.WithFields(log.Fields{"notifier": notifierName})
 	requestLogger.Infoln("Running Notifier!")
+	requestLogger.Tracef("Notifier: %v", notifier)
 
 	// get source
 	currentICS, err := getSource(notifier.Source)
@@ -50,10 +51,8 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 	}
 	log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed_old)) + " changed")
 
-	//get notifier including recipients because the method to get all notifiers returns only the notifiers with an empty recipients slice
-	notifierInclRep := dataStore.GetNotifier(notifier.Name)
 	// iterate over all recipients by type
-	for _, rec := range notifierInclRep.Recipients {
+	for _, rec := range notifier.Recipients {
 		log.Debug("notifier " + rec.Type + " " + rec.Recipient)
 		var err error
 		switch rec.Type {

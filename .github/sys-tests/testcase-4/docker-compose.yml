@@ -1,0 +1,27 @@
+services:
+  ical-notifier:
+    image: ical-notifier:test
+    command: /usr/bin/ical-notifier --superverbose --config /etc/ical-relay/config.yml
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./config.yml:/etc/ical-relay/config.yml:ro
+      - ./data.yml:/etc/ical-relay/data.yml:ro
+      - ../../testdata/basic.ics:/etc/ical-relay/notifystore/test-past.ics:ro
+    depends_on:
+      mockmail:
+        condition: service_started
+  mockmail:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM debian:12
+        RUN apt update && apt install -y postfix
+        RUN postconf -e 'maillog_file=/var/log/mail.log'
+        RUN postconf -F '*/*/chroot = n'
+        RUN postconf -e 'mydestination=static:all'
+        RUN postconf -e 'smtpd_tls_security_level=none'
+        CMD postfix start && tail -f /var/log/mail.log
+  powershell:
+    image: mcr.microsoft.com/powershell
+  
