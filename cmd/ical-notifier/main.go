@@ -85,7 +85,6 @@ func main() {
 
 	} else {
 		log.Warn("Running in lite mode. No connection with ical-relay assumed. No dynamic unsubscription possible.")
-		// TODO: add dynamic data path
 		dataStore, err = datastore.ParseDataFile(args.DataPath)
 		if err != nil {
 			log.Fatalf("Error loading data file: %v", err)
@@ -99,9 +98,9 @@ func main() {
 	for notifierName, notifier := range dataStore.GetNotifiers() {
 		err = notifyChanges(notifierName, notifier)
 		if err != nil {
-			log.Error("Failed to run notifier ", notifierName, ": ", err)
+			log.Errorf("Error in notifier %s: %v", notifierName, err)
 		} else {
-			log.Info("Notifier ", notifierName, " ran successfully")
+			log.Infof("Notifier %s completed successfully", notifierName)
 		}
 	}
 }

@@ -52,6 +52,7 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 	log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed_new)) + " changed")
 
 	// iterate over all recipients by type
+	errcnt := 0
 	for _, rec := range notifier.Recipients {
 		log.Debug("notifier " + rec.Type + " " + rec.Recipient)
 		var err error
@@ -71,13 +72,20 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 
 		if err != nil {
 			log.Errorf("Failed to devliver notifier %s for recipient %s: %v", notifierName, rec.Recipient, err)
-			// TODO fail this upwards. maybe not return here, but let other notifiers run?
+			errcnt++
 		}
 	}
-	log.Debugf("Saving Updated Calendar to %s", historyFilename)
+
 	// save updated calendar
+	log.Debugf("Saving Updated Calendar to %s", historyFilename)
 	helpers.WriteCalFile(currentICS, historyFilename)
-	return nil
+
+	if errcnt != 0 {
+		// at least one error occured
+		return fmt.Errorf("%d of %d notifier recipients failed to run", errcnt, len(notifier.Recipients))
+	} else {
+		return nil
+	}
 
 }
 
