@@ -262,25 +262,25 @@ func sendDatabaseHistory(notifierName string, recipient string, added []ics.VEve
 
 // help: how a discord webhook is structured https://gist.github.com/Birdie0/78ee79402a4301b1faf412ab5f1cdcf9
 type discordWebhook struct {
-	Username string                `json:"username"`
-	Avatar   string                `json:"avatar_url"`
-	Content  string                `json:"content"`
-	Embed    []discordWebhookEmbed `json:"embed"`
+	Username string                `json:"username,omitempty"`
+	Avatar   string                `json:"avatar_url,omitempty"`
+	Content  string                `json:"content,omitempty"`
+	Embed    []discordWebhookEmbed `json:"embed,omitempty"`
 }
 
 type discordWebhookEmbed struct {
 	// TODO: author object skipped
-	Title       string               `json:"title"`
-	URL         string               `json:"url"`
-	Description string               `json:"description"`
-	Color       int                  `json:"color"`
-	Footer      discordWebhookFooter `json:"footer"`
+	Title       string               `json:"title,omitempty"`
+	URL         string               `json:"url,omitempty"`
+	Description string               `json:"description,omitempty"`
+	Color       int                  `json:"color,omitempty"`
+	Footer      discordWebhookFooter `json:"footer,omitempty"`
 	// Thumbnail and Image skipped
 }
 
 type discordWebhookFooter struct {
-	Text    string `json:"text"`
-	IconURL string `json:"icon_url"`
+	Text    string `json:"text,omitempty"`
+	IconURL string `json:"icon_url,omitempty"`
 }
 
 func sendNotifyWebhook(notifierName string, recipient string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
