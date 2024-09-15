@@ -25,7 +25,7 @@ The notifier is meant to be run by an external timer like systemd-timer or cron.
 
 ## Apt Repository
 
-If you're running a Debian based system, you can install the latest release from the my Package Repository.
+If you're running a Debian based system, you can install the latest release from my Package Repository.
 
 This allows automatic updates to the latest version with `apt upgrade`.
 
@@ -40,7 +40,7 @@ If you want to run the beta version, you can use the `testing` repository. Repla
 
 This installs the ical-relay as a systemd service. Change the configuration in `/etc/ical-relay/config.yml` and start the service with `systemctl start ical-relay`.
 
-The package also includes the ical-notifier. If you `systemctl enable ical-notifier.timer` the notifier will run every 15 minutes.
+The package also includes the ical-notifier. If you run `systemctl enable ical-notifier.timer` the notifier will run every 15 minutes.
 
 ## Install Package from Github
 
@@ -70,7 +70,7 @@ There is also a docker container for ical-notifier using crond to time the ical-
 
 # Configuration
 
-The configuration is split in two:
+The configuration is split in two parts:
 
 - `config.yml` contains all the general server/service configuration.
 - `data.yml` contains profiles and notifier information. You can use the same file for ical-relay and ical-notifier.
