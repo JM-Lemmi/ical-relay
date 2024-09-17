@@ -130,7 +130,7 @@ func (c DatabaseDataStore) AddNotifierFromProfile(profileName string, ownURL str
 func (c DatabaseDataStore) GetNotifiers() map[string]Notifier {
 	notifiers := make(map[string]Notifier)
 	for _, notifierName := range dbListNotifiers() {
-		notifier, err := dbReadNotifier(notifierName, false)
+		notifier, err := dbReadNotifier(notifierName, true)
 		if err != nil {
 			log.Warnf("`dbReadNotifier` failed with %s", err.Error())
 		}
