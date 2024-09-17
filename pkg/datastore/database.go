@@ -565,6 +565,10 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*Notifier, error
 JOIN notifier_recipients nr ON recipients.recipient = nr.recipient
 JOIN notifier ON nr.notifier = notifier.name WHERE nr.notifier = $1`,
 			notifierName)
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
 	}
 	return readNotifier, nil
 }
