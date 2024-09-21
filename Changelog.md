@@ -1,11 +1,20 @@
 # 2.0.0-beta.9
 
-- !! legacy config upgrades not supported!
-- data.yml file for profile and notifier information (follows old config.yml format)
-- config.yml now only contains server configuration information
-- remove cleanup timers (not implemented anyway)
-- import data now takes data.yml file as argument to import into DB
+- ical-notifier binary hived off
+  - add RSS Feed output
+  - add Webhook output
+  - add DB output
+- Frontend
+  - profile change viewer
+- configuration changes
+  - !! legacy config upgrades not supported!
+  - data.yml file for profile and notifier information (follows old config.yml format)
+  - config.yml now only contains server configuration information
+  - seperate config.yml for ical-notifer
+  - remove cleanup timers (not implemented anyway)
+  - import data now takes data.yml file as argument to import into DB
 - add reporting on startup to get a sense of how many instances are in use. disable via `--disable-telemetry`
+- system tests
 
 # 2.0.0-beta.8.3
 

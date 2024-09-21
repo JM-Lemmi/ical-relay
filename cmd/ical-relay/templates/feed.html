@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<head  lang="de">
+    <title>Feed {{.ProfileName}} - {{.ApplicationName}}</title>
+    {{template "head.html" .}}
+</head>
+<body>
+    {{template "nav.html" .}}
+    <main class="container">
+        <h1>Letzte Änderungen</h1>
+        
+        <div class="list-group">
+            {{range .FeedItems}}
+            <a href="{{.Link}}" class="list-group-item list-group-item-action flex-column align-items-start">
+              <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{.Title}}</h5>
+                <small>{{.PubDate}}</small>
+              </div>
+              <p class="mb-1">{{.Description}}</p>
+            </a>
+            {{end}}
+        </div>
+
+    </main>
+    {{template "footer.html" .}}
+</body>

@@ -1,0 +1,17 @@
+version: 1
+
+general:
+  url: https://workflow.github.com
+  name: workflow4
+  loglevel: debug
+  storagepath: /etc/ical-relay/
+  db:
+    host: postgres
+    db-name: ical_relay
+    user: dbuser
+    password: password
+  mail:
+    smtp_server: mockmail
+    smtp_port: 25
+    sender: "calnotification@workflow.github.com"
+    smtp_ssl: false

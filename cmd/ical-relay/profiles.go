@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -216,17 +215,7 @@ func getSource(source string) (*ics.Calendar, error) {
 
 	switch strings.Split(source, "://")[0] {
 	case "http", "https":
-		response, err := http.Get(source)
-		if err != nil {
-			return nil, err
-		}
-		if response.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("HTTP error: %s", response.Status)
-		}
-		if err != nil {
-			return nil, err
-		}
-		calendar, err = ics.ParseCalendar(response.Body)
+		calendar, err = helpers.ReadCalURL(source)
 		if err != nil {
 			return nil, err
 		}

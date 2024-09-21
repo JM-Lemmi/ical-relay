@@ -1,5 +1,7 @@
 package datastore
 
+import "time"
+
 type DataStore interface {
 	GetPublicProfileNames() []string
 	GetAllProfileNames() []string
@@ -24,11 +26,13 @@ type DataStore interface {
 
 	NotifierExists(name string) bool
 	AddNotifier(notifier Notifier)
+	AddNotifierFromProfile(profileName string, ownURL string) error // takes the conf.Server.URL as ownURL, since its not a global variable in this package
 	// getNotifiers returns a map of notifier (potentially WITHOUT the recipients populated!)
 	GetNotifiers() map[string]Notifier
 	GetNotifier(notifierName string) Notifier
-	AddNotifyRecipient(notifierName string, recipient string) error
-	RemoveNotifyRecipient(notifierName string, recipient string) error
+	AddNotifyRecipient(notifierName string, recipient Recipient) error
+	RemoveNotifyRecipient(notifierName string, recipient Recipient) error
+	AddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, changedDate time.Time, data string) error
 }
 
 type Token struct {
@@ -54,10 +58,14 @@ type Rule struct {
 }
 
 type Notifier struct {
-	Name       string   `db:"name"`
-	Source     string   `yaml:"source" db:"source"`
-	Interval   string   `yaml:"interval" db:"interval"`
-	Recipients []string `yaml:"recipients"`
+	Name       string      `db:"name"`
+	Source     string      `yaml:"source" db:"source"`
+	Recipients []Recipient `yaml:"recipients"`
+}
+
+type Recipient struct {
+	Type      string `yaml:"type" db:"type"`
+	Recipient string `yaml:"recipient" db:"recipient"`
 }
 
 // Data Integrity Functions

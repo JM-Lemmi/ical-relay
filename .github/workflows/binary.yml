@@ -1,0 +1,89 @@
+name: Compile
+
+# Run workflow on tags starting with v (eg. v2, v1.2.0)
+on:
+  push:
+  workflow_call:
+
+jobs:
+  Compile:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+        bin: [ical-relay, ical-notifier]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.18.0' # The Go version to download (if necessary) and use.
+      - run: go generate cmd/${{ matrix.bin }}/main.go
+      - run: env GOOS=linux GOARCH=${{ matrix.arch }} go build -o ./bin/${{ matrix.bin }} ./cmd/${{ matrix.bin }}/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.bin }}_${{ matrix.arch }}
+          path: ./bin/${{ matrix.bin }}
+
+  Package-deb:
+    needs: Compile
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Create debpkg structure
+        run: |
+          mkdir -p cmd/ical-relay/.debpkg/etc/ical-relay
+          mkdir -p cmd/ical-relay/.debpkg/opt/ical-relay
+          cp cmd/ical-relay/config.yml.example cmd/ical-relay/.debpkg/etc/ical-relay/
+          cp -r cmd/ical-relay/templates cmd/ical-relay/.debpkg/opt/ical-relay/templates/
+          cp cmd/ical-notifier/notifier-config.yml.example cmd/ical-relay/.debpkg/etc/ical-relay/
+          mkdir -p cmd/ical-relay/.debpkg/etc/systemd/system/
+          cp cmd/ical-relay/misc/ical-relay.service cmd/ical-relay/.debpkg/etc/systemd/system/
+          cp cmd/ical-notifier/misc/ical-notifier.service cmd/ical-relay/.debpkg/etc/systemd/system/
+          cp cmd/ical-notifier/misc/ical-notifier.timer cmd/ical-relay/.debpkg/etc/systemd/system/
+
+          mkdir -p cmd/ical-relay/.debpkg/DEBIAN
+          cp cmd/ical-relay/misc/postinstall.sh cmd/ical-relay/.debpkg/DEBIAN/postinst
+          chmod +x cmd/ical-relay/.debpkg/DEBIAN/postinst
+      - name: Download binary ical-relay
+        uses: actions/download-artifact@v4
+        id: download_ir
+        with:
+          name: ical-relay_${{ matrix.arch }}
+      - name: Download binary ical-notifier
+        uses: actions/download-artifact@v4
+        id: download_in
+        with:
+          name: ical-notifier_${{ matrix.arch }}
+      - run: |
+          mkdir -p cmd/ical-relay/.debpkg/usr/bin
+          cp ${{steps.download_ir.outputs.download-path}}/ical-relay cmd/ical-relay/.debpkg/usr/bin/ical-relay
+          cp ${{steps.download_in.outputs.download-path}}/ical-notifier cmd/ical-relay/.debpkg/usr/bin/ical-notifier
+          chmod +x cmd/ical-relay/.debpkg/usr/bin/ical-relay
+          chmod +x cmd/ical-relay/.debpkg/usr/bin/ical-notifier
+      - run: |
+          .github/scripts/generate-version.sh
+          echo "X_VERSION=$(cat cmd/ical-relay/VERSION)" >> $GITHUB_OUTPUT
+        id: version
+      - uses: jiro4989/build-deb-action@v2
+        id: package
+        with:
+          package: ical-relay
+          package_root: ./cmd/ical-relay/.debpkg
+          maintainer: Julian Lemmerich <mail@julian-lemmerich.de>
+          version: ${{ steps.version.outputs.X_VERSION }} # refs/tags/v*.*.*
+          arch: '${{ matrix.arch }}'
+          desc: 'Relay ical urls and edit them on the fly with different modules.'
+          depends: 'tzdata'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ical-relay_${{ steps.version.outputs.X_VERSION }}_${{ matrix.arch }}.deb
+          path: ${{steps.package.outputs.file_name}}

@@ -1,0 +1,7 @@
+[Unit]
+Description=Check for changes in an ical source and publish them.
+
+[Service]
+User=ical-relay
+Group=ical-relay
+ExecStart=/usr/bin/ical-notifier --config /etc/ical-relay/notifier-config.yml

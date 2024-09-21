@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/mail"
 	"os"
@@ -27,7 +26,7 @@ func ReadCalURL(url string) (*ics.Calendar, error) {
 
 func WriteCalFile(cal *ics.Calendar, filename string) error {
 	// write file
-	return ioutil.WriteFile(filename, []byte(cal.Serialize()), 0600)
+	return os.WriteFile(filename, []byte(cal.Serialize()), 0600)
 }
 
 func LoadCalFile(filename string) (*ics.Calendar, error) {
