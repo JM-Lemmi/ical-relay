@@ -11,6 +11,7 @@ config.yml
 config*.yml
 !.github/sys-tests/*/config.yml
 notifier-config.yml
+!.github/sys-tests/*/*-config.yml
 data.yml
 !.github/sys-tests/*/data.yml
 /tmp/

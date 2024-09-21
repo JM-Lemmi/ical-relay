@@ -89,7 +89,7 @@ func main() {
 		dataStore = datastore.DatabaseDataStore{}
 
 		if args.ImportData != "" {
-			err := datastore.ImportToDB(args.ImportData) // TODO
+			err := datastore.ImportToDB(args.ImportData)
 			if err != nil {
 				log.Fatalf("Error importing data: %v", err)
 			}
