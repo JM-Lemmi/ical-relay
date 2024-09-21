@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"encoding/json"
-	"strings"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -101,11 +101,35 @@ func doDbUpgrade(fromDbVersion int) {
 		setDbVersion(4)
 	}
 	if fromDbVersion < 5 {
+		log.Info("running upgrade to db version 5")
 		_, err := db.Exec(`ALTER TABLE rule DROP CONSTRAINT rule_profile_fkey;
 ALTER TABLE rule ADD CONSTRAINT rule_profile_fkey FOREIGN KEY (profile) REFERENCES profile(name) ON DELETE CASCADE;`)
 		if err != nil {
 			log.Panic("Failed to upgrade db", err)
 		}
+		// add column type with default value to add type email to all existing notifiers
+		// remove default as we do not want to have it and recreate the unique index including the notifier type
+		_, err = db.Exec("ALTER TABLE notifier DROP CONSTRAINT notifier_source_interval_key")
+		if err != nil {
+			log.Panic("Failed to drop notifier unique(source,interval) constraint")
+		}
+		_, err = db.Exec("ALTER TABLE notifier DROP COLUMN interval")
+		if err != nil {
+			log.Panic("Failed to drop legacy interval column of table notifier", err)
+		}
+		_, err = db.Exec("ALTER TABLE recipients ADD COLUMN type text NOT NULL DEFAULT 'email'")
+		if err != nil {
+			log.Panic("Failed to add column type to recipients table on upgrade to db version 5", err)
+		}
+		_, err = db.Exec("ALTER TABLE recipients ALTER COLUMN type DROP DEFAULT")
+		if err != nil {
+			log.Panic("Failed to remove default of column type of table notifier on upgrade to db version 5", err)
+		}
+		_, err = db.Exec("ALTER TABLE recipients RENAME email to recipient")
+		if err != nil {
+			log.Panic("Failed to rename recipients column email to recipient", err)
+		}
+		initTables()
 		setDbVersion(5)
 	}
 }
@@ -288,7 +312,7 @@ func dbAddProfileSource(profile Profile, source string) {
 }
 
 func dbRemoveAllProfileSources(profile Profile) {
-	log.Info(profile.Name)
+	log.Trace("dbRemoveAllProfileSources: " + profile.Name)
 	// Note: The following SQL statement is needlessly complicated due to the db supporting a n:n relation between
 	// source and profile over profile_sources.
 	// This n:n connection was used before db schema version 4, but since we support base64 events and can no longer
@@ -522,7 +546,7 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*Notifier, error
 		log.Fatal(err)
 		return nil, err
 	}
-	err = tx.Get(readNotifier, "SELECT name, source, \"interval\" FROM notifier WHERE name = $1", notifierName)
+	err = tx.Get(readNotifier, "SELECT name, source FROM notifier WHERE name = $1", notifierName)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -534,22 +558,17 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*Notifier, error
 		return nil, err
 	}
 
-	duration, err :=
-		time.ParseDuration(strings.ToLower(strings.Split(readNotifier.Interval, "T")[1]))
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-	//log.Tracef("%#v\n", duration.String())
-	readNotifier.Interval = duration.String()
-
 	if fetchRecipients {
 		err = db.Select(
 			&readNotifier.Recipients,
-			`SELECT email FROM recipients
-JOIN notifier_recipients nr ON email = nr.recipient
+			`SELECT recipients.recipient, type FROM recipients
+JOIN notifier_recipients nr ON recipients.recipient = nr.recipient
 JOIN notifier ON nr.notifier = notifier.name WHERE nr.notifier = $1`,
 			notifierName)
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
 	}
 	return readNotifier, nil
 }
@@ -558,11 +577,11 @@ JOIN notifier ON nr.notifier = notifier.name WHERE nr.notifier = $1`,
 // Important: Does not write the notifier recipients to db! This has to be done manually through dbAddNotifierRecipient!
 func dbWriteNotifier(notifier Notifier) {
 	_, err := db.NamedExec(
-		`INSERT INTO notifier (name, source, interval) VALUES (:name, :source, :interval)
-ON CONFLICT (name) DO UPDATE SET source = excluded.source, interval = excluded.interval`,
+		`INSERT INTO notifier (name, source) VALUES (:name, :source)
+ON CONFLICT (name) DO UPDATE SET source = excluded.source`,
 		notifier)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("dbWriteNotifier: %s", err))
 		return
 	}
 }
@@ -578,7 +597,7 @@ func dbDeleteNotifier(notifier Notifier) {
 func dbCleanupOrphanRecipients() {
 	_, err := db.Exec(
 		`DELETE FROM recipients WHERE
-        	(SELECT COUNT(*) FROM notifier_recipients WHERE notifier_recipients.recipient=recipients.email) < 1`,
+        	(SELECT COUNT(*) FROM notifier_recipients WHERE notifier_recipients.recipient=recipients.recipient) < 1`,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -586,40 +605,50 @@ func dbCleanupOrphanRecipients() {
 	}
 }
 
-func dbAddNotifierRecipient(notifier Notifier, recipient string) {
-	_, err := db.Exec(`INSERT INTO recipients (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`, recipient)
+func dbAddNotifierRecipient(notifier Notifier, recipient Recipient) {
+	_, err := db.Exec(`INSERT INTO recipients (recipient, type) VALUES ($1, $2) ON CONFLICT (recipient) DO NOTHING`, recipient.Recipient, recipient.Type) // I know this is not the elegant way, but using just 'recipient' with withe ':recipient, :type' syntax instead of ' $1, $2' will throw an error.
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("dbAddNotifierRecipient (1): %s", err))
 		return
 	}
 	_, err = db.Exec(
 		`INSERT INTO notifier_recipients (notifier, recipient) VALUES ($1, $2)
 ON CONFLICT (notifier, recipient) DO NOTHING`,
-		notifier.Name, recipient)
+		notifier.Name, recipient.Recipient)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("dbAddNotifierRecipient (2): %s", err))
 		return
 	}
 }
 
-func dbRemoveNotifierRecipient(notifier Notifier, recipient string) {
+func dbRemoveNotifierRecipient(notifier Notifier, recipient Recipient) {
 	_, err := db.Exec(`DELETE FROM notifier_recipients WHERE notifier = $1 AND recipient = $2`,
-		notifier.Name, recipient)
+		notifier.Name, recipient.Recipient)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 }
 
-func dbRemoveRecipient(recipient string) {
+func dbRemoveRecipient(recipient Recipient) {
 	//It is too expensive to go through all cached notifiers and remove the recipient, we simply invalidate the cache.
 	//(The db is much more efficient doing a cascading deletion)
 	//TODO: invalidate cache
-	_, err := db.Exec(`DELETE FROM recipients WHERE email = $1`, recipient)
+	_, err := db.Exec(`DELETE FROM recipients WHERE recipient = (:recipient)`, recipient)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
+}
+
+func dbAddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, modifyDate time.Time, data string) {
+	_, err := db.Exec(`INSERT INTO notifier_history (notifier, recipient, type, eventDate, modifyDate, data) VALUES ($1, $2, $3, $4, $5, $6)`,
+		notifierName, recipient, historyType, eventDate, modifyDate, data)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	log.Debug("ran add notifier")
 }
 
 // TODO: Database Cleanup somewhere

@@ -1,0 +1,7 @@
+notifiers:
+  mycalendar:
+    source: "http://localhost/profiles/mycalendar"
+    recipients:
+      - mail: "jm.lemmerich@gmail.com"
+      - mail: "test@example.de"
+      - rss: "/etc/ical-relay/rssstore/mycalendar.rss"

@@ -1,6 +1,7 @@
 ical-relay
 relay
 !ical-relay/
+notifier
 /dist
 rice-box.go
 .devcontainer
@@ -9,13 +10,18 @@ config.toml
 config.yml
 config*.yml
 !.github/sys-tests/*/config.yml
+notifier-config.yml
+!.github/sys-tests/*/*-config.yml
+data.yml
+!.github/sys-tests/*/data.yml
 /tmp/
 .debpkg/
 calstore/
 notifystore/
+rssstore/
 postgres-data
 __debug_bin*
 cmd/ical-relay/db/*
 .vscode/*
 VERSION
-data.yml
+combined_vtimezones.ics

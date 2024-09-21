@@ -32,7 +32,8 @@ func main() {
 	// CLI Flags
 	var args struct {
 		Notifier     string `help:"Run notifier with given ID"`
-		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
+		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
+		DataPath     string `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
 		ImportData   string `arg:"--import-data" help:"Import Data from Data.yml into DB"`
@@ -65,32 +66,12 @@ func main() {
 
 	log.Tracef("%+v\n", conf)
 
-	if !helpers.DirectoryExists(conf.Server.StoragePath + "notifystore/") {
-		log.Info("Creating notifystore directory")
-		err = os.MkdirAll(conf.Server.StoragePath+"notifystore/", 0750)
-		if err != nil {
-			log.Fatalf("Error creating notifystore: %v", err)
-		}
-	}
 	if !helpers.DirectoryExists(conf.Server.StoragePath + "calstore/") {
 		log.Info("Creating calstore directory")
 		err = os.MkdirAll(conf.Server.StoragePath+"calstore/", 0750)
 		if err != nil {
 			log.Fatalf("Error creating calstore: %v", err)
 		}
-	}
-
-	// run notifier if specified
-	if args.Notifier != "" {
-		log.Debug("Notifier mode called. Running: " + args.Notifier)
-		err := RunNotifier(args.Notifier)
-		if err != nil {
-			os.Exit(1)
-		} else {
-			os.Exit(0)
-		}
-	} else {
-		log.Debug("Server mode.")
 	}
 
 	// setup router. Will be configured depending on FULL or LITE mode
@@ -108,7 +89,7 @@ func main() {
 		dataStore = datastore.DatabaseDataStore{}
 
 		if args.ImportData != "" {
-			err := datastore.ImportToDB(args.ImportData) // TODO
+			err := datastore.ImportToDB(args.ImportData)
 			if err != nil {
 				log.Fatalf("Error importing data: %v", err)
 			}
@@ -125,7 +106,7 @@ func main() {
 		}
 	} else {
 		log.Warn("Running in lite mode. No changes will be saved.")
-		dataStore, err = datastore.ParseDataFile(conf.Server.StoragePath + "data.yml")
+		dataStore, err = datastore.ParseDataFile(args.DataPath)
 		if err != nil {
 			log.Fatalf("Error loading data file: %v", err)
 		}
@@ -134,9 +115,11 @@ func main() {
 		initHandlersProfile()
 	}
 
+	// Telemetry
 	if !args.DisableTele {
+		// in own thread, to avoid hanging up the startup, if telemetry fails for some reason
 		go func() {
-			_, err := http.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
+			_, err := http.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name+conf.Server.URL) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
 			if err == nil {
 				log.Trace("Sent telemetry successfully")
 			} else {

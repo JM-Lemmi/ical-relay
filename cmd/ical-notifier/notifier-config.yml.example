@@ -1,0 +1,17 @@
+version: 1
+
+general:
+  lite: true
+  url: "https://cal.julian-lemmerich.de"
+  loglevel: "info"
+  storagepath: /etc/ical-relay/
+  name: "Calendar"
+  db:
+    host: postgres
+    db-name: ical_relay
+    user: dbuser
+    password: password
+  mail:
+    smtp_server: "mailout.julian-lemmerich.de"
+    smtp_port: 25
+    sender: "calnotification@julian-lemmerich.de"

@@ -1,0 +1,18 @@
+services:
+  ical-notifier:
+    image: ical-notifier:test
+    command: /usr/bin/ical-notifier --superverbose --config /etc/ical-relay/config.yml
+    volumes:
+      - ./config.yml:/etc/ical-relay/config.yml:ro
+      - ./data.yml:/etc/ical-relay/data.yml:ro
+      - ../../testdata/basic.ics:/etc/ical-relay/notifystore/test-past.ics:ro
+      - ./test_changed.ics:/etc/ical-relay/test_changed.ics:ro
+      - storage:/etc/ical-relay/rssstore/
+  store:
+    image: alpine
+    command: tail -f /dev/null
+    volumes:
+      - storage:/etc/ical-relay/rssstore/
+
+volumes:
+  storage:

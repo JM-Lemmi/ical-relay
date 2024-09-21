@@ -1,0 +1,11 @@
+profiles:
+  test:
+    sources:
+      - "file:///etc/ical-relay/test_changed.ics"
+
+notifiers:
+  test:
+    source: "http://ical-relay/profiles/test"
+    recipients:
+      - type: "mail"
+        recipient: "root@mockmail"

@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"fmt"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/thanhpk/randstr"
@@ -113,10 +114,23 @@ func (c DatabaseDataStore) AddNotifier(notifier Notifier) {
 	dbWriteNotifier(notifier)
 }
 
+func (c DatabaseDataStore) AddNotifierFromProfile(profileName string, ownURL string) error {
+	if !c.ProfileExists(profileName) {
+		return fmt.Errorf("profile %s does not exist", profileName)
+	}
+
+	notifier := Notifier{
+		Name:   profileName,
+		Source: ownURL + "/profile/" + profileName,
+	}
+	dbWriteNotifier(notifier)
+	return nil
+}
+
 func (c DatabaseDataStore) GetNotifiers() map[string]Notifier {
 	notifiers := make(map[string]Notifier)
 	for _, notifierName := range dbListNotifiers() {
-		notifier, err := dbReadNotifier(notifierName, false)
+		notifier, err := dbReadNotifier(notifierName, true)
 		if err != nil {
 			log.Warnf("`dbReadNotifier` failed with %s", err.Error())
 		}
@@ -133,7 +147,7 @@ func (c DatabaseDataStore) GetNotifier(notifierName string) Notifier {
 	return *notifier
 }
 
-func (c DatabaseDataStore) AddNotifyRecipient(notifierName string, recipient string) error {
+func (c DatabaseDataStore) AddNotifyRecipient(notifierName string, recipient Recipient) error {
 	if !dbNotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
@@ -141,10 +155,18 @@ func (c DatabaseDataStore) AddNotifyRecipient(notifierName string, recipient str
 	return nil
 }
 
-func (c DatabaseDataStore) RemoveNotifyRecipient(notifierName string, recipient string) error {
+func (c DatabaseDataStore) RemoveNotifyRecipient(notifierName string, recipient Recipient) error {
 	if !dbNotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
 	dbRemoveNotifierRecipient(Notifier{Name: notifierName}, recipient)
+	return nil
+}
+
+func (c DatabaseDataStore) AddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, changedDate time.Time, data string) error {
+	if !dbNotifierExists(notifierName) {
+		return fmt.Errorf("notifier does not exist")
+	}
+	dbAddNotifierHistory(notifierName, recipient, historyType, eventDate, changedDate, data)
 	return nil
 }

@@ -3,6 +3,7 @@ package datastore
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/thanhpk/randstr"
 	"gopkg.in/yaml.v3"
@@ -64,7 +65,7 @@ func ImportToDB(path string) error {
 		// Write profile name into object
 		profile.Name = name
 		// Write the profile to the db, adding tokens and modules afterwards
-		log.Debug("Importing profile " + name)
+		log.Info("Importing profile " + name)
 		dbWriteProfile(profile)
 		for _, source := range profile.Sources {
 			if !dbProfileSourceExists(profile, source) {
@@ -84,7 +85,7 @@ func ImportToDB(path string) error {
 	for name, notifier := range data.Notifiers {
 		// Write notifier name into object
 		notifier.Name = name
-		log.Debug("Importing notifier " + name)
+		log.Info("Importing notifier " + name)
 		// Write the notifier to the db, adding recipients afterwards
 		dbWriteNotifier(notifier)
 		for _, recipient := range notifier.Recipients {
@@ -240,6 +241,11 @@ func (c DataFile) AddNotifier(notifier Notifier) {
 	c.Notifiers[notifier.Name] = notifier
 }
 
+func (c DataFile) AddNotifierFromProfile(profileName string, ownURL string) error {
+	// NOT IMPLEMENTED
+	return fmt.Errorf("not implemented")
+}
+
 func (c DataFile) GetNotifiers() map[string]Notifier {
 	return c.Notifiers
 }
@@ -248,7 +254,7 @@ func (c DataFile) GetNotifier(notifierName string) Notifier {
 	return c.Notifiers[notifierName]
 }
 
-func (c DataFile) AddNotifyRecipient(notifierName string, recipient string) error {
+func (c DataFile) AddNotifyRecipient(notifierName string, recipient Recipient) error {
 	if !c.NotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
@@ -258,7 +264,7 @@ func (c DataFile) AddNotifyRecipient(notifierName string, recipient string) erro
 	return nil
 }
 
-func (c DataFile) RemoveNotifyRecipient(notifierName string, recipient string) error {
+func (c DataFile) RemoveNotifyRecipient(notifierName string, recipient Recipient) error {
 	if !c.NotifierExists(notifierName) {
 		return fmt.Errorf("notifier does not exist")
 	}
@@ -271,6 +277,10 @@ func (c DataFile) RemoveNotifyRecipient(notifierName string, recipient string) e
 		}
 	}
 	return fmt.Errorf("recipient not found")
+}
+
+func (c DataFile) AddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, changedDate time.Time, data string) error {
+	return fmt.Errorf("notifier history with file datastore not supported!")
 }
 
 // internal helper functions

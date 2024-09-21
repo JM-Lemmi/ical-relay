@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
+	"rss"
 	"strings"
 	"time"
 
@@ -22,6 +24,8 @@ type calendarDataByDay map[string][]eventData
 func initHandlersProfile() {
 	router.HandleFunc("/profiles/{profile}", profileHandler).Name("profile")
 	router.HandleFunc("/profiles-combi/{profiles}", combineProfileHandler).Name("combineProfile")
+
+	router.HandleFunc("/notifier/{notifier}/rss", rssHandler).Name("rss")
 
 	router.HandleFunc("/api/calendars", calendarlistApiHandler) // listed here because it lists all profiles and is a read only API
 
@@ -47,8 +51,9 @@ func initHandlersFrontend() {
 	router.HandleFunc("/view/{profile}/edit/{uid}", editViewHandler).Name("editView")
 	router.HandleFunc("/view/{profile}/edit", rulesViewHandler).Name("rulesView")
 	router.HandleFunc("/view/{profile}/newentry", newEntryHandler).Name("newEntryView")
-	router.HandleFunc("/notifier/{notifier}/subscribe", notifierSubscribeHandler).Name("notifierSubscribe")
-	router.HandleFunc("/notifier/{notifier}/unsubscribe", notifierUnsubscribeHandler).Name("notifierUnsubscribe")
+	router.HandleFunc("/view/{notifier}/subscribe", notifierSubscribeHandler).Name("notifierSubscribe")
+	router.HandleFunc("/view/{notifier}/unsubscribe", notifierUnsubscribeHandler).Name("notifierUnsubscribe")
+	router.HandleFunc("/view/{notifier}/changefeed", notifierFeed).Name("notifierFeed")
 	router.HandleFunc("/settings", settingsHandler).Name("settings")
 	router.HandleFunc("/howto-users", howtoUsersHandler).Name("howtoUsers")
 	router.HandleFunc("/admin", adminHandler).Name("admin")
@@ -365,7 +370,8 @@ func notifierSubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// load params
 	data := getGlobalTemplateData()
-	data["mail"] = r.URL.Query().Get("mail")
+	data["recipient"] = r.URL.Query().Get("recipient")
+	data["type"] = r.URL.Query().Get("type")
 	data["notifier"] = notifier
 	data["ProfileName"] = notifier // this is vor the nav header to not break
 
@@ -385,11 +391,70 @@ func notifierUnsubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// load params
 	data := getGlobalTemplateData()
-	data["mail"] = r.URL.Query().Get("mail")
+	data["recipient"] = r.URL.Query().Get("recipient")
+	data["type"] = r.URL.Query().Get("type")
 	data["notifier"] = notifier
 	data["ProfileName"] = notifier // this is vor the nav header to not break
 
 	htmlTemplates.ExecuteTemplate(w, "unsubscribe.html", data)
+}
+
+func rssHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "notifier": vars["notifier"]})
+	requestLogger.Infoln("New RSS Request!")
+
+	notifier, ok := vars["notifier"]
+	if !ok {
+		err := fmt.Errorf("notifier '%s' doesn't exist", vars["notifier"])
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	filename := conf.Server.StoragePath + "/rssstore/" + notifier + ".rss"
+
+	http.ServeFile(w, r, filename)
+}
+
+func notifierFeed(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	requestLogger := log.WithFields(log.Fields{"client": GetIP(r), "notifier": vars["notifier"]})
+	requestLogger.Infoln("New Request!")
+	notifier, ok := vars["notifier"]
+	if !ok {
+		err := fmt.Errorf("profile '%s' doesn't exist", vars["notifier"])
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	// load params
+	data := getGlobalTemplateData()
+	data["notifier"] = notifier
+	data["ProfileName"] = notifier // this is vor the nav header to not break
+
+	// load rss feed
+	file, err := os.Open(conf.Server.StoragePath + "rssstore/" + notifier + ".rss")
+	if err != nil {
+		err := fmt.Errorf("error loading rss feed: %s", err)
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// parse existing feed
+	feed, err := rss.ParseRSS(file)
+	file.Close()
+	if err != nil {
+		err := fmt.Errorf("error parsing rss feed: %s", err)
+		requestLogger.Errorln(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	data["FeedItems"] = feed.Item
+
+	htmlTemplates.ExecuteTemplate(w, "feed.html", data)
 }
 
 func GetIP(r *http.Request) string {
