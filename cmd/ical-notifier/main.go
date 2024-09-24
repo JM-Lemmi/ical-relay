@@ -28,11 +28,12 @@ func main() {
 
 	// CLI Flags
 	var args struct {
-		Notifier     string `help:"Run notifier with given ID"`
-		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
-		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
-		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"notifier-config.yml"`
-		DataPath     string `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
+		Notifier        string `arg:"positional" help:"Run notifier with given ID"`
+		ConfigPath      string `arg:"-c,--config" help:"Configuration path" default:"notifier-config.yml"`
+		DataPath        string `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
+		ImportFromRelay string `arg:"--import-from-relay" help:"Create RSS feed for profiles from ical-relay. Pass local URL of relay"`
+		Verbose         bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
+		Superverbose    bool   `arg:"--superverbose" help:"verbosity level Trace"`
 	}
 	arg.MustParse(&args)
 
@@ -90,6 +91,37 @@ func main() {
 			log.Fatalf("Error loading data file: %v", err)
 		}
 		log.Tracef("%+v\n", dataStore)
+	}
+
+	// PARTIAL ROUTINES
+
+	// --import-from-relay
+	if args.ImportFromRelay != "" {
+		if !conf.General.LiteMode {
+			log.Fatal("Can only use --import-from-relay with db connection!")
+		}
+
+		var i int
+		var j int
+		for _, profile := range dataStore.GetAllProfileNames() {
+			if !dataStore.NotifierExists(profile) {
+				err := dataStore.AddNotifierFromProfile(profile, args.ImportFromRelay)
+				if err != nil {
+					log.Fatalf("Error on creating Notifier %s: %v", profile, err)
+				}
+				j++
+			}
+
+			err := dataStore.AddNotifyRecipient(profile, datastore.Recipient{Type: "rss", Recipient: profile + ".rss"})
+			if err != nil {
+				log.Fatalf("Error on adding recipient to notifier %s: %v", profile, err)
+			}
+			i++
+		}
+
+		log.Infof("Created %d Notifiers and added RSS recipient for %d", j, i)
+
+		os.Exit(0)
 	}
 
 	// APPLICATION LOGIC
