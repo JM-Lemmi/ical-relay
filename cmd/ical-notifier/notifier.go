@@ -166,13 +166,15 @@ func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, delet
 		}
 
 		// Write the new RSS feed to the file
+		// file descriptor will be reused for writing the update later!
 		file, err = os.Create(filename)
 		if err != nil {
 			return err
 		}
 
 	} else {
-		file, err = os.Open(filename)
+		// using rw, since the file descriptor will be reused for writing the update later.
+		file, err = os.OpenFile(filename, os.O_RDWR, os.ModePerm)
 		if err != nil {
 			return err
 		}

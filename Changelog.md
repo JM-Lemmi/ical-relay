@@ -1,3 +1,7 @@
+# 2.0.0-beta.9.4
+
+- fix rw issue with RSS files
+
 # 2.0.0-beta.9.3
 
 - write RSS to rssstore instead of absolute path
