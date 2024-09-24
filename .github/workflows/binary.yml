@@ -6,7 +6,10 @@ on:
   workflow_call:
 
 jobs:
+  tzgenerate:
+    uses: ./.github/workflows/generate-timezones.yml
   Compile:
+    needs: tzgenerate
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -20,6 +23,12 @@ jobs:
         with:
           go-version: '1.18.0' # The Go version to download (if necessary) and use.
       - run: go generate cmd/${{ matrix.bin }}/main.go
+      - name: Download timezone data
+        uses: actions/download-artifact@v4
+        id: download_tzdata
+        with:
+          name: combined_vtimezones.ics
+          path: pkg/helpers/
       - run: env GOOS=linux GOARCH=${{ matrix.arch }} go build -o ./bin/${{ matrix.bin }} ./cmd/${{ matrix.bin }}/
       - uses: actions/upload-artifact@v4
         with:
@@ -27,7 +36,7 @@ jobs:
           path: ./bin/${{ matrix.bin }}
 
   Package-deb:
-    needs: Compile
+    needs: [Compile, tzgenerate]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -82,6 +91,7 @@ jobs:
           version: ${{ steps.version.outputs.X_VERSION }} # refs/tags/v*.*.*
           arch: '${{ matrix.arch }}'
           desc: 'Relay ical urls and edit them on the fly with different modules.'
+          depends: 'tzdata'
       - uses: actions/upload-artifact@v4
         with:
           name: ical-relay_${{ steps.version.outputs.X_VERSION }}_${{ matrix.arch }}.deb

@@ -227,3 +227,42 @@ func ActionStripInfo(cal *ics.Calendar, indices []int, params map[string]string)
 	}
 	return nil
 }
+
+// Fixes calendars where the timezone is set by TIMEZONE or X-WR-TIMEZONE property once instead of VTIMEZONE
+// adds a correct VTIMEZONE to the calendar.
+func ActionXWRTimezoneToVTimezone(cal *ics.Calendar) error {
+	var property *ics.CalendarProperty
+	for _, prop := range cal.CalendarProperties {
+		if prop.IANAToken == "TIMEZONE" || prop.IANAToken == "X-WR-TIMEZONE" {
+			property = &prop
+			break
+		}
+	}
+	// no default timezone for the calendar found
+	if property == nil {
+		return fmt.Errorf("no timezone from TIMEZONE or X-WR-TIMEZONE found in calendar")
+	}
+
+	// load VTIMEZONE
+	tz, err := helpers.GetVTimezoneFromString(property.Value)
+	if err != nil {
+		return err
+	}
+
+	// add VTIMEZONE to calendar
+	cal.AddVTimezone(&tz)
+
+	// add TZID to all events, that don't have it yet
+	for _, event := range cal.Events() {
+		for _, prop := range event.Properties {
+			if prop.IANAToken == "DTSTART" || prop.IANAToken == "DTEND" {
+				// set timezone only if no timezone is already set
+				if _, ok := prop.ICalParameters["TZID"]; !ok {
+					prop.ICalParameters["TZID"] = []string{property.Value}
+				}
+			}
+		}
+	}
+
+	return nil
+}
