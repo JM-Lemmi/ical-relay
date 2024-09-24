@@ -3,4 +3,4 @@ notifiers:
     source: "file:///etc/ical-relay/test_changed.ics"
     recipients:
       - type: "rss"
-        recipient: "/etc/ical-relay/rssstore/test.rss"
+        recipient: "test.rss"

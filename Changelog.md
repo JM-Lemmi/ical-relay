@@ -1,3 +1,7 @@
+# 2.0.0-beta.9.3
+
+- write RSS to rssstore instead of absolute path
+
 # 2.0.0-beta.9.2
 
 - implement single run notifier with cli arg

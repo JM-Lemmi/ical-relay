@@ -61,7 +61,7 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 			err = sendNotifyMail(notifierName, rec.Recipient, added, deleted, changed_new)
 
 		case "rss":
-			err = sendRSSFeed(notifierName, rec.Recipient, added, deleted, changed_new)
+			err = sendRSSFeed(notifierName, conf.General.StoragePath+"rssstore/"+rec.Recipient, added, deleted, changed_new)
 
 		case "database":
 			err = sendDatabaseHistory(notifierName, rec.Recipient, added, deleted, changed_old, changed_new)
