@@ -9,6 +9,7 @@ jobs:
   tzgenerate:
     uses: ./.github/workflows/generate-timezones.yml
   Compile:
+    needs: tzgenerate
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -35,7 +36,7 @@ jobs:
           path: ./bin/${{ matrix.bin }}
 
   Package-deb:
-    needs: Compile
+    needs: [Compile, tzgenerate]
     runs-on: ubuntu-latest
     strategy:
       matrix:
