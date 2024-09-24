@@ -49,7 +49,7 @@ func notifyChanges(notifierName string, notifier datastore.Notifier) error {
 		log.Info("No changes detected.")
 		return nil
 	}
-	log.Debug("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed_new)) + " changed")
+	log.Info("Changes detected: " + fmt.Sprint(len(added)) + " added, " + fmt.Sprint(len(deleted)) + " deleted, " + fmt.Sprint(len(changed_new)) + " changed")
 
 	// iterate over all recipients by type
 	errcnt := 0
