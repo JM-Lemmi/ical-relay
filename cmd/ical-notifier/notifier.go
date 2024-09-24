@@ -145,12 +145,12 @@ func sendNotifyMail(notifierName string, recipient string, added []ics.VEvent, d
 
 func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, deleted []ics.VEvent, changed []ics.VEvent) error {
 	var feed rss.Rss
-	var file *os.File
 	var err error
 
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		log.Info("RSS feed does not exist, creating new one")
 		// create new feed
+		log.Info("RSS feed does not exist, creating new one")
+
 		feed = rss.Rss{
 			Title:       "Calendar Notification for " + notifierName,
 			Description: "This is a notification feed for changes in the calendar " + notifierName,
@@ -164,23 +164,18 @@ func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, delet
 				},
 			},
 		}
-
-		// Write the new RSS feed to the file
-		// file descriptor will be reused for writing the update later!
-		file, err = os.Create(filename)
-		if err != nil {
-			return err
-		}
-
 	} else {
-		// using rw, since the file descriptor will be reused for writing the update later.
-		file, err = os.OpenFile(filename, os.O_RDWR, os.ModePerm)
+		// parse existing feed
+
+		rfile, err := os.Open(filename)
 		if err != nil {
 			return err
 		}
-
-		// parse existing feed
-		feed, err = rss.ParseRSS(file)
+		feed, err = rss.ParseRSS(rfile)
+		if err != nil {
+			return err
+		}
+		err = rfile.Close()
 		if err != nil {
 			return err
 		}
@@ -209,6 +204,10 @@ func sendRSSFeed(notifierName string, filename string, added []ics.VEvent, delet
 		})
 	}
 
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
 	err = feed.WriteRSS(file)
 	if err != nil {
 		return err
