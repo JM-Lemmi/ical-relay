@@ -21,6 +21,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.19
+      - name: Download timezone data
+        uses: actions/download-artifact@v4
+        id: download_tzdata
+        with:
+          name: combined_vtimezones.ics
+          path: pkg/helpers/
       - run: go generate cmd/ical-relay/main.go
 
       - name: Run tests
