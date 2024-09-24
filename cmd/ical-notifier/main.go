@@ -93,9 +93,18 @@ func main() {
 	}
 
 	// APPLICATION LOGIC
-	// get all notifiers to iterate
 
-	for notifierName, notifier := range dataStore.GetNotifiers() {
+	runningNotifiers := make(map[string]datastore.Notifier)
+
+	if args.Notifier != "" {
+		// only one notifier
+		runningNotifiers[args.Notifier] = dataStore.GetNotifier(args.Notifier)
+	} else {
+		// get all notifiers to iterate
+		runningNotifiers = dataStore.GetNotifiers()
+	}
+
+	for notifierName, notifier := range runningNotifiers {
 		err = notifyChanges(notifierName, notifier)
 		if err != nil {
 			log.Errorf("Error in notifier %s: %v", notifierName, err)

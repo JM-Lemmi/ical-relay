@@ -1,3 +1,7 @@
+# 2.0.0-beta.9.2
+
+- implement single run notifier with cli arg
+
 # 2.0.0-beta.9.1
 
 - disallow db and rssfeed recipient types in /api/notifier/
