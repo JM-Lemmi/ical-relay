@@ -31,7 +31,7 @@ func main() {
 		Notifier     string `help:"Run notifier with given ID"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
 		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
-		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
+		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"notifier-config.yml"`
 		DataPath     string `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
 	}
 	arg.MustParse(&args)
