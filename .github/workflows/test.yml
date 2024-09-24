@@ -5,7 +5,10 @@ on:
   pull_request:
 
 jobs:
+  tzgenerate:
+    uses: ./.github/workflows/generate-timezones.yml
   go-test:
+    needs: tzgenerate
     runs-on: ubuntu-latest
 
     steps:
