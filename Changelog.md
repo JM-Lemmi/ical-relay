@@ -1,3 +1,7 @@
+# 2.0.0-beta.9.1
+
+- disallow db and rssfeed recipient types in /api/notifier/
+
 # 2.0.0-beta.9
 
 - ical-notifier binary hived off

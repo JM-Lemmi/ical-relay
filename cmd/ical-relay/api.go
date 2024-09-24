@@ -188,6 +188,14 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 	// get URL parameters
 	rectype := r.URL.Query().Get("type")
 	recipient := r.URL.Query().Get("recipient")
+
+	if rectype != "mail" && rectype != "webhook" {
+		// denying access to other recipient types, like db and rss feed
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, "Access denied\n")
+		return
+	}
+
 	if rectype == "mail" {
 		// check for valid email address on mail recipient type
 		if !helpers.ValidMail(recipient) {
@@ -211,6 +219,7 @@ func NotifyRecipientApiHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, "Added "+rectype+" "+recipient+" to "+notifier+"\n")
 		}
+
 	case http.MethodDelete:
 		err := dataStore.RemoveNotifyRecipient(notifier, datastore.Recipient{Recipient: recipient, Type: rectype})
 		if err != nil {

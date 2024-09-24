@@ -69,6 +69,8 @@ paths:
           description: successful operation
         '400':
           description: not a valid type or E-Mail address
+        '403':
+          description: disallowed recipient type
         '404':
           description: Notifier does not exist
         '500':
