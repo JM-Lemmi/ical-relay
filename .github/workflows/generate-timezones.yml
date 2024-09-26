@@ -3,7 +3,6 @@ name: Generate Timezone Files
 on:
     workflow_dispatch:
     workflow_call:
-    push:
 
 
 jobs:
