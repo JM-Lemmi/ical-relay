@@ -1,3 +1,7 @@
+# 2.0.0-beta.9.6
+
+- list change feed with newest entry at the top
+
 # 2.0.0-beta.9.4
 
 - fix rw issue with RSS files

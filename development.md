@@ -18,6 +18,17 @@ adding a new pkg you also need to add it to `go work` to use it.
 go work use ./pkg/<newname>
 ```
 
+## installing the latest go version
+
+often the apt sources for go are behind. The [go wiki](https://go.dev/wiki/Ubuntu) links to [longsleep/golang-backports PPA](https://launchpad.net/~longsleep/+archive/ubuntu/golang-backports):
+
+```
+sudo echo "deb https://ppa.launchpadcontent.net/longsleep/golang-backports/ubuntu jammy main" >> /etc/apt/sources.list.d/golang.list
+sudo echo "deb-src https://ppa.launchpadcontent.net/longsleep/golang-backports/ubuntu jammy main" >> /etc/apt/sources.list.d/golang.list
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 876B22BA887CA91614B5323FC631127F87FA12D1
+sudo apt update
+```
+
 ## compiling
 
 please first generate the version number: `./.github/scripts/generate-version.sh` then build with `go build -o ./bin/ical-relay ./cmd/ical-relay/`

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"rss"
+	"slices" // needs go 1.21 or later
 	"strings"
 	"time"
 
@@ -452,7 +453,10 @@ func notifierFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data["FeedItems"] = feed.Item
+	feeditems := feed.Item
+	slices.Reverse(feeditems)
+
+	data["FeedItems"] = feeditems
 
 	htmlTemplates.ExecuteTemplate(w, "feed.html", data)
 }

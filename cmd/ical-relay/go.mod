@@ -1,6 +1,6 @@
 module github.com/jm-lemmi/ical-relay/relay
 
-go 1.19
+go 1.21
 
 require (
 	github.com/arran4/golang-ical v0.2.4
