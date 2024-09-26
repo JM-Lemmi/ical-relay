@@ -14,9 +14,19 @@ import (
 	ics "github.com/arran4/golang-ical"
 )
 
+var client = initHttpClient()
+
+func initHttpClient() *http.Client {
+	return &http.Client{}
+}
+
+func InitHttpClientUpstream(ua *http.Client) {
+	client = ua
+}
+
 func ReadCalURL(url string) (*ics.Calendar, error) {
 	// download file
-	response, err := http.Get(url)
+	response, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}

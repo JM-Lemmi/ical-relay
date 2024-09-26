@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -18,13 +19,16 @@ import (
 //go:generate ../../.github/scripts/generate-version.sh
 //go:embed VERSION
 var version string // If you are here due to a compile error, run go generate
+var binname string = "ical-notifier"
 
 var configPath string
 var conf Config
 var dataStore datastore.DataStore
 
+var client *http.Client
+
 func main() {
-	log.Info("Welcome to ical-notifier, version " + version)
+	log.Infof("Welcome to %s, version %s", binname, version)
 
 	// CLI Flags
 	var args struct {
@@ -69,6 +73,10 @@ func main() {
 			log.Fatalf("Error creating notifystore: %v", err)
 		}
 	}
+
+	initVersions(conf.General.URL)
+	client = &http.Client{Transport: NewUseragentTransport(nil)}
+	helpers.InitHttpClientUpstream(client)
 
 	// load data
 
