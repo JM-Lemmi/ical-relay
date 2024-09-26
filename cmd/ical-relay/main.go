@@ -76,6 +76,7 @@ func main() {
 
 	// setup router. Will be configured depending on FULL or LITE mode
 	router = mux.NewRouter()
+	router.Use(serverHeaderMiddleware)
 
 	if !conf.Server.LiteMode {
 		// RUNNING FULL MODE
