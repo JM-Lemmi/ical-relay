@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <head  lang="de">
     <title>Abbonieren - {{.ApplicationName}}</title>
+    <link rel="alternate" type="application/rss+xml" title="Calendar Notification for {{.ProfileName}}" href="{{((.Router.Get "rss").URL "notifier" .ProfileName).Path}}"/>
     {{template "head.html" .}}
 </head>
 <body>
@@ -31,6 +32,7 @@
                 </div>
             </div>
         </form>
+        <p style="margin-top:32px;">Oder per RSS: <a href="{{((.Router.Get "rss").URL "notifier" .ProfileName).Path}}"><img style="height:12px;" src="/static/media/rss.svg" alt="RSS Icon"></a></p>
     </main>
     {{template "footer.html" .}}
     <script>

@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <head  lang="de">
     <title>Feed {{.ProfileName}} - {{.ApplicationName}}</title>
+    <link rel="alternate" type="application/rss+xml" title="Calendar Notification for {{.ProfileName}}" href="{{((.Router.Get "rss").URL "notifier" .ProfileName).Path}}"/>
     {{template "head.html" .}}
 </head>
 <body>
     {{template "nav.html" .}}
     <main class="container">
-        <h1>Letzte Änderungen</h1>
+        <h1>Letzte Änderungen <a href="{{((.Router.Get "rss").URL "notifier" .ProfileName).Path}}"><img style="height:32px;" align="right" src="/static/media/rss.svg" alt="RSS Icon"></a></h1>
         
         <div class="list-group">
             {{range .FeedItems}}
