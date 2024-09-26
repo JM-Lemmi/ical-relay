@@ -19,15 +19,17 @@ import (
 //go:generate ../../.github/scripts/generate-version.sh
 //go:embed VERSION
 var version string // If you are here due to a compile error, run go generate
+var binname string = "ical-relay"
 
 var configPath string
 var conf Config
 var dataStore datastore.DataStore
 
 var router *mux.Router
+var client *http.Client
 
 func main() {
-	log.Info("Welcome to ical-relay, version " + version)
+	log.Infof("Welcome to %s, version %s", binname, version)
 
 	// CLI Flags
 	var args struct {
@@ -76,7 +78,10 @@ func main() {
 
 	// setup router. Will be configured depending on FULL or LITE mode
 	router = mux.NewRouter()
+	initVersions(conf.Server.URL)
 	router.Use(serverHeaderMiddleware)
+	client = &http.Client{Transport: NewUseragentTransport(nil)}
+	helpers.InitHttpClientUpstream(client)
 
 	if !conf.Server.LiteMode {
 		// RUNNING FULL MODE
@@ -120,7 +125,7 @@ func main() {
 	if !args.DisableTele {
 		// in own thread, to avoid hanging up the startup, if telemetry fails for some reason
 		go func() {
-			_, err := http.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name+conf.Server.URL) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
+			_, err := client.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name+conf.Server.URL) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
 			if err == nil {
 				log.Trace("Sent telemetry successfully")
 			} else {

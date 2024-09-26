@@ -1,6 +1,7 @@
 # 2.0.0-beta.9.6
 
 - list change feed with newest entry at the top
+- set Useragent and Server to ical-relay version
 
 # 2.0.0-beta.9.4
 

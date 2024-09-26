@@ -332,9 +332,8 @@ func sendNotifyWebhook(notifierName string, recipient string, added []ics.VEvent
 		return fmt.Errorf("error creating new Request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("User-Agent", "Go-http-client/1.1 (ical-notifier/"+version+"; +"+conf.General.URL)
 
-	client := &http.Client{}
+	client := &http.Client{Transport: NewUseragentTransport(nil)}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error doing webhook Request: %v", err)
