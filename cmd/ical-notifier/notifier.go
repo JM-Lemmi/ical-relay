@@ -266,7 +266,7 @@ type discordWebhook struct {
 	Username string                `json:"username,omitempty"`
 	Avatar   string                `json:"avatar_url,omitempty"`
 	Content  string                `json:"content,omitempty"`
-	Embed    []discordWebhookEmbed `json:"embed,omitempty"`
+	Embed    []discordWebhookEmbed `json:"embeds,omitempty"`
 }
 
 type discordWebhookEmbed struct {
