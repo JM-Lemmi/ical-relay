@@ -1,6 +1,7 @@
 # 2.0.0-beta.9.7
 
 - fix: do not add X-WR-TIMEZONE to UTC timestamps
+- fix: fix discord webhooks not being sent due to wrong json format 
 - dependency fix: read properties after component
 
 # 2.0.0-beta.9.6
