@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"time"
 
 	ics "github.com/arran4/golang-ical"
@@ -256,6 +257,10 @@ func ActionXWRTimezoneToVTimezone(cal *ics.Calendar) error {
 	for _, event := range cal.Events() {
 		for _, prop := range event.Properties {
 			if prop.IANAToken == "DTSTART" || prop.IANAToken == "DTEND" {
+				// skip further checks if value ends with Z, since that indicates UTC value
+				if strings.HasSuffix(prop.Value, "Z") {
+					continue
+				}
 				// set timezone only if no timezone is already set
 				if _, ok := prop.ICalParameters["TZID"]; !ok {
 					prop.ICalParameters["TZID"] = []string{property.Value}
