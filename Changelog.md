@@ -1,3 +1,8 @@
+# 2.0.0-beta.9.7
+
+- fix: do not add X-WR-TIMEZONE to UTC timestamps
+- dependency fix: read properties after component
+
 # 2.0.0-beta.9.6
 
 - list change feed with newest entry at the top
