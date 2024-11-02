@@ -39,6 +39,20 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
   /api/profiles/{profile}:
+    get:
+      summary: Get a calendar
+      operationId: getProfile
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Error decoding
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile does not exist
+        '500':
+          $ref: '#/components/responses/InternalError'
     post:
       summary: Edit a calendar
       operationId: createProfile

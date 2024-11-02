@@ -80,6 +80,27 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 	profileName := mux.Vars(r)["profile"]
 
 	switch r.Method {
+	case http.MethodGet:
+		// Get Profile Content
+		if !dataStore.ProfileExists(profileName) {
+			requestLogger.Errorln("Profile doesnt exist!")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
+			return
+		}
+
+		body, err := json.Marshal(dataStore.GetProfileByName(profileName))
+		if err != nil {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error unmarshalling profile")
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(body)
+
 	case http.MethodPost:
 		// Create new profile
 		var newProfile datastore.Profile
