@@ -24,7 +24,7 @@
             </div>
             {{ end }}
         </div>
-        <p id="sources-error-message"></p>
+        <div id="sources-error-message" class="alert alert-danger" role="alert" style="display: none"></div>
         <div class="row g-3 align-items-center">
             <div class="col me-auto">
                 <input type="text" id="new-source" class="form-control" />
@@ -91,6 +91,7 @@
 
     <script>
         let sources = [];
+        let previousSources = [];
 
         $(document).ready(function () {
             validateMinSources();
@@ -131,6 +132,7 @@
                 return;
             }
 
+            previousSources = sources.slice();
             sources.push(source);
 
             renderSources();
@@ -153,6 +155,7 @@
         }
 
         function removeSource(sourceId) {
+            previousSources = sources.slice();
             sources.splice(sourceId, 1);
             renderSources();
             commitRules();
@@ -177,6 +180,7 @@
             button.text("Edit");
             button.attr("onclick", "editSource(" + sourceId + ")");
 
+            previousSources = sources.slice();
             sources[sourceId] = input.val();
             commitRules();
         }
@@ -184,8 +188,6 @@
         function commitRules() {
             // Endpoint PATCH api/profiles/{profileName}
             // Body: JSON { sources: [source1, source2, ...] }
-
-            const sourcesBeforeRequest = sources.slice();
 
             const profileName = "{{ .ProfileName }}";
 
@@ -196,25 +198,20 @@
                     Authorization: localStorage.getItem("token"),
                 },
                 body: JSON.stringify({ sources: sources }),
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        sources = sourcesBeforeRequest;
-                        renderSources();
-                        $("#sources-error-message").text("Fehler beim Speichern der Quellen");
-                    }
-                    return response;
-                })
-                .then((data) => {
-                    console.log("Success", data);
-                })
-                .catch((error) => {
-                    console.error("Error", error);
-                    sources = sourcesBeforeRequest;
+            }).then((response) => {
+                if (!response.ok) {
+                    // Rollback
+                    sources = previousSources;
                     renderSources();
 
-                    $("#sources-error-message").text("Fehler beim Speichern der Quellen");
-                });
+                    return response.text().then((errorMessage) => {
+                        $("#sources-error-message").text("Fehler beim Speichern der Quellen: " + errorMessage);
+                        $("#sources-error-message").show();
+                    });
+                } else {
+                    $("#sources-error-message").hide();
+                }
+            });
         }
     </script>
 </body>
