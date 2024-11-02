@@ -103,7 +103,7 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 		if !helpers.ValidateSources(newProfile.Sources) {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, "At least one Source Format does not ")
+			fmt.Fprint(w, "At least one Source is not formatted correctly")
 			return
 		}
 
@@ -144,7 +144,7 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 		if !helpers.ValidateSources(profile.Sources) {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, "At least one Source Format does not ")
+			fmt.Fprint(w, "At least one Source is not formatted correctly ")
 			return
 		}
 
@@ -184,7 +184,7 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 		if !helpers.ValidateSources(newProfile.Sources) {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, "At least one Source Format does not ")
+			fmt.Fprint(w, "At least one Source is not formatted correctly ")
 			return
 		}
 
