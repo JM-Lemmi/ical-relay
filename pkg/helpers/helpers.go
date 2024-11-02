@@ -175,3 +175,21 @@ func GetVTimezoneFromString(tzString string) (ics.VTimezone, error) {
 	}
 	return ics.VTimezone{}, fmt.Errorf("timezone not found: %s", tzString)
 }
+
+func ValidateSources(sourcestrings []string) bool {
+	for _, sourcestring := range sourcestrings {
+		if !ValidateSource(sourcestring) {
+			return false
+		}
+	}
+	return true
+}
+
+func ValidateSource(sourcestring string) bool {
+	switch strings.Split(sourcestring, "://")[0] {
+	case "http", "https", "file", "base64":
+		return true
+	default:
+		return false
+	}
+}

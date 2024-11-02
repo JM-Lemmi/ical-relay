@@ -93,6 +93,20 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// validation
+		if len(newProfile.Sources) < 1 {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Need at least one source")
+			return
+		}
+		if !helpers.ValidateSources(newProfile.Sources) {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "At least one Source Format does not ")
+			return
+		}
+
 		newProfile.Name = profileName
 
 		dataStore.AddProfile(newProfile)
@@ -120,6 +134,20 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// validation
+		if len(profile.Sources) < 1 {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Need at least one source")
+			return
+		}
+		if !helpers.ValidateSources(profile.Sources) {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "At least one Source Format does not ")
+			return
+		}
+
 		dataStore.OverwriteProfile(profile)
 
 		requestLogger.Infoln("Edited profile: " + profileName)
@@ -143,6 +171,20 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			requestLogger.Errorln(err)
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Error decoding json: "+err.Error()+"\n")
+			return
+		}
+
+		// validation
+		if len(newProfile.Sources) < 1 {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Need at least one source")
+			return
+		}
+		if !helpers.ValidateSources(newProfile.Sources) {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "At least one Source Format does not ")
 			return
 		}
 
