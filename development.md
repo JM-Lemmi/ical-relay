@@ -8,6 +8,12 @@ Since there are submodules, you need to clone recursively:
 git clone --recursive https://www.github.com/jm-lemmi/ical-relay
 ```
 
+Auch pull muss recursive gemacht werden. Ich empfehle daher
+
+```
+git config --global submodule.recurse=true
+```
+
 ## Go linter with multiple modules
 
 also see: https://github.com/golang/tools/blob/master/gopls/doc/workspace.md
