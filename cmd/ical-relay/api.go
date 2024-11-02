@@ -95,13 +95,13 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 
 		// validation
 		if len(newProfile.Sources) < 1 {
-			requestLogger.Errorln(err)
+			requestLogger.Errorln("Need at least one source")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Need at least one source")
 			return
 		}
 		if !helpers.ValidateSources(newProfile.Sources) {
-			requestLogger.Errorln(err)
+			requestLogger.Errorln("At least one Source is not formatted correctly")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "At least one Source is not formatted correctly")
 			return
@@ -136,13 +136,13 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 
 		// validation
 		if len(profile.Sources) < 1 {
-			requestLogger.Errorln(err)
+			requestLogger.Errorln("Need at least one source")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Need at least one source")
 			return
 		}
 		if !helpers.ValidateSources(profile.Sources) {
-			requestLogger.Errorln(err)
+			requestLogger.Errorln("At least one Source is not formatted correctly")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "At least one Source is not formatted correctly ")
 			return
@@ -176,13 +176,13 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 
 		// validation
 		if len(newProfile.Sources) < 1 {
-			requestLogger.Errorln(err)
+			requestLogger.Errorln("Need at least one source")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "Need at least one source")
 			return
 		}
 		if !helpers.ValidateSources(newProfile.Sources) {
-			requestLogger.Errorln(err)
+			requestLogger.Errorln("At least one Source is not formatted correctly ")
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "At least one Source is not formatted correctly ")
 			return
