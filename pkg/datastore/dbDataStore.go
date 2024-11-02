@@ -27,26 +27,12 @@ func (c DatabaseDataStore) GetProfileByName(name string) Profile {
 	return *dbReadProfile(name)
 }
 
-func (c DatabaseDataStore) AddProfile(name string, sources []string, public bool, immutablePast bool) {
-	dbWriteProfile(Profile{
-		Name:          name,
-		Sources:       sources,
-		Public:        public,
-		ImmutablePast: immutablePast,
-		Tokens:        []Token{},
-		Rules:         []Rule{},
-	})
+func (c DatabaseDataStore) AddProfile(profile Profile) {
+	dbWriteProfile(profile)
 }
 
-func (c DatabaseDataStore) EditProfile(name string, sources []string, public bool, immutablePast bool) {
-	tempProfile := Profile{
-		Name:          name,
-		Sources:       sources,
-		Public:        public,
-		ImmutablePast: immutablePast,
-	}
-
-	dbWriteProfile(tempProfile)
+func (c DatabaseDataStore) EditProfile(profile Profile) {
+	dbWriteProfile(profile)
 }
 
 func (c DatabaseDataStore) AddSource(profileName string, src string) error {

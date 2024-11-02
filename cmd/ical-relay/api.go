@@ -79,16 +79,10 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	profileName := mux.Vars(r)["profile"]
 
-	type profileJson struct {
-		Sources       []string `json:"sources"`
-		Public        bool     `json:"public"`
-		ImmutablePast bool     `json:"immutable_past"`
-	}
-
 	switch r.Method {
 	case http.MethodPost:
 		// Create new profile
-		var newProfile profileJson
+		var newProfile datastore.Profile
 
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&newProfile)
@@ -99,24 +93,49 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if dataStore.ProfileExists(profileName) {
-			requestLogger.Errorln("Profile already exists!")
-			w.WriteHeader(http.StatusConflict)
-			fmt.Fprint(w, "Error: Profile already exists!\n")
-			return
-		}
+		newProfile.Name = profileName
 
-		dataStore.AddProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+		dataStore.AddProfile(newProfile)
 
 		requestLogger.Infoln("Created new profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Created new profile: "+profileName+"\n")
 
-	// TODO MethodPatch, to only edit singe aspects
+	case http.MethodPatch:
+		if !dataStore.ProfileExists(profileName) {
+			requestLogger.Errorln("Profile doesnt exist!")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
+			return
+		}
+
+		profile := dataStore.GetProfileByName(profileName)
+
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&profile)
+		if err != nil {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error decoding json: "+err.Error()+"\n")
+			return
+		}
+
+		dataStore.OverwriteProfile(profile)
+
+		requestLogger.Infoln("Edited profile: " + profileName)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Edited profile: "+profileName+"\n")
 
 	case http.MethodPut:
-		// Update profile
-		var newProfile profileJson
+		if !dataStore.ProfileExists(profileName) {
+			requestLogger.Errorln("Profile doesnt exist!")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
+			return
+		}
+
+		// Overwrite Profile
+		var newProfile datastore.Profile
 
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&newProfile)
@@ -127,18 +146,13 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !dataStore.ProfileExists(profileName) {
-			requestLogger.Errorln("Profile doesnt exist!")
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
-			return
-		}
+		newProfile.Name = profileName
 
-		dataStore.EditProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+		dataStore.OverwriteProfile(newProfile)
 
-		requestLogger.Infoln("Edited profile: " + profileName)
+		requestLogger.Infoln("Overwrote profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Edited profile: "+profileName+"\n")
+		fmt.Fprint(w, "Overwrite profile: "+profileName+"\n")
 
 	case http.MethodDelete:
 		// Delete profile
