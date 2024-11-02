@@ -26,4 +26,5 @@ notifiers:
     interval: "15m"
     admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
     recipients:
-      - "jm.lemmerich@gmail.com"
+      - type: "mail"
+        recipient: "jm.lemmerich@gmail.com"
