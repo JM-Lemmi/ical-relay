@@ -11,20 +11,23 @@
         <h1>Profil {{ .ProfileName }} bearbeiten</h1>
         <h2>Quellen</h2>
 
-        {{ range $i, $source := .Profile.Sources }}
-        <div class="row g-3 align-items-center">
-            <div class="col me-auto">
-                <input type="text" id="source{{ $i }}" class="form-control" value="{{ $source }}" disabled>
+        <div id="sources-container">
+            {{ range $i, $source := .Profile.Sources }}
+            <div class="row g-3 align-items-center mb-3" data-source="{{ $i }}">
+                <div class="col me-auto">
+                    <input type="text" id="source{{ $i }}" class="form-control" value="{{ $source }}" disabled autocomplete="off" />
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-primary" onclick="editSource({{ $i }})">Edit</button>
+                    <button type="button" class="btn btn-danger profile-delete-button" onclick="removeSource({{ $i }})">Löschen</button>
+                </div>
             </div>
-            <div class="col-auto">
-                <button type="button" class="btn btn-primary">Edit</button> <!-- TODO: enable edit of field to the left, turn into save button -->
-                <button type="button" class="btn btn-danger" onclick="removeSource({{ $i }})">Löschen</button>
-            </div>
+            {{ end }}
         </div>
-        {{ end }}
+        <p id="sources-error-message"></p>
         <div class="row g-3 align-items-center">
             <div class="col me-auto">
-                <input type="text" id="new-source" class="form-control">
+                <input type="text" id="new-source" class="form-control" />
             </div>
             <div class="col-auto">
                 <!-- TODO only extend text field, when this button is pressed -->
@@ -45,19 +48,17 @@
             </div>
             <div class="card-body">
                 <div class="mb-2">
-                <h5 class="card-title">Filter</h5>
-                {{ range $j, $filter := $rule.Filters }}
-                    {{ range $key, $value := $filter }}
-                        <strong>{{ $key }}</strong>: {{ $value }}<br/>
-                    {{ end }}
-                {{ end }}
-                <strong>Operator</strong>: {{if $rule.Operator }}{{ $rule.Operator }}{{ else }}or{{ end }}<br/>
+                    <h5 class="card-title">Filter</h5>
+                    {{ range $j, $filter := $rule.Filters }} {{ range $key, $value := $filter }}
+                    <strong>{{ $key }}</strong>: {{ $value }}<br />
+                    {{ end }} {{ end }}
+                    <strong>Operator</strong>: {{if $rule.Operator }}{{ $rule.Operator }}{{ else }}or{{ end }}<br />
                 </div>
                 <div class="mb-2">
-                <h5 class="card-title">Aktion</h5>
-                {{ range $key, $value := $rule.Action }}
-                    <strong>{{ $key }}</strong>: {{ $value }}<br/>
-                {{ end }}
+                    <h5 class="card-title">Aktion</h5>
+                    {{ range $key, $value := $rule.Action }}
+                    <strong>{{ $key }}</strong>: {{ $value }}<br />
+                    {{ end }}
                 </div>
             </div>
         </div>
@@ -67,20 +68,19 @@
         <details>
             <summary class="h3">Fortgeschrittene Optionen</summary>
             <div class="alert alert-warning" role="alert">
-                <strong>Warnung:</strong> Die fortgeschrittenen Optionen können das Verhalten des Kalenders verändern
-                und sollten nur von erfahrenen Benutzern verwendet werden.
+                <strong>Warnung:</strong> Die fortgeschrittenen Optionen können das Verhalten des Kalenders verändern und sollten nur von erfahrenen
+                Benutzern verwendet werden.
             </div>
             <form id="advanced-profile-form" method="POST">
                 <div class="form-check form-switch">
-                    <input type="checkbox" class="form-check-input" id="public" name="public" {{if .Profile.Public}}checked{{end}}>
+                    <input type="checkbox" class="form-check-input" id="public" name="public" {{if .Profile.Public}}checked{{end}} />
                     <label for="public" class="form-check-label">Gelistet</label>
                     <div class="form-text text-muted">Kalender wird in der öffentlichen Liste angezeigt</div>
                 </div>
                 <div class="form-check form-switch">
-                    <input type="checkbox" class="form-check-input" id="immutable" name="immutable" {{if .Profile.ImmutablePast}}checked{{end}}>
+                    <input type="checkbox" class="form-check-input" id="immutable" name="immutable" {{if .Profile.ImmutablePast}}checked{{end}} />
                     <label for="immutable" class="form-check-label">Geschütze Vergangenheit</label>
-                    <div class="form-text text-muted">Kalendereinträge in der Vergangenheit können nicht verändert
-                        werden</div>
+                    <div class="form-text text-muted">Kalendereinträge in der Vergangenheit können nicht verändert werden</div>
                 </div>
                 <!-- right aligend submit button -->
                 <button type="submit" class="btn btn-primary float-end">Speichern</button>
@@ -88,4 +88,133 @@
         </details>
     </main>
     {{template "footer.html" .}}
+
+    <script>
+        let sources = [];
+
+        $(document).ready(function () {
+            validateMinSources();
+
+            $("#sources-container")
+                .children()
+                .each(function (index, element) {
+                    const source = $(element).find("input").val();
+                    sources.push(source);
+                });
+        });
+
+        function renderSources() {
+            const container = $("#sources-container");
+            container.empty();
+            // TOD make this prettier
+            sources.forEach((source, index) => {
+                const sourceElement = $(`
+                <div class="row g-3 align-items-center mb-3" data-source="${index}">
+                    <div class="col me-auto">
+                        <input type="text" id="source${index}" class="form-control" value="${source}" disabled autocomplete="off" />
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-primary mr-3" onclick="editSource(${index})">Edit</button>
+                        <button type="button" class="btn btn-danger profile-delete-button" onclick="removeSource(${index})">Löschen</button>
+                    </div>
+                </div>
+                `);
+                container.append(sourceElement);
+            });
+        }
+
+        // function addSource: duplicate the #source-container first child
+        function addSource() {
+            const source = $("#new-source").val();
+            if (source === "") {
+                $("#sources-error-message").text("Quelle darf nicht leer sein");
+                return;
+            }
+
+            sources.push(source);
+
+            renderSources();
+
+            // clear the input field
+            $("#new-source").val("");
+            commitRules();
+            validateMinSources();
+        }
+
+        // function editSource: enable the input field of the source. Turn the edit button into a save button
+
+        function editSource(sourceId) {
+            const input = $("#source" + sourceId);
+            input.prop("disabled", false);
+            input.focus();
+            const button = input.parent().next().find("button").first();
+            button.text("Save");
+            button.attr("onclick", "saveSource(" + sourceId + ")");
+        }
+
+        function removeSource(sourceId) {
+            sources.splice(sourceId, 1);
+            renderSources();
+            commitRules();
+            validateMinSources();
+        }
+
+        function validateMinSources() {
+            if ($("#sources-container").children().length === 1) {
+                $("#sources-container").children().first().find("button").next().prop("disabled", true);
+            } else {
+                $(".profile-delete-button").each(function (index, element) {
+                    console.log(element);
+                    $(element).prop("disabled", false);
+                });
+            }
+        }
+
+        function saveSource(sourceId) {
+            const input = $("#source" + sourceId);
+            input.prop("disabled", true);
+            const button = input.parent().next().find("button").first();
+            button.text("Edit");
+            button.attr("onclick", "editSource(" + sourceId + ")");
+
+            sources[sourceId] = input.val();
+            commitRules();
+        }
+
+        function commitRules() {
+            // Endpoint PATCH api/profiles/{profileName}
+            // Body: JSON { sources: [source1, source2, ...] }
+
+            const sourcesBeforeRequest = sources.slice();
+
+            const profileName = "{{ .ProfileName }}";
+
+            fetch("/api/profiles/" + profileName, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: localStorage.getItem("token"),
+                },
+                body: JSON.stringify({ sources: sources }),
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        sources = sourcesBeforeRequest;
+                        renderSources();
+                        $("#sources-error-message").text("Fehler beim Speichern der Quellen");
+                    }
+                    return response;
+                })
+                .then((data) => {
+                    console.log("Success", data);
+                })
+                .catch((error) => {
+                    console.error("Error", error);
+                    sources = sourcesBeforeRequest;
+                    renderSources();
+
+                    $("#sources-error-message").text("Fehler beim Speichern der Quellen");
+                });
+        }
+    </script>
 </body>
