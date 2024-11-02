@@ -31,7 +31,7 @@ func (c DatabaseDataStore) AddProfile(profile Profile) {
 	dbWriteProfile(profile)
 }
 
-func (c DatabaseDataStore) EditProfile(profile Profile) {
+func (c DatabaseDataStore) OverwriteProfile(profile Profile) {
 	dbWriteProfile(profile)
 }
 

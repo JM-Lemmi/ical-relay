@@ -131,7 +131,7 @@ func (c DataFile) AddProfile(profile Profile) {
 	c.Profiles[profile.Name] = profile
 }
 
-func (c DataFile) EditProfile(profile Profile) {
+func (c DataFile) OverwriteProfile(profile Profile) {
 	c.Profiles[profile.Name] = profile
 }
 
