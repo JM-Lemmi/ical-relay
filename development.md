@@ -33,6 +33,7 @@ sudo echo "deb https://ppa.launchpadcontent.net/longsleep/golang-backports/ubunt
 sudo echo "deb-src https://ppa.launchpadcontent.net/longsleep/golang-backports/ubuntu jammy main" >> /etc/apt/sources.list.d/golang.list
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 876B22BA887CA91614B5323FC631127F87FA12D1
 sudo apt update
+sudo apt install golang-go
 ```
 
 ## compiling
