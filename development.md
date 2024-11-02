@@ -11,7 +11,7 @@ git clone --recursive https://www.github.com/jm-lemmi/ical-relay
 Auch pull muss recursive gemacht werden. Ich empfehle daher
 
 ```
-git config --global submodule.recurse=true
+git config --global submodule.recurse true
 ```
 
 ## Go linter with multiple modules
