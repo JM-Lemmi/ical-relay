@@ -17,6 +17,7 @@
                 <input type="text" id="source{{ $i }}" class="form-control" value="{{ $source }}" disabled>
             </div>
             <div class="col-auto">
+                <button type="button" class="btn btn-primary">Edit</button> <!-- TODO: enable edit of field to the left, turn into save button -->
                 <button type="button" class="btn btn-danger" onclick="removeSource({{ $i }})">Löschen</button>
             </div>
         </div>
@@ -26,6 +27,7 @@
                 <input type="text" id="new-source" class="form-control">
             </div>
             <div class="col-auto">
+                <!-- TODO only extend text field, when this button is pressed -->
                 <button type="button" class="btn btn-primary" onclick="addSource()">Hinzufügen</button>
             </div>
         </div>
@@ -33,11 +35,12 @@
         <h2>Regeln</h2>
         {{ range $i, $rule := .Profile.Rules }}
         <div class="card">
+            <!-- TODO: enable editing of fields here -->
             <div>
                 <h4 class="card-header pb-3">
                     Regel {{ $i }}
                     <a href="#" class="btn btn-danger float-end">Löschen</a>
-                    <a href="#" class="btn btn-primary float-end">Speichern</a>
+                    <a href="#" class="btn btn-primary float-end">Bearbeiten</a>
                 </h4>
             </div>
             <div class="card-body">
@@ -59,6 +62,7 @@
             </div>
         </div>
         {{ end }}
+        <!-- TODO: Add a new rule here -->
 
         <details>
             <summary class="h3">Fortgeschrittene Optionen</summary>
