@@ -11,7 +11,7 @@
         <h1>Profil {{ .ProfileName }} bearbeiten</h1>
         <h2>Quellen</h2>
 
-        {{ range $i, $source := .Sources }}
+        {{ range $i, $source := .Profile.Sources }}
         <div class="row g-3 align-items-center">
             <div class="col me-auto">
                 <input type="text" id="source{{ $i }}" class="form-control" value="{{ $source }}" disabled>
@@ -31,7 +31,7 @@
         </div>
 
         <h2>Regeln</h2>
-        {{ range $i, $rule := .Rules }}
+        {{ range $i, $rule := .Profile.Rules }}
         <div class="card">
             <div>
                 <h4 class="card-header pb-3">
@@ -68,14 +68,12 @@
             </div>
             <form id="advanced-profile-form" method="POST">
                 <div class="form-check form-switch">
-                    <input type="checkbox" class="form-check-input" id="public" name="public" {{if
-                        .Public}}checked{{end}}>
+                    <input type="checkbox" class="form-check-input" id="public" name="public" {{if .Profile.Public}}checked{{end}}>
                     <label for="public" class="form-check-label">Gelistet</label>
                     <div class="form-text text-muted">Kalender wird in der öffentlichen Liste angezeigt</div>
                 </div>
                 <div class="form-check form-switch">
-                    <input type="checkbox" class="form-check-input" id="immutable" name="immutable" {{if
-                        .ImmutablePast}}checked{{end}}>
+                    <input type="checkbox" class="form-check-input" id="immutable" name="immutable" {{if .Profile.ImmutablePast}}checked{{end}}>
                     <label for="immutable" class="form-check-label">Geschütze Vergangenheit</label>
                     <div class="form-text text-muted">Kalendereinträge in der Vergangenheit können nicht verändert
                         werden</div>
