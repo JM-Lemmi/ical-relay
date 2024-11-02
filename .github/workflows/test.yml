@@ -1,11 +1,14 @@
-name: Go Test
+name: Test
 
 on:
   push:
   pull_request:
 
 jobs:
-  test:
+  tzgenerate:
+    uses: ./.github/workflows/generate-timezones.yml
+  go-test:
+    needs: tzgenerate
     runs-on: ubuntu-latest
 
     steps:
@@ -15,9 +18,35 @@ jobs:
           submodules: recursive
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.19
+          go-version: 1.21
+      - name: Download timezone data
+        uses: actions/download-artifact@v4
+        id: download_tzdata
+        with:
+          name: combined_vtimezones.ics
+          path: pkg/helpers/
+      - run: go generate cmd/ical-relay/main.go
 
       - name: Run tests
         run: go test ./cmd/ical-relay/...
+  
+  system-test:
+    needs: tzgenerate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Download timezone data
+        uses: actions/download-artifact@v4
+        id: download_tzdata
+        with:
+          name: combined_vtimezones.ics
+          path: pkg/helpers/
+
+      - name: Run tests
+        run: cd ./.github/sys-tests/; ./tests.sh

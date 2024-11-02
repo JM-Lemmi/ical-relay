@@ -9,6 +9,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- left side navbar -->
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{{(.Router.Get "settings").URL }}">Einstellungen</a>
@@ -16,9 +17,21 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{(.Router.Get "howtoUsers").URL }}">How-To</a>
                 </li>
-                {{ if .ProfileName }}
+                <li class="nav-item d-none" id="nav-admin-link">
+                    <a class="nav-link" href="{{((.Router.Get "admin").URL).Path}}">Admin</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">BETA!</a>
+                </li>
+            </ul>
+            {{ if .ProfileName }}
+            <!-- right side navbar -->
+            <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{{((.Router.Get "notifierSubscribe").URL "notifier" .ProfileName).Path}}">Benachrichtigungen</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{((.Router.Get "notifierFeed").URL "notifier" .ProfileName).Path}}">Änderungs-Feed</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" id="copy_ical_link" onclick="copy_ical_link();" style="cursor: pointer">iCal Link kopieren</a>
@@ -39,15 +52,7 @@
                         }
                     </script>
                 </li>
-                {{ end }}
-                <li class="nav-item d-none" id="nav-admin-link">
-                    <a class="nav-link" href="{{((.Router.Get "admin").URL).Path}}">Admin</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">BETA!</a>
-                </li>
             </ul>
-            {{if .Profiles}}
 			<form class="d-flex">
    			<select class="form-select" id="nav-profile">
                 <option></option>

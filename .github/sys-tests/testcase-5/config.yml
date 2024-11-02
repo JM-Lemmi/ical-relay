@@ -1,0 +1,13 @@
+version: 1
+
+general:
+  litemode: true
+  url: https://workflow.github.com
+  name: workflow4
+  loglevel: debug
+  storagepath: /etc/ical-relay/
+  mail:
+    smtp_server: mockmail
+    smtp_port: 25
+    sender: "calnotification@workflow.github.com"
+    smtp_ssl: false

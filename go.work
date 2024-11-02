@@ -1,7 +1,14 @@
-go 1.19
+go 1.21
+
+toolchain go1.23.1
 
 use (
+	./cmd/ical-notifier
 	./cmd/ical-relay
 	./pkg/compare
+	./pkg/datastore
+	./pkg/golang-ical
+	./pkg/golang-rss-rw
+	./pkg/helpers
 	./pkg/modules
 )

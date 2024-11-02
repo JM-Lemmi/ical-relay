@@ -1,33 +1,45 @@
 package main
 
 import (
+	_ "embed"
+	"strconv"
+
 	"html/template"
 	"net/http"
 	"os"
+
+	"github.com/jm-lemmi/ical-relay/datastore"
+	"github.com/jm-lemmi/ical-relay/helpers"
 
 	"github.com/alexflint/go-arg"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "2.0.0-beta.7.3"
+//go:generate ../../.github/scripts/generate-version.sh
+//go:embed VERSION
+var version string // If you are here due to a compile error, run go generate
+var binname string = "ical-relay"
 
 var configPath string
 var conf Config
+var dataStore datastore.DataStore
 
 var router *mux.Router
+var client *http.Client
 
 func main() {
-	log.Info("Welcome to ical-relay, version " + version)
+	log.Infof("Welcome to %s, version %s", binname, version)
 
 	// CLI Flags
 	var args struct {
 		Notifier     string `help:"Run notifier with given ID"`
-		ConfigPath   string `arg:"--config" help:"Configuration path" default:"config.yml"`
+		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
+		DataPath     string `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
 		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
-		Superverbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
-		ImportData   bool   `arg:"--import-data" help:"Import Data from Config into DB"`
-		Ephemeral    bool   `arg:"-e" help:"Enable ephemeral mode. Running only in Memory, no Database needed."`
+		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
+		ImportData   string `arg:"--import-data" help:"Import Data from Data.yml into DB"`
+		DisableTele  bool   `arg:"--disable-telemetry" help:"Disables reporting its own existence"`
 	}
 	arg.MustParse(&args)
 
@@ -36,7 +48,7 @@ func main() {
 	if args.Verbose {
 		log.SetLevel(log.DebugLevel)
 	}
-	if args.Superverbose {
+	if args.SuperVerbose {
 		log.SetLevel(log.TraceLevel)
 	}
 
@@ -47,7 +59,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !args.Verbose && !args.Superverbose {
+	if !args.Verbose && !args.SuperVerbose {
 		// only set the level from config, if not set by flags
 		log.SetLevel(conf.Server.LogLevel)
 	}
@@ -56,46 +68,71 @@ func main() {
 
 	log.Tracef("%+v\n", conf)
 
-	// run notifier if specified
-	if args.Notifier != "" {
-		log.Debug("Notifier mode called. Running: " + args.Notifier)
-		err := RunNotifier(args.Notifier)
+	if !helpers.DirectoryExists(conf.Server.StoragePath + "calstore/") {
+		log.Info("Creating calstore directory")
+		err = os.MkdirAll(conf.Server.StoragePath+"calstore/", 0750)
 		if err != nil {
-			os.Exit(1)
-		} else {
-			os.Exit(0)
+			log.Fatalf("Error creating calstore: %v", err)
 		}
-	} else {
-		log.Debug("Server mode.")
 	}
 
-	if !args.Ephemeral {
-		if len(conf.Server.DB.Host) > 0 {
-			// connect to DB
-			connect()
-			log.Tracef("%#v", db)
-
-			if args.ImportData {
-				conf.importToDB()
-			}
-		} else {
-			log.Fatal("No database configured. Did you mean to start in ephemeral mode?")
-		}
-	} else {
-		log.Warn("Running in ephemeral-mode. Changes to the config will not persist!!")
-	}
-
-	// setup template path
-	htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html"))
-
-	// setup routes
+	// setup router. Will be configured depending on FULL or LITE mode
 	router = mux.NewRouter()
-	initHandlers()
+	initVersions(conf.Server.URL)
+	router.Use(serverHeaderMiddleware)
+	client = &http.Client{Transport: NewUseragentTransport(nil)}
+	helpers.InitHttpClientUpstream(client)
 
-	// start notifiers
-	NotifierStartup()
-	// start cleanup
-	CleanupStartup()
+	if !conf.Server.LiteMode {
+		// RUNNING FULL MODE
+		log.Debug("Running in full mode.")
+		if conf.Server.DB.Host == "" {
+			log.Fatal("DB configuration missing")
+		}
+
+		// connect to DB
+		datastore.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
+		dataStore = datastore.DatabaseDataStore{}
+
+		if args.ImportData != "" {
+			err := datastore.ImportToDB(args.ImportData)
+			if err != nil {
+				log.Fatalf("Error importing data: %v", err)
+			}
+		}
+
+		// setup routes
+		initHandlersProfile()
+		initHandlersApi()
+
+		if !conf.Server.DisableFrontend {
+			htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html")) // TODO: fail more gracefully than segfault
+
+			initHandlersFrontend()
+		}
+	} else {
+		log.Warn("Running in lite mode. No changes will be saved.")
+		dataStore, err = datastore.ParseDataFile(args.DataPath)
+		if err != nil {
+			log.Fatalf("Error loading data file: %v", err)
+		}
+
+		// setup routes
+		initHandlersProfile()
+	}
+
+	// Telemetry
+	if !args.DisableTele {
+		// in own thread, to avoid hanging up the startup, if telemetry fails for some reason
+		go func() {
+			_, err := client.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name+conf.Server.URL) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
+			if err == nil {
+				log.Trace("Sent telemetry successfully")
+			} else {
+				log.Tracef("Sending telemetry failed: %s", err)
+			}
+		}()
+	}
 
 	// start server
 	address := conf.Server.Addr

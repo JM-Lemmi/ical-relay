@@ -58,3 +58,16 @@ body {
 .navbar-brand img {
     height: 2rem;
 }
+
+.dropzone {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+    border: 2px dashed #000;
+    border-radius: 20px;
+    inset: 1em;
+    top: 40%;
+    z-index: 1021;
+}

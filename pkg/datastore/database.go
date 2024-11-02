@@ -1,10 +1,10 @@
-package main
+package datastore
 
 import (
 	"database/sql"
 	_ "embed"
 	"encoding/json"
-	"strings"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -14,19 +14,19 @@ import (
 
 var db sqlx.DB
 
-const CurrentDbVersion = 4
+const CurrentDbVersion = 5
 
 // startup connection function
-func connect() {
+func Connect(dbUser string, dbPassword string, dbHost string, dbName string) {
 	userStr := ""
-	if conf.Server.DB.User != "" {
-		userStr = conf.Server.DB.User
-		if conf.Server.DB.Password != "" {
-			userStr += ":" + conf.Server.DB.Password
+	if dbUser != "" {
+		userStr = dbUser
+		if dbPassword != "" {
+			userStr += ":" + dbPassword
 		}
 		userStr += "@"
 	}
-	connStr := "postgresql://" + userStr + conf.Server.DB.Host + "/" + conf.Server.DB.DbName + "?sslmode=disable"
+	connStr := "postgresql://" + userStr + dbHost + "/" + dbName + "?sslmode=disable"
 	log.Debug("Connecting to db using " + connStr)
 
 	dbConn, err := sqlx.Connect("postgres", connStr)
@@ -45,9 +45,13 @@ func connect() {
 		setDbVersion(CurrentDbVersion)
 		dbVersion = CurrentDbVersion
 	}
+	if dbVersion > CurrentDbVersion {
+		log.Panicf("Found db with dbVersion %d but I only know dbVersion %d", dbVersion, CurrentDbVersion)
+	}
 	if dbVersion != CurrentDbVersion {
 		doDbUpgrade(dbVersion)
 	}
+	log.Tracef("%#v", db)
 }
 
 //go:embed db.sql
@@ -96,6 +100,38 @@ func doDbUpgrade(fromDbVersion int) {
 		initTables()
 		setDbVersion(4)
 	}
+	if fromDbVersion < 5 {
+		log.Info("running upgrade to db version 5")
+		_, err := db.Exec(`ALTER TABLE rule DROP CONSTRAINT rule_profile_fkey;
+ALTER TABLE rule ADD CONSTRAINT rule_profile_fkey FOREIGN KEY (profile) REFERENCES profile(name) ON DELETE CASCADE;`)
+		if err != nil {
+			log.Panic("Failed to upgrade db", err)
+		}
+		// add column type with default value to add type email to all existing notifiers
+		// remove default as we do not want to have it and recreate the unique index including the notifier type
+		_, err = db.Exec("ALTER TABLE notifier DROP CONSTRAINT notifier_source_interval_key")
+		if err != nil {
+			log.Panic("Failed to drop notifier unique(source,interval) constraint")
+		}
+		_, err = db.Exec("ALTER TABLE notifier DROP COLUMN interval")
+		if err != nil {
+			log.Panic("Failed to drop legacy interval column of table notifier", err)
+		}
+		_, err = db.Exec("ALTER TABLE recipients ADD COLUMN type text NOT NULL DEFAULT 'email'")
+		if err != nil {
+			log.Panic("Failed to add column type to recipients table on upgrade to db version 5", err)
+		}
+		_, err = db.Exec("ALTER TABLE recipients ALTER COLUMN type DROP DEFAULT")
+		if err != nil {
+			log.Panic("Failed to remove default of column type of table notifier on upgrade to db version 5", err)
+		}
+		_, err = db.Exec("ALTER TABLE recipients RENAME email to recipient")
+		if err != nil {
+			log.Panic("Failed to rename recipients column email to recipient", err)
+		}
+		initTables()
+		setDbVersion(5)
+	}
 }
 
 func setDbVersion(dbVersion int) {
@@ -110,7 +146,7 @@ func setDbVersion(dbVersion int) {
 
 // these structs are only used for reading
 type dbRule struct {
-	Id               int64      `db:"id"`
+	Id               int        `db:"id"`
 	Operator         string     `db:"operator"`
 	ActionType       string     `db:"action_type"`
 	ActionParameters string     `db:"action_parameters"`
@@ -146,17 +182,6 @@ func dbListPublicProfiles() []string {
 	return profiles
 }
 
-func dbListAllProfiles() []string {
-	var profiles []string
-
-	err := db.Select(&profiles, `SELECT name FROM profile`)
-	if err != nil {
-		panic(err)
-	}
-
-	return profiles
-}
-
 func dbListProfiles() []string {
 	var profiles []string
 
@@ -168,8 +193,8 @@ func dbListProfiles() []string {
 	return profiles
 }
 
-func dbReadProfile(profileName string) *profile {
-	profile := new(profile)
+func dbReadProfile(profileName string) *Profile {
+	profile := new(Profile)
 	err := db.Get(profile, "SELECT name, public, immutable_past FROM profile WHERE name = $1", profileName)
 	if err != nil {
 		log.Fatal(err)
@@ -182,11 +207,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = db.Select(&profile.Tokens, "SELECT token FROM admin_tokens WHERE profile = $1", profileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Select(&profile.NTokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
+	err = db.Select(&profile.Tokens, "SELECT token, note FROM admin_tokens WHERE profile = $1", profileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -201,6 +222,7 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	log.Tracef("%#v\n", dbRules)
 	for _, dbRule := range dbRules {
 		rule := new(Rule)
+		rule.Id = dbRule.Id
 		rule.Operator = dbRule.Operator
 		if dbRule.Expiry != nil {
 			rule.Expiry = dbRule.Expiry.Format(time.RFC3339)
@@ -235,18 +257,33 @@ JOIN profile_sources ps ON id = ps.source WHERE ps.profile = $1`,
 	return profile
 }
 
-// dbWriteProfile writes the profile to the db, silently overwriting if a profile with the same name exists.
-func dbWriteProfile(profile profile) {
+// dbWriteProfile writes the profile options and sources to the db,
+// silently overwriting if a profile with the same name exists.
+func dbWriteProfile(profile Profile) {
 	_, err := db.NamedExec(
 		`INSERT INTO profile (name, public, immutable_past) VALUES (:name, :public, :immutable_past)
 ON CONFLICT (name) DO UPDATE SET public = excluded.public, immutable_past = excluded.immutable_past`,
 		profile)
+
+	dbRemoveAllProfileSources(profile)
+	for _, source := range profile.Sources {
+		dbAddProfileSource(profile, source)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func dbProfileSourceExists(profile profile, source string) bool {
+func dbDeleteProfile(profile Profile) {
+	_, err := db.Exec(`DELETE FROM profile WHERE name=$1`, profile.Name)
+	if err != nil {
+		panic(err)
+	}
+	dbCleanupOrphanSources()
+}
+
+func dbProfileSourceExists(profile Profile, source string) bool {
 	var profileSourceExists bool
 
 	err := db.Get(&profileSourceExists, `SELECT EXISTS (SELECT * FROM source
@@ -258,8 +295,8 @@ JOIN profile_sources ps ON id = ps.source WHERE profile = $1 AND url = $2)`, pro
 	return profileSourceExists
 }
 
-func dbAddProfileSource(profile profile, source string) {
-	var sourceId int64
+func dbAddProfileSource(profile Profile, source string) {
+	var sourceId int
 	err := db.Get(&sourceId, `INSERT INTO source (url) VALUES ($1) RETURNING id`, source)
 	if err != nil {
 		log.Fatal(err)
@@ -274,8 +311,8 @@ func dbAddProfileSource(profile profile, source string) {
 	}
 }
 
-func dbRemoveAllProfileSources(profile profile) {
-	log.Info(profile.Name)
+func dbRemoveAllProfileSources(profile Profile) {
+	log.Trace("dbRemoveAllProfileSources: " + profile.Name)
 	// Note: The following SQL statement is needlessly complicated due to the db supporting a n:n relation between
 	// source and profile over profile_sources.
 	// This n:n connection was used before db schema version 4, but since we support base64 events and can no longer
@@ -290,10 +327,45 @@ func dbRemoveAllProfileSources(profile profile) {
 	}
 }
 
-// TODO: fix this, leaves orphans currently
-func dbRemoveProfileSource(profile profile, sourceId int64) {
+// TODO: Expose sourceId, like we do for rules, to avoid this potentially expensive search
+func dbRemoveProfileSourceByUrl(profile Profile, sourceUrl string) {
+	var sourceIds []int
+	err := db.Select(&sourceIds, `SELECT id FROM source WHERE url = $1`,
+		sourceUrl)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	if len(sourceIds) == 0 {
+		log.Trace("no sources found for searchString sU:'", sourceUrl, "' p:'", profile.Name, "'")
+	}
+	for _, sourceId := range sourceIds {
+		dbRemoveProfileSource(profile, sourceId) //Note: This will only remove the source if it belongs to the profile
+	}
+}
+
+func dbRemoveProfileSource(profile Profile, sourceId int) {
 	_, err := db.Exec(`DELETE FROM profile_sources WHERE profile = $1 AND source = $2`,
 		profile.Name, sourceId)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	dbCleanupOrphanSources()
+}
+
+func dbCleanupOrphanSources() {
+	_, err := db.Exec(
+		`DELETE FROM source WHERE (SELECT COUNT(*) FROM profile_sources WHERE profile_sources.source=source.id) < 1`,
+	)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
+
+func dbRemoveAllProfileRules(profile Profile) {
+	_, err := db.Exec(`DELETE FROM rule WHERE profile = $1`, profile.Name)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -301,7 +373,7 @@ func dbRemoveProfileSource(profile profile, sourceId int64) {
 }
 
 // used for importing
-func dbProfileRuleExists(profile profile, rule Rule) bool {
+func dbProfileRuleExists(profile Profile, rule Rule) bool {
 	actionCopy := make(map[string]string)
 	for k, v := range rule.Action {
 		actionCopy[k] = v
@@ -313,7 +385,7 @@ func dbProfileRuleExists(profile profile, rule Rule) bool {
 		panic(err)
 	}
 
-	var ruleIds []int64
+	var ruleIds []int
 	if rule.Expiry != "" { // stored as true NULL in db
 		err = db.Select(
 			&ruleIds, `SELECT id FROM rule WHERE profile = $1 AND operator = $2
@@ -327,7 +399,7 @@ AND action_type = $3 AND action_parameters = $4 AND expiry IS NULL`,
 	}
 	if len(ruleIds) == 0 {
 		log.Trace("rule not found with pN:'", profile.Name, "' rOp:'", rule.Operator,
-			" 'aT:'", actionType, "' aP:", string(parametersJson), " rE:'", rule.Expiry, "'")
+			"' aT:'", actionType, "' aP:", string(parametersJson), " rE:'", rule.Expiry, "'")
 		return false
 	}
 	if err != nil {
@@ -367,7 +439,7 @@ AND action_type = $3 AND action_parameters = $4 AND expiry IS NULL`,
 	return false
 }
 
-func dbAddProfileRule(profile profile, rule Rule) {
+func dbAddProfileRule(profile Profile, rule Rule) {
 	actionType := rule.Action["type"]
 	delete(rule.Action, "type") //TODO: possibly deep-copy
 	parametersJson, err := json.Marshal(rule.Action)
@@ -377,7 +449,7 @@ func dbAddProfileRule(profile profile, rule Rule) {
 
 	var expiry sql.NullString
 	expiry.String = rule.Expiry
-	var ruleId int64
+	var ruleId int
 	err = db.QueryRow(
 		`INSERT INTO rule (profile, operator, action_type, action_parameters, expiry) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
 		profile.Name, rule.Operator, actionType, parametersJson, expiry).Scan(&ruleId)
@@ -390,7 +462,7 @@ func dbAddProfileRule(profile profile, rule Rule) {
 	}
 }
 
-func dbAddRuleFilter(ruleId int64, filter map[string]string) {
+func dbAddRuleFilter(ruleId int, filter map[string]string) {
 	filterType := filter["type"]
 	delete(filter, "type") //TODO: possibly deep-copy
 	parametersJson, err := json.Marshal(filter)
@@ -405,24 +477,17 @@ func dbAddRuleFilter(ruleId int64, filter map[string]string) {
 	}
 }
 
-// TODO: replace with dbRemoveRule (by id only)
-// this is currently somewhat expensive, since we need to find the module by the full parameters
-func dbRemoveProfileModule(profile profile, module map[string]string) {
-	name := module["name"]
-	delete(module, "name")
-	parametersJson, err := json.Marshal(module)
-	if err != nil {
-		panic(err)
-	}
-	_, err = db.Exec(
-		`DELETE FROM module WHERE profile=$1 AND name=$2 AND parameters=$3`,
-		profile.Name, name, parametersJson)
+func dbRemoveRule(profile Profile, ruleId int) {
+	//TODO: ignore profile passed here, ruleIds are unique
+	_, err := db.Exec(
+		`DELETE FROM rule WHERE profile=$1 AND id=$2`,
+		profile.Name, ruleId)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func dbWriteProfileToken(profile profile, token string, note *string) {
+func dbWriteProfileToken(profile Profile, token string, note *string) {
 	if len(token) != 64 {
 		log.Fatal("Only 64-byte tokens are allowed!")
 	}
@@ -435,7 +500,7 @@ ON CONFLICT (token) DO UPDATE SET note = excluded.note`,
 	}
 }
 
-func dbRemoveProfileToken(profile profile, token string) {
+func dbRemoveProfileToken(profile Profile, token string) {
 	//TODO: ignore profile passed here, tokens are unique
 	_, err := db.Exec(
 		`DELETE FROM admin_tokens WHERE profile=$1 AND token=$2`,
@@ -469,8 +534,8 @@ func dbListNotifiers() []string {
 	return notifiers
 }
 
-func dbReadNotifier(notifierName string, fetchRecipients bool) (*notifier, error) {
-	readNotifier := new(notifier)
+func dbReadNotifier(notifierName string, fetchRecipients bool) (*Notifier, error) {
+	readNotifier := new(Notifier)
 	tx, err := db.Beginx()
 	if err != nil {
 		log.Fatal(err)
@@ -481,7 +546,7 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*notifier, error
 		log.Fatal(err)
 		return nil, err
 	}
-	err = tx.Get(readNotifier, "SELECT name, source, \"interval\" FROM notifier WHERE name = $1", notifierName)
+	err = tx.Get(readNotifier, "SELECT name, source FROM notifier WHERE name = $1", notifierName)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -493,78 +558,97 @@ func dbReadNotifier(notifierName string, fetchRecipients bool) (*notifier, error
 		return nil, err
 	}
 
-	duration, err :=
-		time.ParseDuration(strings.ToLower(strings.Split(readNotifier.Interval, "T")[1]))
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-	//log.Tracef("%#v\n", duration.String())
-	readNotifier.Interval = duration.String()
-
 	if fetchRecipients {
 		err = db.Select(
 			&readNotifier.Recipients,
-			`SELECT email FROM recipients
-JOIN notifier_recipients nr ON email = nr.recipient
+			`SELECT recipients.recipient, type FROM recipients
+JOIN notifier_recipients nr ON recipients.recipient = nr.recipient
 JOIN notifier ON nr.notifier = notifier.name WHERE nr.notifier = $1`,
 			notifierName)
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
 	}
 	return readNotifier, nil
 }
 
 // dbWriteNotifier writes the notifier to the db, silently overwriting if a notifier with the same name exists.
 // Important: Does not write the notifier recipients to db! This has to be done manually through dbAddNotifierRecipient!
-func dbWriteNotifier(notifier notifier) {
+func dbWriteNotifier(notifier Notifier) {
 	_, err := db.NamedExec(
-		`INSERT INTO notifier (name, source, interval) VALUES (:name, :source, :interval)
-ON CONFLICT (name) DO UPDATE SET source = excluded.source, interval = excluded.interval`,
+		`INSERT INTO notifier (name, source) VALUES (:name, :source)
+ON CONFLICT (name) DO UPDATE SET source = excluded.source`,
 		notifier)
+	if err != nil {
+		log.Fatal(fmt.Errorf("dbWriteNotifier: %s", err))
+		return
+	}
+}
+
+func dbDeleteNotifier(notifier Notifier) {
+	_, err := db.Exec(`DELETE FROM notifier WHERE name=$1`, notifier.Name)
+	if err != nil {
+		panic(err)
+	}
+	dbCleanupOrphanRecipients()
+}
+
+func dbCleanupOrphanRecipients() {
+	_, err := db.Exec(
+		`DELETE FROM recipients WHERE
+        	(SELECT COUNT(*) FROM notifier_recipients WHERE notifier_recipients.recipient=recipients.recipient) < 1`,
+	)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 }
 
-func dbDeleteNotifier(notifier notifier) {
-	_, err := db.Exec(`DELETE FROM notifier WHERE name=$1`, notifier.Name)
+func dbAddNotifierRecipient(notifier Notifier, recipient Recipient) {
+	_, err := db.Exec(`INSERT INTO recipients (recipient, type) VALUES ($1, $2) ON CONFLICT (recipient) DO NOTHING`, recipient.Recipient, recipient.Type) // I know this is not the elegant way, but using just 'recipient' with withe ':recipient, :type' syntax instead of ' $1, $2' will throw an error.
 	if err != nil {
-		panic(err)
-	}
-}
-
-func dbAddNotifierRecipient(notifier notifier, recipient string) {
-	_, err := db.Exec(`INSERT INTO recipients (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`, recipient)
-	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("dbAddNotifierRecipient (1): %s", err))
 		return
 	}
 	_, err = db.Exec(
 		`INSERT INTO notifier_recipients (notifier, recipient) VALUES ($1, $2)
 ON CONFLICT (notifier, recipient) DO NOTHING`,
-		notifier.Name, recipient)
+		notifier.Name, recipient.Recipient)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("dbAddNotifierRecipient (2): %s", err))
 		return
 	}
 }
 
-func dbRemoveNotifierRecipient(notifier notifier, recipient string) {
+func dbRemoveNotifierRecipient(notifier Notifier, recipient Recipient) {
 	_, err := db.Exec(`DELETE FROM notifier_recipients WHERE notifier = $1 AND recipient = $2`,
-		notifier.Name, recipient)
+		notifier.Name, recipient.Recipient)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 }
 
-func dbRemoveRecipient(recipient string) {
+func dbRemoveRecipient(recipient Recipient) {
 	//It is too expensive to go through all cached notifiers and remove the recipient, we simply invalidate the cache.
 	//(The db is much more efficient doing a cascading deletion)
 	//TODO: invalidate cache
-	_, err := db.Exec(`DELETE FROM recipients WHERE email = $1`, recipient)
+	_, err := db.Exec(`DELETE FROM recipients WHERE recipient = (:recipient)`, recipient)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 }
+
+func dbAddNotifierHistory(notifierName string, recipient string, historyType string, eventDate time.Time, modifyDate time.Time, data string) {
+	_, err := db.Exec(`INSERT INTO notifier_history (notifier, recipient, type, eventDate, modifyDate, data) VALUES ($1, $2, $3, $4, $5, $6)`,
+		notifierName, recipient, historyType, eventDate, modifyDate, data)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	log.Debug("ran add notifier")
+}
+
+// TODO: Database Cleanup somewhere

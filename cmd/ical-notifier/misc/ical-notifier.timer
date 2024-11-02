@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic check for changes in ical sources.
+
+[Timer]
+OnBootSec=15min
+OnUnitInactiveSec=15min
+Persistent=true
+Unit=ical-notifier.service
+
+[Install]
+WantedBy=timers.target

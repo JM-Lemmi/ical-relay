@@ -1,3 +1,68 @@
+# 2.0.0-beta.9.7
+
+- fix: do not add X-WR-TIMEZONE to UTC timestamps
+- fix: fix discord webhooks not being sent due to wrong json format 
+- dependency fix: read properties after component
+
+# 2.0.0-beta.9.6
+
+- list change feed with newest entry at the top
+- set Useragent and Server to ical-relay version
+
+# 2.0.0-beta.9.4
+
+- fix rw issue with RSS files
+
+# 2.0.0-beta.9.3
+
+- write RSS to rssstore instead of absolute path
+
+# 2.0.0-beta.9.2
+
+- implement single run notifier with cli arg
+
+# 2.0.0-beta.9.1
+
+- disallow db and rssfeed recipient types in /api/notifier/
+
+# 2.0.0-beta.9
+
+- ical-notifier binary hived off
+  - add RSS Feed output
+  - add Webhook output
+  - add DB output
+- Frontend
+  - profile change viewer
+- configuration changes
+  - !! legacy config upgrades not supported!
+  - data.yml file for profile and notifier information (follows old config.yml format)
+  - config.yml now only contains server configuration information
+  - seperate config.yml for ical-notifer
+  - remove cleanup timers (not implemented anyway)
+  - import data now takes data.yml file as argument to import into DB
+- add reporting on startup to get a sense of how many instances are in use. disable via `--disable-telemetry`
+- add `/health` endpoint and docker healthcheck
+- system tests
+
+# 2.0.0-beta.8.3
+
+- remove startup of notifiers (in preparation for rework and due to crashing)
+
+# 2.0.0-beta.8.2
+
+- fix critical bug in upstream library that exponentially escaped backslashes
+
+# 2.0.0-beta.8
+
+- Small Stability Fixes and Bugfixes
+- Update Dependencies for Bugfixes
+- Show next week on Sundays
+- Add Events via Drag & Drop
+
+# 2.0.0-beta.7.4
+
+- Fix critical bug in Databse query for Rule Filters
+
 # 2.0.0-beta.7.3
 
 - Implement PUT /api/profiles/<profile> (editProfile) for DB

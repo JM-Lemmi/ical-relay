@@ -8,8 +8,7 @@
   {{template "nav.html" .}}
   <main class="container">
     <h1 class="mb-3">
-      {{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty
-      "SUMMARY").Value}}{{ end }} bearbeiten
+      {{ if .Event.GetProperty "SUMMARY" }}{{.Event.GetSummary }}{{ end }} bearbeiten
     </h1>
     <div class="alert alert-danger" id="edit-error" style="display: none">
       Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
@@ -19,16 +18,14 @@
         <label for="summary" class="col-sm-1 col-form-label">Titel</label>
         <div class="col-sm-11">
           <input type="text" class="form-control" id="summary" name="summary"
-          value="{{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty
-          "SUMMARY").Value}}{{ end }}">
+          value="{{ if .Event.GetProperty "SUMMARY" }}{{ .Event.GetSummary }}{{ end }}">
         </div>
       </div>
       <div class="row mb-3">
         <label for="location" class="col-sm-1 col-form-label">Ort</label>
         <div class="col-sm-11">
           <input type="text" class="form-control" id="location" name="location"
-          value="{{ if .Event.GetProperty "LOCATION" }}{{(.Event.GetProperty
-          "LOCATION").Value}}{{ end }}">
+          value="{{ if .Event.GetProperty "LOCATION" }}{{ .Event.GetLocation }}{{ end }}">
         </div>
       </div>
       <div class="row mb-3">
@@ -62,7 +59,7 @@
             name="description"
             rows="1"
           >
-{{ if .Event.GetProperty "DESCRIPTION" }}{{(.Event.GetProperty "DESCRIPTION").Value}}{{ end }}</textarea
+{{ if .Event.GetProperty "DESCRIPTION" }}{{ .Event.GetDescription }}{{ end }}</textarea
           >
         </div>
       </div>
@@ -78,11 +75,11 @@
   <script>
     const profileName = {{.ProfileName }};
     const uid = {{(.Event.GetProperty "UID").Value}};
-    const originalSummary = {{ if .Event.GetProperty "SUMMARY" }}{{(.Event.GetProperty "SUMMARY").Value}}{{ else }} ""{{ end }};
-    const originalLocation = {{ if .Event.GetProperty "LOCATION" }}{{(.Event.GetProperty "LOCATION").Value}}{{ else }} ""{{ end }};
+    const originalSummary = {{ if .Event.GetProperty "SUMMARY" }}{{ .Event.GetSummary }}{{ else }} ""{{ end }};
+    const originalLocation = {{ if .Event.GetProperty "LOCATION" }}{{ .Event.GetLocation }}{{ else }} ""{{ end }};
     const originalStart = dayjs({{(.Event.GetStartAt).Format "2006-01-02T15:04:05Z07:00"}});
     const originalEnd = dayjs({{(.Event.GetEndAt).Format "2006-01-02T15:04:05Z07:00"}});
-    const originalDescription = {{ if .Event.GetProperty "DESCRIPTION" }}{{ (.Event.GetProperty "DESCRIPTION").Value }}{{ else }} ""{{ end }};
+    const originalDescription = {{ if .Event.GetProperty "DESCRIPTION" }}{{ .Event.GetDescription  }}{{ else }} ""{{ end }};
     document.getElementById("start").value = originalStart.format("YYYY-MM-DDTHH:mm");
     document.getElementById("end").value = originalEnd.format("YYYY-MM-DDTHH:mm");
 

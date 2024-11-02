@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"time"
 
 	ics "github.com/arran4/golang-ical"
@@ -66,13 +67,13 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				switch params["overwrite"] {
 				case "false":
-					event.SetProperty(ics.ComponentPropertySummary, event.GetProperty(ics.ComponentPropertySummary).Value+"; "+params["new-summary"])
+					event.SetSummary(event.GetSummary() + "; " + params["new-summary"])
 				case "fillempty":
 					if event.GetProperty(ics.ComponentPropertySummary).Value == "" {
-						event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
+						event.SetSummary(params["new-summary"])
 					}
 				case "true":
-					event.SetProperty(ics.ComponentPropertySummary, params["new-summary"])
+					event.SetSummary(params["new-summary"])
 				}
 				log.Debug("Changed summary to " + event.GetProperty(ics.ComponentPropertySummary).Value)
 			}
@@ -83,13 +84,13 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				switch params["overwrite"] {
 				case "false":
-					event.SetProperty(ics.ComponentPropertyDescription, event.GetProperty(ics.ComponentPropertyDescription).Value+"; "+params["new-description"])
+					event.SetDescription(event.GetDescription() + "; " + params["new-description"])
 				case "fillempty":
 					if event.GetProperty(ics.ComponentPropertyDescription).Value == "" {
-						event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
+						event.SetDescription(params["new-description"])
 					}
 				case "true":
-					event.SetProperty(ics.ComponentPropertyDescription, params["new-description"])
+					event.SetDescription(params["new-description"])
 				}
 				log.Debug("Changed description to " + event.GetProperty(ics.ComponentPropertyDescription).Value)
 			}
@@ -100,13 +101,13 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				}
 				switch params["overwrite"] {
 				case "false":
-					event.SetProperty(ics.ComponentPropertyLocation, event.GetProperty(ics.ComponentPropertyLocation).Value+"; "+params["new-location"])
+					event.SetLocation(event.GetLocation() + "; " + params["new-location"])
 				case "fillempty":
 					if event.GetProperty(ics.ComponentPropertyLocation).Value == "" {
-						event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
+						event.SetLocation(params["new-location"])
 					}
 				case "true":
-					event.SetProperty(ics.ComponentPropertyLocation, params["new-location"])
+					event.SetLocation(params["new-location"])
 				}
 				log.Debug("Changed location to " + event.GetProperty(ics.ComponentPropertyLocation).Value)
 			}
@@ -225,5 +226,48 @@ func ActionStripInfo(cal *ics.Calendar, indices []int, params map[string]string)
 			log.Debug("Stripped info with mode " + params["mode"] + " from event " + event.Id())
 		}
 	}
+	return nil
+}
+
+// Fixes calendars where the timezone is set by TIMEZONE or X-WR-TIMEZONE property once instead of VTIMEZONE
+// adds a correct VTIMEZONE to the calendar.
+func ActionXWRTimezoneToVTimezone(cal *ics.Calendar) error {
+	var property *ics.CalendarProperty
+	for _, prop := range cal.CalendarProperties {
+		if prop.IANAToken == "TIMEZONE" || prop.IANAToken == "X-WR-TIMEZONE" {
+			property = &prop
+			break
+		}
+	}
+	// no default timezone for the calendar found
+	if property == nil {
+		return fmt.Errorf("no timezone from TIMEZONE or X-WR-TIMEZONE found in calendar")
+	}
+
+	// load VTIMEZONE
+	tz, err := helpers.GetVTimezoneFromString(property.Value)
+	if err != nil {
+		return err
+	}
+
+	// add VTIMEZONE to calendar
+	cal.AddVTimezone(&tz)
+
+	// add TZID to all events, that don't have it yet
+	for _, event := range cal.Events() {
+		for _, prop := range event.Properties {
+			if prop.IANAToken == "DTSTART" || prop.IANAToken == "DTEND" {
+				// skip further checks if value ends with Z, since that indicates UTC value
+				if strings.HasSuffix(prop.Value, "Z") {
+					continue
+				}
+				// set timezone only if no timezone is already set
+				if _, ok := prop.ICalParameters["TZID"]; !ok {
+					prop.ICalParameters["TZID"] = []string{property.Value}
+				}
+			}
+		}
+	}
+
 	return nil
 }

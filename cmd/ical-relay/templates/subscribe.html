@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <head  lang="de">
     <title>Abbonieren - {{.ApplicationName}}</title>
+    <link rel="alternate" type="application/rss+xml" title="Calendar Notification for {{.ProfileName}}" href="{{((.Router.Get "rss").URL "notifier" .ProfileName).Path}}"/>
     {{template "head.html" .}}
 </head>
 <body>
@@ -17,19 +18,27 @@
             <div class="row">
                 <div class="col">
                     <div class="mb-3">
-                        <label for="mail" class="form-label">Mail-Addresse</label>
-                        <input type="text" class="form-control" id="mail" name="token" value="{{.mail}}">
+                        <label for="rectype" class="form-label">Typ</label>
+                        <select class="form-select" id="rectype">
+                            <option value="mail" {{if eq .type "mail"}}selected{{end}}>E-Mail</option>
+                            <option value="webhook" {{if eq .type "webhook"}}selected{{end}}>Webhook</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="recipient" class="form-label">Empfänger</label>
+                        <input type="text" class="form-control" id="recipient" name="token" value="{{.recipient}}">
                     </div>
                     <button type="submit" class="btn btn-primary">Speichern</button>
                 </div>
             </div>
         </form>
+        <p style="margin-top:32px;">Oder per RSS: <a href="{{((.Router.Get "rss").URL "notifier" .ProfileName).Path}}"><img style="height:12px;" src="/static/media/rss.svg" alt="RSS Icon"></a></p>
     </main>
     {{template "footer.html" .}}
     <script>
         function handleSaveSettings(e) {
             e.preventDefault();
-            let api_url = ("/api/notifier/{{.notifier}}/recipient?mail=" + document.getElementById("mail").value);
+            let api_url = ("/api/notifier/{{.notifier}}/recipient?type="+ document.getElementById("rectype").value+"&recipient=" + document.getElementById("recipient").value);
             fetch(api_url, {
                 method: "POST"
             }).then(response => {

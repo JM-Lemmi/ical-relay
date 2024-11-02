@@ -1,0 +1,19 @@
+<rss version="2.0">
+  <channel>
+    <title>Calendar Notification for test</title>
+    <description>This is a notification feed for changes in the calendar test</description>
+    <link>https://workflow.github.com/view/test/changefeed</link>
+    <item>
+      <title>Feed created</title>
+      <link></link>
+      <description>The feed was created. Changes before this date were not recorded.</description>
+      <pubDate>Fri, 13 Sep 2024 19:41:32 +0000</pubDate>
+    </item>
+    <item>
+      <title>Added Event2</title>
+      <link></link>
+      <description>Event2&#xA;Thu 29. Aug 2024, 21:52 - 22:00&#xA;Location: Hamburg&#xA;</description>
+      <pubDate>Fri, 13 Sep 2024 19:41:32 +0000</pubDate>
+    </item>
+  </channel>
+</rss>

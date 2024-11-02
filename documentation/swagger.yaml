@@ -38,23 +38,11 @@ paths:
                   - "profile2"
         '500':
           $ref: '#/components/responses/InternalError'
-  /api/reloadconfig:
-    get:
-      tags:
-        - public
-      summary: Reloads the config
-      description: Reloads the config of the relay stored on the server.
-      operationId: reloadConfig
-      responses:
-        '200':
-          description: successful operation
-        '500':
-          $ref: '#/components/responses/InternalError'
   /api/notifiers/{notifier}/recipient:
     post:
       tags:
         - public
-      summary: Adds an E-Mail-Recipient to a Notifier
+      summary: Adds a Recipient to a Notifier
       description: ''
       operationId: addRecipient
       parameters:
@@ -64,7 +52,13 @@ paths:
           required: true
           schema:
             type: string
-        - name: mail
+        - name: type
+          in: query
+          description: Type of recipient that will be added
+          required: true
+          schema:
+            type: string
+        - name: recipient
           in: query
           description: E-Mail Address that will be added
           required: true
@@ -74,7 +68,9 @@ paths:
         '200':
           description: successful operation
         '400':
-          description: not a valid E-Mail address
+          description: not a valid type or E-Mail address
+        '403':
+          description: disallowed recipient type
         '404':
           description: Notifier does not exist
         '500':

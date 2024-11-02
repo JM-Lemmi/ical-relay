@@ -17,8 +17,15 @@
             <div class="row">
                 <div class="col">
                     <div class="mb-3">
-                        <label for="mail" class="form-label">Mail-Addresse</label>
-                        <input type="text" class="form-control" id="mail" name="token" value="{{.mail}}">
+                        <label for="rectype" class="form-label">Typ</label>
+                        <select class="form-select" id="rectype">
+                            <option value="mail" {{if eq .type "mail"}}selected{{end}}>E-Mail</option>
+                            <option value="webhook" {{if eq .type "webhook"}}selected{{end}}>Webhook</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="recipient" class="form-label">Empfänger</label>
+                        <input type="text" class="form-control" id="recipient" name="token" value="{{.recipient}}">
                     </div>
                     <button type="submit" class="btn btn-danger">Abbestellen</button>
                 </div>
@@ -29,7 +36,7 @@
     <script>
         function handleSaveSettings(e) {
             e.preventDefault();
-            let api_url = ("/api/notifier/{{.notifier}}/recipient?mail=" + document.getElementById("mail").value);
+            let api_url = ("/api/notifier/{{.notifier}}/recipient?type="+ document.getElementById("rectype").value+"&recipient=" + document.getElementById("recipient").value);
             fetch(api_url, {
                 method: "DELETE"
             }).then(response => {

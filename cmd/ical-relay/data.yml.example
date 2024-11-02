@@ -1,0 +1,30 @@
+version: 1
+profiles:
+  relay:
+    sources:
+      - "https://example.com/calendar.ics"
+    public: true
+    immutable-past: true
+    admin-tokens:
+      - token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+        note: An example token
+    rules:
+      - filters:
+          - type: "regex"
+            regex: "testentry"
+            target: "summary"
+          - type: "timeframe"
+            after: "2021-12-02T00:00:00Z"
+            before: "2021-12-31T00:00:00Z"
+        action:
+          type: "delete"
+        expires: "2022-12-31T00:00:00Z"
+
+notifiers:
+  relay:
+    source: "http://localhost/relay"
+    interval: "15m"
+    admin-token: eAn97Sa0BKHKk02O12lNsa1O5wXmqXAKrBYxRcTNsvZoU9tU4OVS6FH7EP4yFbEt
+    recipients:
+      - type: "mail"
+        recipient: "jm.lemmerich@gmail.com"

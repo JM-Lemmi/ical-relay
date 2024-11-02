@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS profile_sources (
 /* TODO: add facility for easy reordering */
 CREATE TABLE IF NOT EXISTS rule (
     id                integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    profile           text references profile(name) NOT NULL,
+    profile           text references profile(name) ON DELETE CASCADE NOT NULL,
     operator          text NOT NULL,
     action_type       text NOT NULL,
     action_parameters jsonb NOT NULL,
@@ -45,17 +45,26 @@ CREATE TABLE IF NOT EXISTS admin_tokens (
 
 CREATE TABLE IF NOT EXISTS notifier (
     name     text NOT NULL PRIMARY KEY,
-    UNIQUE   (source, interval),
-    source   text NOT NULL,
-    interval interval HOUR TO SECOND NOT NULL
+    source   text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS recipients (
-    email text PRIMARY KEY
+    recipient     text PRIMARY KEY,
+    type            text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS notifier_recipients (
     notifier  text REFERENCES notifier(name) ON DELETE CASCADE NOT NULL,
-    recipient text REFERENCES recipients(email) ON DELETE CASCADE NOT NULL,
+    recipient text REFERENCES recipients(recipient) ON DELETE CASCADE NOT NULL,
     UNIQUE    (notifier, recipient)
 );
+
+CREATE TABLE IF NOT EXISTS notifier_history (
+    id          integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    notifier    text REFERENCES notifier(name) ON DELETE CASCADE NOT NULL,
+    recipient   text REFERENCES recipients(recipient) ON DELETE CASCADE NOT NULL,
+    type        TEXT NOT NULL,
+    eventDate   TIMESTAMP WITH TIME ZONE NOT NULL,
+    modifyDate  TIMESTAMP WITH TIME ZONE NOT NULL,
+    data        JSON NOT NULL
+)

@@ -1,0 +1,11 @@
+version: 4
+server:
+  addr: :80
+  url: https://workflow.github.com
+  name: workflow
+  litemode: true
+  loglevel: debug
+  imprintlink: ""
+  privacypolicylink: ""
+  super-tokens:
+    - "supersecret"

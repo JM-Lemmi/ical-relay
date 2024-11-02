@@ -1,0 +1,16 @@
+version: 4
+server:
+  addr: :80
+  url: https://workflow.github.com
+  name: workflow
+  litemode: false
+  loglevel: debug
+  imprintlink: ""
+  privacypolicylink: ""
+  db:
+    host: postgres
+    db-name: ical_relay
+    user: dbuser
+    password: password
+  super-tokens:
+    - "supersecret"

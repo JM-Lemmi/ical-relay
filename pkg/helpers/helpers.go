@@ -1,17 +1,32 @@
 package helpers
 
 import (
-	"io/ioutil"
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/mail"
 	"os"
+	"strings"
+
+	_ "embed"
 
 	ics "github.com/arran4/golang-ical"
 )
 
+var client = initHttpClient()
+
+func initHttpClient() *http.Client {
+	return &http.Client{}
+}
+
+func InitHttpClientUpstream(ua *http.Client) {
+	client = ua
+}
+
 func ReadCalURL(url string) (*ics.Calendar, error) {
 	// download file
-	response, err := http.Get(url)
+	response, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +36,7 @@ func ReadCalURL(url string) (*ics.Calendar, error) {
 
 func WriteCalFile(cal *ics.Calendar, filename string) error {
 	// write file
-	return ioutil.WriteFile(filename, []byte(cal.Serialize()), 0600)
+	return os.WriteFile(filename, []byte(cal.Serialize()), 0600)
 }
 
 func LoadCalFile(filename string) (*ics.Calendar, error) {
@@ -77,6 +92,12 @@ func PrettyPrint(e ics.VEvent) string {
 	return output
 }
 
+// returns the MD5 hash of a string
+func GetMD5Hash(text string) string {
+	hash := md5.Sum([]byte(text))
+	return hex.EncodeToString(hash[:])
+}
+
 func Contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -130,4 +151,27 @@ func AddEvents(cal1 *ics.Calendar, cal2 *ics.Calendar) int {
 		count++
 	}
 	return count
+}
+
+// if youre here because of a compile error, get the latest combined_vtimezones.ics from github action artifacts
+//
+//go:embed "combined_vtimezones.ics"
+var combinedVTimezones string
+
+// returns the VTimezone with the given tzString as id. For example: "Europe/Berlin" or "Etc/GMT+6"
+func GetVTimezoneFromString(tzString string) (ics.VTimezone, error) {
+	// read file
+	combinedVTimezoneReader := strings.NewReader(combinedVTimezones)
+	cal, err := ics.ParseCalendar(combinedVTimezoneReader)
+	if err != nil {
+		return ics.VTimezone{}, err
+	}
+
+	// find the right timezone
+	for _, tz := range cal.Timezones() {
+		if tz.GetProperty(ics.ComponentPropertyTzid).Value == tzString {
+			return *tz, nil
+		}
+	}
+	return ics.VTimezone{}, fmt.Errorf("timezone not found: %s", tzString)
 }

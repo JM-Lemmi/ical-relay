@@ -1,0 +1,6 @@
+notifiers:
+  test:
+    source: "file:///etc/ical-relay/test_changed.ics"
+    recipients:
+      - type: "mail"
+        recipient: "root@mockmail"

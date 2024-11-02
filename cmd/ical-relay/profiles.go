@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"os"
 	"sort"
 	"strings"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/jm-lemmi/ical-relay/datastore"
 	"github.com/jm-lemmi/ical-relay/helpers"
 	"github.com/jm-lemmi/ical-relay/modules"
 	"github.com/juliangruber/go-intersect/v2" // requires go1.18
@@ -24,7 +24,7 @@ type profileMetadata struct {
 
 func getProfilesMetadata() []profileMetadata {
 	profiles := make([]profileMetadata, 0)
-	for _, name := range conf.getPublicCalendars() {
+	for _, name := range dataStore.GetPublicProfileNames() {
 		// FIXME: any name with "/" will break the URL
 		viewUrl, err := router.Get("calendarView").URL("profile", name)
 		if err != nil {
@@ -50,10 +50,11 @@ func getProfilesMetadata() []profileMetadata {
 	return profiles
 }
 
-func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, error) {
+func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Calendar, error) {
 	var calendar *ics.Calendar
 
-	// get all sources
+	// SOURCES
+
 	if len(profile.Sources) == 0 {
 		log.Debug("No sources, creating empty calendar")
 		calendar = ics.NewCalendar()
@@ -82,7 +83,8 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 	}
 
-	// apply rules
+	// RULES
+
 	for i, rule := range profile.Rules {
 		log.Debug("Executing Rule ", i)
 
@@ -122,7 +124,8 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		log.Trace("Finished action!")
 	}
 
-	// immutable past:
+	// IMMUTABLE PAST
+
 	historyFilename := conf.Server.StoragePath + "calstore/" + profileName + "-past.ics"
 	if profile.ImmutablePast {
 		// check if file exists, if not download for the first time
@@ -138,7 +141,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 
 		// load history file
-		log.Debug("Loading history file")
+		log.Debugf("Loading history file %s", historyFilename)
 		historyCal, err := helpers.LoadCalFile(historyFilename)
 		if err != nil {
 			log.Errorln(err)
@@ -168,7 +171,7 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 
 		//saving history file
-		log.Debug("Saving history file")
+		log.Debugf("Saving history file %s", historyFilename)
 		err = helpers.WriteCalFile(calendar, historyFilename)
 		if err != nil {
 			log.Errorln(err)
@@ -176,6 +179,17 @@ func getProfileCalendar(profile profile, profileName string) (*ics.Calendar, err
 		}
 	}
 	// it may be neccesary to run delete-duplicates here to avoid duplicates from the history file
+
+	// GENERAL COMPATIBILITY
+
+	if modules.CheckXWRTimezone(calendar) {
+		log.Debug("Calendar has X-WR-Timezone format, converting to VTIMEZONE")
+		err := modules.ActionXWRTimezoneToVTimezone(calendar)
+		if err != nil {
+			log.Errorln(err)
+			return calendar, fmt.Errorf("error converting X-WR-Timezone to VTIMEZONE: %s", err.Error())
+		}
+	}
 
 	return calendar, nil
 }
@@ -201,17 +215,7 @@ func getSource(source string) (*ics.Calendar, error) {
 
 	switch strings.Split(source, "://")[0] {
 	case "http", "https":
-		response, err := http.Get(source)
-		if err != nil {
-			return nil, err
-		}
-		if response.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("HTTP error: %s", response.Status)
-		}
-		if err != nil {
-			return nil, err
-		}
-		calendar, err = ics.ParseCalendar(response.Body)
+		calendar, err = helpers.ReadCalURL(source)
 		if err != nil {
 			return nil, err
 		}
@@ -222,8 +226,10 @@ func getSource(source string) (*ics.Calendar, error) {
 		}
 	case "profile":
 		profileName := strings.Split(source, "://")[1]
-		conf.ensureProfileLoaded(profileName)
-		calendar, err = getProfileCalendar(conf.Profiles[profileName], profileName)
+		if !dataStore.ProfileExists(profileName) {
+			return nil, fmt.Errorf("Profile does not exist: %s", profileName)
+		}
+		calendar, err = getProfileCalendar(dataStore.GetProfileByName(profileName), profileName)
 		if err != nil {
 			return nil, err
 		}
