@@ -79,16 +79,31 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	profileName := mux.Vars(r)["profile"]
 
-	type profileJson struct {
-		Sources       []string `json:"sources"`
-		Public        bool     `json:"public"`
-		ImmutablePast bool     `json:"immutable_past"`
-	}
-
 	switch r.Method {
+	case http.MethodGet:
+		// Get Profile Content
+		if !dataStore.ProfileExists(profileName) {
+			requestLogger.Errorln("Profile doesnt exist!")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
+			return
+		}
+
+		body, err := json.Marshal(dataStore.GetProfileByName(profileName))
+		if err != nil {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error unmarshalling profile")
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(body)
+
 	case http.MethodPost:
 		// Create new profile
-		var newProfile profileJson
+		var newProfile datastore.Profile
 
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&newProfile)
@@ -99,24 +114,77 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if dataStore.ProfileExists(profileName) {
-			requestLogger.Errorln("Profile already exists!")
-			w.WriteHeader(http.StatusConflict)
-			fmt.Fprint(w, "Error: Profile already exists!\n")
+		// validation
+		if len(newProfile.Sources) < 1 {
+			requestLogger.Errorln("Need at least one source")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Need at least one source")
+			return
+		}
+		if !helpers.ValidateSources(newProfile.Sources) {
+			requestLogger.Errorln("At least one Source is not formatted correctly")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "At least one Source is not formatted correctly")
 			return
 		}
 
-		dataStore.AddProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+		newProfile.Name = profileName
+
+		dataStore.AddProfile(newProfile)
 
 		requestLogger.Infoln("Created new profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Created new profile: "+profileName+"\n")
 
-	// TODO MethodPatch, to only edit singe aspects
+	case http.MethodPatch:
+		if !dataStore.ProfileExists(profileName) {
+			requestLogger.Errorln("Profile doesnt exist!")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
+			return
+		}
+
+		profile := dataStore.GetProfileByName(profileName)
+
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&profile)
+		if err != nil {
+			requestLogger.Errorln(err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Error decoding json: "+err.Error()+"\n")
+			return
+		}
+
+		// validation
+		if len(profile.Sources) < 1 {
+			requestLogger.Errorln("Need at least one source")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Need at least one source")
+			return
+		}
+		if !helpers.ValidateSources(profile.Sources) {
+			requestLogger.Errorln("At least one Source is not formatted correctly")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "At least one Source is not formatted correctly ")
+			return
+		}
+
+		dataStore.OverwriteProfile(profile)
+
+		requestLogger.Infoln("Edited profile: " + profileName)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Edited profile: "+profileName+"\n")
 
 	case http.MethodPut:
-		// Update profile
-		var newProfile profileJson
+		if !dataStore.ProfileExists(profileName) {
+			requestLogger.Errorln("Profile doesnt exist!")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
+			return
+		}
+
+		// Overwrite Profile
+		var newProfile datastore.Profile
 
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&newProfile)
@@ -127,18 +195,27 @@ func profileApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !dataStore.ProfileExists(profileName) {
-			requestLogger.Errorln("Profile doesnt exist!")
+		// validation
+		if len(newProfile.Sources) < 1 {
+			requestLogger.Errorln("Need at least one source")
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, "Error: Profile doesnt exist!\n")
+			fmt.Fprint(w, "Need at least one source")
+			return
+		}
+		if !helpers.ValidateSources(newProfile.Sources) {
+			requestLogger.Errorln("At least one Source is not formatted correctly ")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "At least one Source is not formatted correctly ")
 			return
 		}
 
-		dataStore.EditProfile(profileName, newProfile.Sources, newProfile.Public, newProfile.ImmutablePast)
+		newProfile.Name = profileName
 
-		requestLogger.Infoln("Edited profile: " + profileName)
+		dataStore.OverwriteProfile(newProfile)
+
+		requestLogger.Infoln("Overwrote profile: " + profileName)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Edited profile: "+profileName+"\n")
+		fmt.Fprint(w, "Overwrite profile: "+profileName+"\n")
 
 	case http.MethodDelete:
 		// Delete profile

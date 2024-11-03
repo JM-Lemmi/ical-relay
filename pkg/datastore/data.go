@@ -8,10 +8,8 @@ type DataStore interface {
 	ProfileExists(name string) bool
 	// Note: Must check if profileExists beforehand
 	GetProfileByName(name string) Profile
-	AddProfile(name string, sources []string, public bool, immutablePast bool) //TODO: make this take a profile type
-
-	// editProfile edits a profile, not touching tokens and rules
-	EditProfile(name string, sources []string, public bool, immutablePast bool) //TODO: either make this take a profile type or split it into explicit editing functions
+	AddProfile(profile Profile)
+	OverwriteProfile(profile Profile)
 	AddSource(profileName string, src string) error
 	// removeSource removes all sources with the given src string
 	RemoveSource(profileName string, src string) error
@@ -42,11 +40,11 @@ type Token struct {
 
 type Profile struct {
 	Name          string   `yaml:"name,omitempty" db:"name"`
-	Sources       []string `yaml:"sources,omitempty"`
-	Public        bool     `yaml:"public" db:"public"`
-	ImmutablePast bool     `yaml:"immutable-past,omitempty" db:"immutable_past"`
-	Tokens        []Token  `yaml:"admin-tokens,omitempty"`
-	Rules         []Rule   `yaml:"rules,omitempty"`
+	Sources       []string `yaml:"sources,omitempty" json:"sources"`
+	Public        bool     `yaml:"public" db:"public" json:"public"`
+	ImmutablePast bool     `yaml:"immutable-past,omitempty" db:"immutable_past" json:"immutable-past"`
+	Tokens        []Token  `yaml:"admin-tokens,omitempty" json:"admin-tokens,omitempty"`
+	Rules         []Rule   `yaml:"rules,omitempty" json:"rules,omitempty"`
 }
 
 type Rule struct {

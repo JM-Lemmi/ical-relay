@@ -127,24 +127,12 @@ func (c DataFile) GetProfileByName(name string) Profile {
 }
 
 // add a profile without tokens and without rules
-func (c DataFile) AddProfile(name string, sources []string, public bool, immutablepast bool) {
-	c.Profiles[name] = Profile{
-		Sources:       sources,
-		Public:        public,
-		ImmutablePast: immutablepast,
-		Tokens:        []Token{},
-		Rules:         []Rule{},
-	}
+func (c DataFile) AddProfile(profile Profile) {
+	c.Profiles[profile.Name] = profile
 }
 
-func (c DataFile) EditProfile(name string, sources []string, public bool, immutablepast bool) {
-	c.Profiles[name] = Profile{
-		Sources:       sources,
-		Public:        public,
-		ImmutablePast: immutablepast,
-		Tokens:        c.Profiles[name].Tokens,
-		Rules:         c.Profiles[name].Rules,
-	}
+func (c DataFile) OverwriteProfile(profile Profile) {
+	c.Profiles[profile.Name] = profile
 }
 
 func (c DataFile) AddSource(profileName string, src string) error {

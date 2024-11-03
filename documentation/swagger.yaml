@@ -38,6 +38,90 @@ paths:
                   - "profile2"
         '500':
           $ref: '#/components/responses/InternalError'
+  /api/profiles/{profile}:
+    get:
+      summary: Get a calendar
+      operationId: getProfile
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Error decoding
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile does not exist
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      summary: Edit a calendar
+      operationId: createProfile
+      parameters:
+        - name: profile
+          in: body
+          description: Profile data
+          required: true
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Error decoding
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      summary: Edit a calendar
+      operationId: editProfile
+      parameters:
+        - name: profile
+          in: body
+          description: Changed data of profile
+          required: true
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Error decoding
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile does not exist
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      summary: Edit a calendar with overwrite
+      operationId: overwriteProfile
+      parameters:
+        - name: profile
+          in: body
+          description: New Profile
+          required: true
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Error decoding
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile does not exist
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      summary: Delete a calendar
+      operationId: overwriteProfile
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Error decoding
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          description: Profile does not exist
+        '500':
+          $ref: '#/components/responses/InternalError'
   /api/notifiers/{notifier}/recipient:
     post:
       tags:

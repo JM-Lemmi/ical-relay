@@ -17,6 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//go:generate ../../.github/scripts/download-js-dependencies.sh
 var htmlTemplates *template.Template
 
 type eventData map[string]interface{}
@@ -166,7 +167,7 @@ func rulesViewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	profile := dataStore.GetProfileByName(profileName)
 	data := getGlobalTemplateData()
-	data["Rules"] = profile.Rules
+	data["Profile"] = profile
 	data["ProfileName"] = profileName
 	htmlTemplates.ExecuteTemplate(w, "rules.html", data)
 }

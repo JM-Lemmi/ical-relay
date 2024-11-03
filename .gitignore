@@ -23,6 +23,6 @@ rssstore/
 postgres-data
 __debug_bin*
 cmd/ical-relay/db/*
-.vscode/*
 VERSION
 combined_vtimezones.ics
+cmd/ical-relay/templates/static/js-dep/*
