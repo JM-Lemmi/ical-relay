@@ -25,3 +25,4 @@ __debug_bin*
 cmd/ical-relay/db/*
 VERSION
 combined_vtimezones.ics
+cmd/ical-relay/templates/static/js-dep/*

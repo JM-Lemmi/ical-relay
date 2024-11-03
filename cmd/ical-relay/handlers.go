@@ -17,6 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//go:generate ../../.github/scripts/download-js-dependencies.sh
 var htmlTemplates *template.Template
 
 type eventData map[string]interface{}
