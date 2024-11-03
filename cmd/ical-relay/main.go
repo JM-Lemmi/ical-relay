@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"strconv"
+	"time"
 
 	"html/template"
 	"net/http"
@@ -32,14 +33,16 @@ func main() {
 	log.Infof("Welcome to %s, version %s", binname, version)
 
 	// CLI Flags
+	type GarbcCmd struct {
+	}
 	var args struct {
-		Notifier     string `help:"Run notifier with given ID"`
-		ConfigPath   string `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
-		DataPath     string `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
-		Verbose      bool   `arg:"-v,--verbose" help:"verbosity level Debug"`
-		SuperVerbose bool   `arg:"--superverbose" help:"verbosity level Trace"`
-		ImportData   string `arg:"--import-data" help:"Import Data from Data.yml into DB"`
-		DisableTele  bool   `arg:"--disable-telemetry" help:"Disables reporting its own existence"`
+		GarbcCmd     *GarbcCmd `arg:"subcommand:garbagecollector" help:"Start the garbage collection"`
+		ConfigPath   string    `arg:"-c,--config" help:"Configuration path" default:"config.yml"`
+		DataPath     string    `arg:"-d,--data" help:"Data File path, if DB is not in use" default:"data.yml"`
+		Verbose      bool      `arg:"-v,--verbose" help:"verbosity level Debug"`
+		SuperVerbose bool      `arg:"--superverbose" help:"verbosity level Trace"`
+		ImportData   string    `arg:"--import-data" help:"Import Data from Data.yml into DB"`
+		DisableTele  bool      `arg:"--disable-telemetry" help:"Disables reporting its own existence"`
 	}
 	arg.MustParse(&args)
 
@@ -76,16 +79,13 @@ func main() {
 		}
 	}
 
-	// setup router. Will be configured depending on FULL or LITE mode
-	router = mux.NewRouter()
-	initVersions(conf.Server.URL)
-	router.Use(serverHeaderMiddleware)
-	client = &http.Client{Transport: NewUseragentTransport(nil)}
-	helpers.InitHttpClientUpstream(client)
+	switch {
+	case args.GarbcCmd != nil:
+		// GARBAGE COLLECITON
 
-	if !conf.Server.LiteMode {
-		// RUNNING FULL MODE
-		log.Debug("Running in full mode.")
+		if conf.Server.LiteMode {
+			log.Fatal("Can only run garbage collection in full mode.")
+		}
 		if conf.Server.DB.Host == "" {
 			log.Fatal("DB configuration missing")
 		}
@@ -94,48 +94,73 @@ func main() {
 		datastore.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
 		dataStore = datastore.DatabaseDataStore{}
 
-		if args.ImportData != "" {
-			err := datastore.ImportToDB(args.ImportData)
+		affected := datastore.DbCleanupExpiredRules(time.Now())
+		log.Infof("Removed %v expired entries.", affected)
+
+	default:
+		// NORMAL SERVER
+
+		// setup router. Will be configured depending on FULL or LITE mode
+		router = mux.NewRouter()
+		initVersions(conf.Server.URL)
+		router.Use(serverHeaderMiddleware)
+		client = &http.Client{Transport: NewUseragentTransport(nil)}
+		helpers.InitHttpClientUpstream(client)
+
+		if !conf.Server.LiteMode {
+			// RUNNING FULL MODE
+			log.Debug("Running in full mode.")
+			if conf.Server.DB.Host == "" {
+				log.Fatal("DB configuration missing")
+			}
+
+			// connect to DB
+			datastore.Connect(conf.Server.DB.User, conf.Server.DB.Password, conf.Server.DB.Host, conf.Server.DB.DbName)
+			dataStore = datastore.DatabaseDataStore{}
+
+			if args.ImportData != "" {
+				err := datastore.ImportToDB(args.ImportData)
+				if err != nil {
+					log.Fatalf("Error importing data: %v", err)
+				}
+			}
+
+			// setup routes
+			initHandlersProfile()
+			initHandlersApi()
+
+			if !conf.Server.DisableFrontend {
+				htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html")) // TODO: fail more gracefully than segfault
+
+				initHandlersFrontend()
+			}
+		} else {
+			log.Warn("Running in lite mode. No changes will be saved.")
+			dataStore, err = datastore.ParseDataFile(args.DataPath)
 			if err != nil {
-				log.Fatalf("Error importing data: %v", err)
+				log.Fatalf("Error loading data file: %v", err)
 			}
+
+			// setup routes
+			initHandlersProfile()
 		}
 
-		// setup routes
-		initHandlersProfile()
-		initHandlersApi()
-
-		if !conf.Server.DisableFrontend {
-			htmlTemplates = template.Must(template.ParseGlob(conf.Server.TemplatePath + "*.html")) // TODO: fail more gracefully than segfault
-
-			initHandlersFrontend()
-		}
-	} else {
-		log.Warn("Running in lite mode. No changes will be saved.")
-		dataStore, err = datastore.ParseDataFile(args.DataPath)
-		if err != nil {
-			log.Fatalf("Error loading data file: %v", err)
+		// Telemetry
+		if !args.DisableTele {
+			// in own thread, to avoid hanging up the startup, if telemetry fails for some reason
+			go func() {
+				_, err := client.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name+conf.Server.URL) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
+				if err == nil {
+					log.Trace("Sent telemetry successfully")
+				} else {
+					log.Tracef("Sending telemetry failed: %s", err)
+				}
+			}()
 		}
 
-		// setup routes
-		initHandlersProfile()
+		// start server
+		address := conf.Server.Addr
+		log.Info("Starting server on " + address)
+		log.Fatal(http.ListenAndServe(address, router))
 	}
-
-	// Telemetry
-	if !args.DisableTele {
-		// in own thread, to avoid hanging up the startup, if telemetry fails for some reason
-		go func() {
-			_, err := client.Get("https://ical-relay.telemetry.julian-lemmerich.de/ping?name=" + helpers.GetMD5Hash(conf.Server.Name+conf.Server.URL) + "&litemode=" + strconv.FormatBool(conf.Server.LiteMode) + "&version=" + version)
-			if err == nil {
-				log.Trace("Sent telemetry successfully")
-			} else {
-				log.Tracef("Sending telemetry failed: %s", err)
-			}
-		}()
-	}
-
-	// start server
-	address := conf.Server.Addr
-	log.Info("Starting server on " + address)
-	log.Fatal(http.ListenAndServe(address, router))
 }
