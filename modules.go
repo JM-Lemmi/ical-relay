@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	regexp "github.com/wasilibs/go-re2"
+	regexp "github.com/dlclark/regexp2"
 
 	ics "github.com/arran4/golang-ical"
 	log "github.com/sirupsen/logrus"
@@ -47,7 +47,7 @@ func moduleDeleteSummaryRegex(cal *ics.Calendar, params map[string]string) (int,
 	if params["regex"] == "" {
 		return 0, fmt.Errorf("missing mandatory Parameter 'regex'")
 	}
-	regex, err := regexp.Compile(params["regex"])
+	regex, err := regexp.Compile(params["regex"], regexp.None)
 	if err != nil {
 		return 0, fmt.Errorf("error in compiling regex: %s", err.Error())
 	}
@@ -81,7 +81,7 @@ func removeByRegexSummaryAndTime(cal *ics.Calendar, regex *regexp.Regexp, start 
 			date, _ := event.GetStartAt()
 			if date.After(start) && end.After(date) {
 				// event is in time range
-				if regex.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
+				if ret, _ := regex.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value); ret == true {
 					// event matches regex
 					cal.Components = remove(cal.Components, i)
 					log.Debug("Excluding event '" + event.GetProperty(ics.ComponentPropertySummary).Value + "' with id " + event.Id() + "\n")
@@ -479,7 +479,7 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 	if params["regex"] == "" {
 		return 0, fmt.Errorf("missing mandatory Parameter 'regex'")
 	}
-	re, err := regexp.Compile(params["regex"])
+	re, err := regexp.Compile(params["regex"], regexp.None)
 	if err != nil {
 		return 0, fmt.Errorf("invalid regex: %s", err.Error())
 	}
@@ -521,7 +521,7 @@ func moduleEditSummaryRegex(cal *ics.Calendar, params map[string]string) (int, e
 			event := cal.Components[i].(*ics.VEvent)
 			date, _ := event.GetStartAt()
 			if date.After(after) && before.After(date) {
-				if re.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value) {
+				if ret, _ := re.MatchString(event.GetProperty(ics.ComponentPropertySummary).Value); ret == true {
 					log.Debug("Changing event with id " + event.Id())
 					if params["new-summary"] != "" {
 						if event.GetProperty(ics.ComponentPropertySummary) == nil {
