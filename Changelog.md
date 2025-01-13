@@ -1,3 +1,7 @@
+# v1.3.2
+
+- replace standard Regex library with dlclarc/regexp2 to allow for lookahead and lookbehind
+
 # v1.3.1
 
 - basic RRULE handling in delete-timeframe Module
