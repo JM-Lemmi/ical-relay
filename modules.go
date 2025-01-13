@@ -54,9 +54,9 @@ func moduleDeleteSummaryRegex(cal *ics.Calendar, params map[string]string) (int,
 	if params["from"] != "" && params["until"] != "" {
 		from, _ := time.Parse(time.RFC3339, params["from"])
 		until, _ := time.Parse(time.RFC3339, params["until"])
-		count = removeByRegexSummaryAndTime(cal, *regex, from, until)
+		count = removeByRegexSummaryAndTime(cal, regex, from, until)
 	} else {
-		count = removeByRegexSummary(cal, *regex)
+		count = removeByRegexSummary(cal, regex)
 	}
 	if count > 0 {
 		return count, fmt.Errorf("this number should not be positive")
@@ -65,14 +65,14 @@ func moduleDeleteSummaryRegex(cal *ics.Calendar, params map[string]string) (int,
 }
 
 // This function is a wrapper for removeByRegexSummaryAndTime, where the time is any time
-func removeByRegexSummary(cal *ics.Calendar, regex regexp.Regexp) int {
+func removeByRegexSummary(cal *ics.Calendar, regex *regexp.Regexp) int {
 	return removeByRegexSummaryAndTime(cal, regex, time.Time{}, time.Unix(1<<63-1-int64((1969*365+1969/4-1969/100+1969/400)*24*60*60), 999999999))
 	// this is the maximum time that can be represented in the time.Time struct
 }
 
 // This function is used to remove the events that are in the time range and match the regex string.
 // It returns the number of events removed. (always negative)
-func removeByRegexSummaryAndTime(cal *ics.Calendar, regex regexp.Regexp, start time.Time, end time.Time) int {
+func removeByRegexSummaryAndTime(cal *ics.Calendar, regex *regexp.Regexp, start time.Time, end time.Time) int {
 	var count int
 	for i := len(cal.Components) - 1; i >= 0; i-- { // iterate over events
 		switch cal.Components[i].(type) {
