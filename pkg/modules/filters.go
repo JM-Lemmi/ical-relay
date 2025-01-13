@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	regexp "github.com/wasilibs/go-re2"
+	regexp "github.com/dlclark/regexp2"
 
 	ics "github.com/arran4/golang-ical"
 	log "github.com/sirupsen/logrus"
@@ -42,7 +42,7 @@ func FilterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	if params["target"] == "" {
 		params["target"] = "summary"
 	}
-	regex, err := regexp.Compile(params["regex"])
+	regex, err := regexp.Compile(params["regex"], regexp.None)
 	if err != nil {
 		return indices, fmt.Errorf("error in compiling regex: %s", err.Error())
 	}
@@ -74,7 +74,7 @@ func FilterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
 				}
 			}
 
-			if regex.MatchString(target) {
+			if ret, _ := regex.MatchString(target); ret == true {
 				// event matches regex
 				indices = append(indices, i)
 				log.Debug("Filtering event with id " + event.Id() + "\n")

@@ -19,11 +19,10 @@ require (
 )
 
 require (
+	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
-	github.com/tetratelabs/wazero v1.8.2 // indirect
-	github.com/wasilibs/go-re2 v1.8.0 // indirect
-	github.com/wasilibs/wazero-helpers v0.0.0-20240620070341-3dff1577cd52 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 )
 
 require (
