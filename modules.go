@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"os"
 	"reflect"
-	"regexp"
 	"strings"
 	"time"
+
+	regexp "github.com/wasilibs/go-re2"
 
 	ics "github.com/arran4/golang-ical"
 	log "github.com/sirupsen/logrus"
