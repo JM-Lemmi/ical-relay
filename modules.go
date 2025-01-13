@@ -47,7 +47,10 @@ func moduleDeleteSummaryRegex(cal *ics.Calendar, params map[string]string) (int,
 	if params["regex"] == "" {
 		return 0, fmt.Errorf("missing mandatory Parameter 'regex'")
 	}
-	regex, _ := regexp.Compile(params["regex"])
+	regex, err := regexp.Compile(params["regex"])
+	if err != nil {
+		return 0, fmt.Errorf("error in compiling regex: %s", err.Error())
+	}
 	if params["from"] != "" && params["until"] != "" {
 		from, _ := time.Parse(time.RFC3339, params["from"])
 		until, _ := time.Parse(time.RFC3339, params["until"])
