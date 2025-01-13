@@ -42,7 +42,10 @@ func FilterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	if params["target"] == "" {
 		params["target"] = "summary"
 	}
-	regex, _ := regexp.Compile(params["regex"])
+	regex, err := regexp.Compile(params["regex"])
+	if err != nil {
+		return indices, fmt.Errorf("error in compiling regex: %s", err.Error())
+	}
 
 	for i, component := range cal.Components { // iterate over events
 		switch cal.Components[i].(type) {
