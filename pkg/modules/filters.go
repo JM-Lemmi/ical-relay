@@ -74,7 +74,7 @@ func FilterRegex(cal *ics.Calendar, params map[string]string) ([]int, error) {
 				}
 			}
 
-			if ret, _ := regex.MatchString(target); ret == true {
+			if ret, _ := regex.MatchString(target); ret {
 				// event matches regex
 				indices = append(indices, i)
 				log.Debug("Filtering event with id " + event.Id() + "\n")
