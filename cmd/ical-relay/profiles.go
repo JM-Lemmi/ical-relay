@@ -73,7 +73,7 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 				if strings.HasPrefix(s, "base64") {
 					return nil, err
 				}
-				// check if history file exists
+				// check if cache file exists
 				if _, err := os.Stat(sourceCacheFilename); os.IsNotExist(err) {
 					log.Debugf("Source-cache file for source %s in profile %s does not exist!", s, profileName)
 					return nil, err
