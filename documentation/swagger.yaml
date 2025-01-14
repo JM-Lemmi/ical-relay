@@ -1,4 +1,4 @@
-swagger: 2.0
+openapi: 3.1.0
 info:
   title: ical-relay
   description: |-
@@ -33,7 +33,7 @@ paths:
           content:
             application/json:
               schema:
-                example:
+                examples:
                   - "publicProfile1"
                   - "publicProfile2"
         '500':
@@ -54,7 +54,7 @@ paths:
           schema:
             type: string
         - name: request
-          in: body
+          in: query
           description: Profile configuration
           required: true
           schema:
@@ -93,7 +93,7 @@ paths:
           schema:
             type: string
         - name: request
-          in: body
+          in: query
           description: Updated profile information
           required: true
           schema:
@@ -247,12 +247,13 @@ paths:
           required: true
           schema:
             type: string
-        - name: calentry
-          in: body
-          description: Key-value pairs to overwrite
-          required: true
-          schema:
-            $ref: "#/components/schemas/CalEntry"
+      requestBody:
+        description: Key-value pairs to overwrite
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalEntry"
       security:
         - tokenAuth: []
       responses:
@@ -323,11 +324,13 @@ paths:
           required: true
           schema:
             type: string
-        - name: calentry
-          in: body
-          required: true
-          schema:
-            $ref: "#/components/schemas/CalEntry"
+      requestBody:
+        description: Calendar Entry
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalEntry"
       security:
         - tokenAuth: []
       responses:
@@ -356,10 +359,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: upfile
-          in: formData
-          type: file
-          description: ICS file to upload
       security:
         - tokenAuth: []
       responses:
@@ -388,10 +387,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: upfile
-          in: formData
-          type: file
-          description: ICS file to upload
       security:
         - tokenAuth: []
       responses:
@@ -438,12 +433,13 @@ paths:
           required: true
           schema:
             type: string
-        - name: rule
-          in: body
-          description: Rule configuration
-          required: true
-          schema:
-            $ref: "#/components/schemas/Rule"
+      requestBody:
+        description: Rule configuration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Rule"
       security:
         - tokenAuth: []
       responses:
@@ -577,15 +573,16 @@ paths:
           required: true
           schema:
             type: string
-        - name: tokenData
-          in: body
-          description: Optional note for the token
-          required: false
-          schema:
-            type: object
-            properties:
-              note:
-                type: string
+      requestBody:
+        description: Optional Note for Token
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
       security:
         - superAuth: []
       responses:
@@ -610,17 +607,18 @@ paths:
           required: true
           schema:
             type: string
-        - name: tokenData
-          in: body
-          description: Token identifier and new note
-          required: true
-          schema:
-            type: object
-            properties:
-              token:
-                type: string
-              note:
-                type: string
+      requestBody:
+        description: Token Identifier and new note
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                note:
+                  type: string
       security:
         - superAuth: []
       responses:
@@ -645,15 +643,16 @@ paths:
           required: true
           schema:
             type: string
-        - name: tokenData
-          in: body
-          description: Token to remove
-          required: true
-          schema:
-            type: object
-            properties:
-              token:
-                type: string
+      requestBody:
+        description: Token to remove
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
       security:
         - superAuth: []
       responses:
