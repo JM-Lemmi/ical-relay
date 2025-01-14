@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/jm-lemmi/ical-relay/datastore"
@@ -52,6 +53,7 @@ func getProfilesMetadata() []profileMetadata {
 
 func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Calendar, error) {
 	var calendar *ics.Calendar
+	var usedSourceCache map[string]time.Time = make(map[string]time.Time)
 
 	// SOURCES
 
@@ -64,20 +66,47 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 		var err error
 
 		for i, s := range profile.Sources {
+			sourceCacheFilename := conf.Server.StoragePath + "calstore/" + profileName + "-cache-" + helpers.GetMD5Hash(s) + ".ics"
+			log.Debugf("Loading source calendar %s of profile %s", s, profileName)
+			ncalendar, err = getSource(s)
+			if err != nil {
+				// do not apply cache on base64 as they should always be valid
+				if strings.HasPrefix(s, "base64") {
+					return nil, fmt.Errorf("This should never happen! Error loading base64 source: %s", err.Error())
+				} else if strings.HasPrefix(s, "file") {
+					return nil, fmt.Errorf("Error loading file source: %s", err.Error())
+				}
+				// check if cache file exists
+				file, err := os.Stat(sourceCacheFilename)
+				if os.IsNotExist(err) {
+					log.Debugf("Source-cache file for source %s in profile %s does not exist!", s, profileName)
+					return nil, fmt.Errorf("Error loading cache file: %s", err)
+				}
+				// load history file and assign it to source calendar variable
+				log.Debugf("Loading cache file %s", sourceCacheFilename)
+				ncalendar, err = helpers.LoadCalFile(sourceCacheFilename)
+				if err != nil {
+					log.Errorln(err)
+					return nil, fmt.Errorf("Error loading cache file: %s", err.Error())
+				}
+				usedSourceCache[s] = file.ModTime().UTC()
+			} else if !strings.HasPrefix(s, "base64") {
+				// do not save cache for static base64 source
+				log.Debugf("Saving cache file %s", sourceCacheFilename)
+				err = helpers.WriteCalFile(ncalendar, sourceCacheFilename)
+				if err != nil {
+					// we do not need to display the error in the frontend, since we did load the source successfully
+					log.Errorln(err)
+				}
+			}
+			// handle ncalendar as base or additional
 			if i == 0 {
 				// first source gets assigned to base calendar
-				log.Debug("Loading source ", s, " as base calendar")
-				calendar, err = getSource(s)
-				if err != nil {
-					return nil, err
-				}
+				log.Debugf("Setting source %s of profile %s as base calendar", s, profileName)
+				calendar = ncalendar
 			} else {
 				// all other calendars only load events
-				log.Debug("Loading source ", s, " as additional calendar")
-				ncalendar, err = getSource(s)
-				if err != nil {
-					return nil, err
-				}
+				log.Debugf("Loading events of source %s into existing calendar for profile %s", s, profileName)
 				helpers.AddEvents(calendar, ncalendar)
 			}
 		}
@@ -191,7 +220,14 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 		}
 	}
 
-	return calendar, nil
+	if len(usedSourceCache) > 0 {
+		return calendar, &helpers.CalendarCacheUsedError{
+			Err:     fmt.Errorf("Calendar might be outdated, because at least one upstream calendar could not be integrated successfully"),
+			Sources: usedSourceCache,
+		}
+	} else {
+		return calendar, nil
+	}
 }
 
 // Delete Helper funtion for immutable past.

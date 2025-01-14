@@ -8,6 +8,7 @@ import (
 	"net/mail"
 	"os"
 	"strings"
+	"time"
 
 	_ "embed"
 
@@ -174,4 +175,13 @@ func GetVTimezoneFromString(tzString string) (ics.VTimezone, error) {
 		}
 	}
 	return ics.VTimezone{}, fmt.Errorf("timezone not found: %s", tzString)
+}
+
+type CalendarCacheUsedError struct {
+	Err     error
+	Sources map[string]time.Time
+}
+
+func (c *CalendarCacheUsedError) Error() string {
+	return c.Err.Error()
 }
