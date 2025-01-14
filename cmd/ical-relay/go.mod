@@ -19,14 +19,16 @@ require (
 )
 
 require (
-	github.com/jmoiron/sqlx v1.3.5 // indirect
+	github.com/dlclark/regexp2 v1.11.4 // indirect
+	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 )
 
 require (
 	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/jm-lemmi/ical-relay/datastore v0.0.0-00010101000000-000000000000
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 )
 
 replace (
