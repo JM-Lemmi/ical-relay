@@ -314,7 +314,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 			for k, v := range ce.Sources {
 				cacheDetails = append(cacheDetails, fmt.Sprintf("%s (%d)", k, v.UnixMilli()))
 			}
-			w.Header().Set("X-Cache-Details", strings.Join(cacheDetails[:], ","))
+			w.Header().Set("X-Cache-Detail", strings.Join(cacheDetails[:], ","))
 		} else {
 			requestLogger.Errorln(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -361,7 +361,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 					for k, v := range ce.Sources {
 						cacheDetails = append(cacheDetails, fmt.Sprintf("%s (%d)", k, v.UnixMilli()))
 					}
-					w.Header().Set("X-Cache-Details", strings.Join(cacheDetails[:], ","))
+					w.Header().Set("X-Cache-Detail", strings.Join(cacheDetails[:], ","))
 				} else {
 					err := fmt.Errorf("error loading profile %s", profileName)
 					tryRenderErrorOrFallback(w, r, http.StatusBadRequest, err, err.Error())
@@ -380,7 +380,7 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 					for k, v := range ce.Sources {
 						cacheDetails = append(cacheDetails, fmt.Sprintf("%s (%d)", k, v.UnixMilli()))
 					}
-					w.Header().Set("X-Cache-Details", strings.Join(cacheDetails[:], ","))
+					w.Header().Set("X-Cache-Detail", strings.Join(cacheDetails[:], ","))
 				} else {
 					err := fmt.Errorf("error loading profile %s", profileName)
 					tryRenderErrorOrFallback(w, r, http.StatusBadRequest, err, err.Error())

@@ -74,7 +74,7 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 				if strings.HasPrefix(s, "base64") {
 					return nil, fmt.Errorf("This should never happen! Error loading base64 source: %s", err.Error())
 				} else if strings.HasPrefix(s, "file") {
-					return nil, fmt.Errorf("This should never happen! Error loading file source: %s", err.Error())
+					return nil, fmt.Errorf("Error loading file source: %s", err.Error())
 				}
 				// check if cache file exists
 				file, err := os.Stat(sourceCacheFilename)
