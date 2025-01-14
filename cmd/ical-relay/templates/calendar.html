@@ -69,6 +69,13 @@
         let immutable_past = {{ .ImmutablePast }};
         let check_auth_url = {{((.Router.Get "apiCheckAuth").URL "profile" .ProfileName).Path}};
 
+        let cache_used = {{ .CacheUsed }}
+
+        function showErrorMessage(message) {
+            document.getElementById("error-message").innerHTML = message;
+            document.getElementById("error-message-wrapper").classList.remove("d-none");
+        }
+
         let show_edit = window.localStorage.getItem("token") !== null;
         if(show_edit){
             initEdit();
@@ -85,10 +92,14 @@
                 show_edit = false;
                 // We have a token, but it's not valid anymore.
                 document.getElementById("add-event-button").classList.add("d-none");
-                document.getElementById("error-message").innerHTML = "Der gespeicherte Token ist ungültig. Bearbeitung ist deaktiviert.";
-                document.getElementById("error-message-wrapper").classList.remove("d-none");
+                showErrorMessage("Der gespeicherte Token ist ungültig. Bearbeitung ist deaktiviert.")
                 updateCalendar(currentDate);
             }
+        }
+
+        // display warning
+        if (cache_used) {
+            showErrorMessage("Der Kalender zeigt ggf. nicht den aktuellen Stand, da mindestens ein Ursprungskalender nicht erreicht werden konnte.")
         }
 
         //month or week
