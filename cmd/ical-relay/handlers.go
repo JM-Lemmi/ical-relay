@@ -137,6 +137,7 @@ func editViewHandler(w http.ResponseWriter, r *http.Request) {
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	if err != nil {
 		_, ok := err.(*helpers.CalendarCacheUsedError)
+		// ignore cache warning while editing - it will be displayed afterwards
 		if !ok {
 			requestLogger.Errorln(err)
 			tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, err.Error())
@@ -205,9 +206,9 @@ func calendarViewHandler(w http.ResponseWriter, r *http.Request) {
 	calendar, err := getProfileCalendar(profile, vars["profile"])
 	data := getGlobalTemplateData()
 	if err != nil {
-		_, ok := err.(*helpers.CalendarCacheUsedError)
+		ce, ok := err.(*helpers.CalendarCacheUsedError)
 		if ok {
-			data["CacheUsed"] = true
+			data["CacheUsed"] = ce.Sources
 		} else {
 			tryRenderErrorOrFallback(w, r, http.StatusInternalServerError, err, "Internal Server Error")
 			return
@@ -306,9 +307,19 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 	calendar, err := getProfileCalendar(profile, profileName)
 	if err != nil {
-		requestLogger.Errorln(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		ce, ok := err.(*helpers.CalendarCacheUsedError)
+		if ok {
+			w.Header().Set("X-Cache", "HIT")
+			var cacheDetails []string = make([]string, 0)
+			for k, v := range ce.Sources {
+				cacheDetails = append(cacheDetails, fmt.Sprintf("%s (%d)", k, v.UnixMilli()))
+			}
+			w.Header().Set("X-Cache-Details", strings.Join(cacheDetails[:], ","))
+		} else {
+			requestLogger.Errorln(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	// return new calendar
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
@@ -343,18 +354,38 @@ func combineProfileHandler(w http.ResponseWriter, r *http.Request) {
 			log.Debug("Loading source ", profileName, " as base calendar")
 			calendar, err = getProfileCalendar(profile, profileName)
 			if err != nil {
-				err := fmt.Errorf("error loading profile %s", profileName)
-				tryRenderErrorOrFallback(w, r, http.StatusBadRequest, err, err.Error())
-				return
+				ce, ok := err.(*helpers.CalendarCacheUsedError)
+				if ok {
+					w.Header().Set("X-Cache", "HIT")
+					var cacheDetails []string = make([]string, 0)
+					for k, v := range ce.Sources {
+						cacheDetails = append(cacheDetails, fmt.Sprintf("%s (%d)", k, v.UnixMilli()))
+					}
+					w.Header().Set("X-Cache-Details", strings.Join(cacheDetails[:], ","))
+				} else {
+					err := fmt.Errorf("error loading profile %s", profileName)
+					tryRenderErrorOrFallback(w, r, http.StatusBadRequest, err, err.Error())
+					return
+				}
 			}
 		} else {
 			// all other calendars only load events
 			log.Debug("Loading source ", profileName, " as additional calendar")
 			ncalendar, err = getProfileCalendar(profile, profileName)
 			if err != nil {
-				err := fmt.Errorf("error loading profile %s", profileName)
-				tryRenderErrorOrFallback(w, r, http.StatusBadRequest, err, err.Error())
-				return
+				ce, ok := err.(*helpers.CalendarCacheUsedError)
+				if ok {
+					w.Header().Set("X-Cache", "HIT")
+					var cacheDetails []string = make([]string, 0)
+					for k, v := range ce.Sources {
+						cacheDetails = append(cacheDetails, fmt.Sprintf("%s (%d)", k, v.UnixMilli()))
+					}
+					w.Header().Set("X-Cache-Details", strings.Join(cacheDetails[:], ","))
+				} else {
+					err := fmt.Errorf("error loading profile %s", profileName)
+					tryRenderErrorOrFallback(w, r, http.StatusBadRequest, err, err.Error())
+					return
+				}
 			}
 			helpers.AddEvents(calendar, ncalendar)
 		}

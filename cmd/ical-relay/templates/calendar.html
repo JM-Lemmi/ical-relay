@@ -99,7 +99,10 @@
 
         // display warning
         if (cache_used) {
-            showErrorMessage("Der Kalender zeigt ggf. nicht den aktuellen Stand, da mindestens ein Ursprungskalender nicht erreicht werden konnte.")
+            let message = "Der Kalender zeigt ggf. nicht den aktuellen Stand, da folgende Kalender nicht erreicht werden konnten und stattdessen die letzte erfolgreiche Version verwendet wird:<br>"
+             + Object.entries(cache_used).map(([k, v]) => `${k} (Stand ${new Date(v).toLocaleString('de-DE')} Uhr)`).join("<br>")
+            
+            showErrorMessage(message)
         }
 
         //month or week

@@ -8,6 +8,7 @@ import (
 	"net/mail"
 	"os"
 	"strings"
+	"time"
 
 	_ "embed"
 
@@ -177,7 +178,8 @@ func GetVTimezoneFromString(tzString string) (ics.VTimezone, error) {
 }
 
 type CalendarCacheUsedError struct {
-	Err error
+	Err     error
+	Sources map[string]time.Time
 }
 
 func (c *CalendarCacheUsedError) Error() string {
