@@ -1,3 +1,7 @@
+# 2.0.0-beta.10
+
+- Caching of Upstream Sources
+
 # 2.0.0-beta.9.7
 
 - fix: do not add X-WR-TIMEZONE to UTC timestamps

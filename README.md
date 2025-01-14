@@ -1,6 +1,6 @@
 Collection of tools for using ical calendars:
 
-- **ical-relay**: Webserver to relay ical urls and edit them on the fly with different modules.
+- **ical-relay**: Webserver to relay ical urls and edit them on the fly with different modules with included cache for improved availability.
 - **ical-notifier**: Tool for detecting changes and notifying different targets about it.
 
 # Usage
