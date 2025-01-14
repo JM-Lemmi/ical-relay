@@ -83,7 +83,7 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 				ncalendar, err = helpers.LoadCalFile(sourceCacheFilename)
 				if err != nil {
 					log.Errorln(err)
-					return nil, fmt.Errorf("Error loading history file: %s", err.Error())
+					return nil, fmt.Errorf("Error loading cache file: %s", err.Error())
 				}
 				usedSourceCache = true
 			} else if !strings.HasPrefix(s, "base64") {
