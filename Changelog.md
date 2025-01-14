@@ -1,6 +1,7 @@
 # 2.0.0-beta.10
 
 - Caching of Upstream Sources
+- replace standard Regex library with dlclarc/regexp2 to allow for lookahead and lookbehind
 
 # 2.0.0-beta.9.7
 
