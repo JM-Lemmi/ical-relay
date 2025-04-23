@@ -391,11 +391,29 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		event := ics.NewEvent(uuid.New().String() + "@" + url)
 
+		// create calendar
+		cal := ics.NewCalendar()
+
 		if eventjson["summary"] != "" {
 			event.SetSummary(eventjson["summary"])
 		}
 		if eventjson["location"] != "" {
 			event.SetLocation(eventjson["location"])
+		}
+		var tz *time.Location
+		if tz_str, ok := eventjson["timezone"]; !ok {
+			requestLogger.Warnln("No timezone given in new event payload. Will use locale as fallback")
+			tz = time.Local
+		} else {
+			tz, err = time.LoadLocation(tz_str)
+			if err != nil {
+				requestLogger.Errorln("Unparseable timezone given in new event payload. Will use locale as fallback", tz_str)
+				tz = time.Local
+			} else {
+				// Since GoLang's time.Location().String() is not consistent with its output, we use the user-prvided timezone here,
+				// as it was successfully parsed by GoLang
+				cal.AddTimezone(eventjson["timezone"])
+			}
 		}
 		if eventjson["start"] != "" {
 			start, err := time.Parse(time.RFC3339, eventjson["start"])
@@ -404,7 +422,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			event.SetStartAt(start)
+			event.SetStartWithTimezoneAt(start.In(tz), tz)
 		} else {
 			requestLogger.Errorln("No start time given!")
 			http.Error(w, "No start time given!", http.StatusBadRequest)
@@ -417,7 +435,7 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			event.SetEndAt(end)
+			event.SetEndWithTimezoneAt(end.In(tz), tz)
 		} else {
 			requestLogger.Errorln("No end time given!")
 			http.Error(w, "No end time given!", http.StatusBadRequest)
@@ -427,8 +445,6 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 			event.SetDescription(eventjson["description"])
 		}
 
-		// create calendar
-		cal := ics.NewCalendar()
 		cal.AddVEvent(event)
 
 		// convert calendar to base64

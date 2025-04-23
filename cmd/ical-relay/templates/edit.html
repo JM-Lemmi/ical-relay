@@ -107,11 +107,11 @@
         }
         let start = dayjs(document.getElementById("start").value);
         if (!start.isSame(originalStart)) {
-            event.start = start.toISOString();
+            event.start = start.format("YYYY-MM-DDTHH:mm:ssZ");
         }
         let end = dayjs(document.getElementById("end").value);
         if (!end.isSame(originalEnd)) {
-            event.end = end.toISOString();
+            event.end = end.format("YYYY-MM-DDTHH:mm:ssZ");
         }
         if (document.getElementById("description").value !== originalDescription) {
             event.description = document.getElementById("description").value;

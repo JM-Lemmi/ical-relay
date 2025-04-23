@@ -112,19 +112,27 @@ func ActionEdit(cal *ics.Calendar, indices []int, params map[string]string) erro
 				log.Debug("Changed location to " + event.GetProperty(ics.ComponentPropertyLocation).Value)
 			}
 			if _, ok := params["new-start"]; ok {
+				prev_start, err := event.GetStartAt()
+				if err != nil {
+					return fmt.Errorf("expected to be able to load previous start time: %s", err.Error())
+				}
 				start, err := time.Parse(time.RFC3339, params["new-start"])
 				if err != nil {
 					return fmt.Errorf("invalid start time: %s", err.Error())
 				}
-				event.SetStartAt(start)
+				event.SetStartWithTimezoneAt(start.In(prev_start.Location()), prev_start.Location())
 				log.Debug("Changed start to " + params["new-start"])
 			}
 			if _, ok := params["new-end"]; ok {
+				prev_end, err := event.GetStartAt()
+				if err != nil {
+					return fmt.Errorf("expected to be able to load previous end time: %s", err.Error())
+				}
 				end, err := time.Parse(time.RFC3339, params["new-end"])
 				if err != nil {
 					return fmt.Errorf("invalid end time: %s", err.Error())
 				}
-				event.SetEndAt(end)
+				event.SetEndWithTimezoneAt(end.In(prev_end.Location()), prev_end.Location())
 				log.Debug("Changed end to " + params["new-end"])
 			}
 

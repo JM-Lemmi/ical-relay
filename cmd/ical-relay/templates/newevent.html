@@ -90,10 +90,11 @@
         event.summary = document.getElementById("summary").value;
         event.location = document.getElementById("location").value;
         let start = dayjs(document.getElementById("start").value);
-        event.start = start.toISOString();
+        event.start = start.format("YYYY-MM-DDTHH:mm:ssZ");
         let end = dayjs(document.getElementById("end").value);
-        event.end = end.toISOString();
+        event.end = end.format("YYYY-MM-DDTHH:mm:ssZ");
         event.description = document.getElementById("description").value;
+        event.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
         if (Object.keys(event).length === 0) {
             return_to_prev();
