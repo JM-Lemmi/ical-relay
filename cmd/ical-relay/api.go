@@ -402,12 +402,12 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		var tz *time.Location
 		if tz_str, ok := eventjson["timezone"]; !ok {
-			requestLogger.Warnln("No timezone given in new event payload. Will use locale as fallback")
+			requestLogger.Warnln("No timezone given in new event payload. Will use local as fallback")
 			tz = time.Local
 		} else {
 			tz, err = time.LoadLocation(tz_str)
 			if err != nil {
-				requestLogger.Errorln("Unparseable timezone given in new event payload. Will use locale as fallback", tz_str)
+				requestLogger.Errorln("Unparseable timezone given in new event payload. Will use local as fallback", tz_str)
 				tz = time.Local
 			} else {
 				// Since GoLang's time.Location().String() is not consistent with its output, we use the user-prvided timezone here,
