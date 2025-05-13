@@ -1,3 +1,7 @@
+# 2.0.0-beta.10.1
+- fix(datastore): adjust sql query to load filters by @niri81 in https://github.com/JM-Lemmi/ical-relay/pull/282
+- fix: change edit and new event to always include tzid by @niri81 in https://github.com/JM-Lemmi/ical-relay/pull/283
+
 # 2.0.0-beta.10
 
 - Caching of Upstream Sources
