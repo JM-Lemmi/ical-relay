@@ -445,6 +445,22 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 			event.SetDescription(eventjson["description"])
 		}
 
+		//check start and end time
+		start, startErr := event.GetStartAt()
+		end, endErr := event.GetEndAt()
+
+		if startErr != nil || endErr != nil {
+			requestLogger.Errorln(startErr)
+			requestLogger.Errorln(endErr)
+			http.Error(w, "Start- oder Endzeit ungültig!", http.StatusBadRequest)
+			return
+		}
+		if !end.After(start) {
+			requestLogger.Errorln("Endzeit muss nach Startzeit liegen!")
+			http.Error(w, "Endzeit muss nach Startzeit liegen!", http.StatusBadRequest)
+			return
+		}
+
 		cal.AddVEvent(event)
 
 		// convert calendar to base64
