@@ -651,4 +651,14 @@ func dbAddNotifierHistory(notifierName string, recipient string, historyType str
 	log.Debug("ran add notifier")
 }
 
+func DbCleanupExpiredRules(date time.Time) int64 {
+	result, err := db.Exec(`DELETE FROM rule WHERE expiry <= $1`, date)
+	if err != nil {
+		log.Fatal(err)
+		return 0
+	}
+	affect, _ := result.RowsAffected()
+	return affect
+}
+
 // TODO: Database Cleanup somewhere
