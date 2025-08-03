@@ -9,7 +9,11 @@
   <main class="container">
     <h1 class="mb-3">Neues Event erstellen</h1>
     <div class="alert alert-danger" id="edit-error" style="display: none">
-      Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
+      Es ist ein Fehler aufgetreten! 
+
+      <p id = "default-error" style="display: none"> Sind Sie eingeloggt? Lol</p>
+      <p id = "edit-error-invalid-date" style="display: none"> Die eingegebenen Zeiten enthalten eine Fehler! </p>
+
     </div>
     <form id="edit-form">
       <div class="row mb-3">
@@ -111,9 +115,15 @@
             if (response.ok) {
                 // redirect to GET parameter next, if next is at the same origin
                 return_to_prev();
-            } else {
+            } else if (response.status == 422) {
                 console.log(response);
                 document.getElementById("edit-error").style.display = "block";
+                document.getElementById("edit-error-invalid-date").style.display = "block";
+            }
+            else {
+                console.log(response);
+                document.getElementById("edit-error").style.display = "block";
+                document.getElementById("default-error").style.display = "block";
             }
         });
     }
