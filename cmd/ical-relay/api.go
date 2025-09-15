@@ -452,12 +452,12 @@ func newentryjsonApiHandler(w http.ResponseWriter, r *http.Request) {
 		if startErr != nil || endErr != nil {
 			requestLogger.Errorln(startErr)
 			requestLogger.Errorln(endErr)
-			http.Error(w, "Start- oder Endzeit ungültig!", http.StatusUnprocessableEntity)
+			http.Error(w, "Start- oder Endzeit ungültig!", http.StatusBadRequest)
 			return
 		}
 		if !end.After(start) {
 			requestLogger.Errorln("Endzeit muss nach Startzeit liegen!")
-			http.Error(w, "Endzeit muss nach Startzeit liegen!", http.StatusUnprocessableEntity)
+			http.Error(w, "Endzeit muss nach Startzeit liegen!", http.StatusBadRequest)
 			return
 		}
 
