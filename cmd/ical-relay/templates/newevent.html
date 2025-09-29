@@ -8,13 +8,7 @@
   {{template "nav.html" .}}
   <main class="container">
     <h1 class="mb-3">Neues Event erstellen</h1>
-    <!-- <div class="alert alert-danger" id="edit-error" style="display: none">
-      Es ist ein Fehler aufgetreten! 
 
-      <p id = "default-error" style="display: none"> Sind Sie eingeloggt?</p>
-      <p id = "edit-error-invalid-date" style="display: none"> Die eingegebenen Zeiten enthalten eine Fehler! </p>
-
-    </div> -->
     <div 
         class="alert alert-danger"
         id="edit-error"
@@ -126,12 +120,12 @@
                 return_to_prev();
                 return;
             } else {
-              console.log(response);
+                const msg = await response.text();
+                const alertEl = document.getElementById("edit-error");
+                alertEl.textContent = msg || "Es ist ein Fehler aufgetreten.";
+                alertEl.style.display = "block";
             }
-            const msg = await response.text();
-            const alertEl = document.getElementById("edit-error");
-            alertEl.textContent = msg || "Es ist ein Fehler aufgetreten.";
-            alertEl.style.display = "block";
+
 
         });
     }
