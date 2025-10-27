@@ -19,6 +19,7 @@ var Actions = map[string]func(*ics.Calendar, []int, map[string]string) error{
 	"edit":         ActionEdit,
 	"add-reminder": ActionAddReminder,
 	"strip-info":   ActionStripInfo,
+	"trim-summary": ActionTrimSummary,
 }
 
 // This wrappter gets a function from the above action map and calls it with the indices and the passed calendar.
@@ -275,6 +276,24 @@ func ActionXWRTimezoneToVTimezone(cal *ics.Calendar) error {
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+func ActionTrimSummary(cal *ics.Calendar, indices []int, params map[string]string) error {
+	log.Debug(indices, cal.Components)
+	for _, event := range cal.Events() {
+		log.Debug("Stripping title of event with id " + event.Id())
+
+		summary := event.GetProperty(ics.ComponentPropertySummary)
+
+		if summary == nil {
+			log.Debug("Could not find summary for event with ID " + event.Id())
+			continue
+		}
+
+		event.SetSummary(strings.TrimSpace(summary.Value))
 	}
 
 	return nil
