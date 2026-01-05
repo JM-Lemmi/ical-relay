@@ -177,9 +177,60 @@
                 currentDate = currentDate.add(1, "day")
             }
             updateCalendar(currentDate.startOf(currentType));
+            
+            // Auto-scroll to current day on small screens
+            if (window.innerWidth <= 768) {
+                scrollToCurrentDay();
+            }
         }
+        
+        // Initial load - scroll to current day on mobile
+        function onInitialLoad(){
+            // Set default hash to current date if no hash exists
+            if(!location.hash){
+                const today = dayjs();
+                if(currentType === "month"){
+                    window.location.hash = today.format("YYYY-MM");
+                }else{
+                    window.location.hash = today.format("YYYY-MM-DD");
+                }
+                return;
+            }
+            
+            onHashChange();
+        }
+        
         addEventListener("hashchange", onHashChange)
-        onHashChange();
+        onInitialLoad();
+
+        // scroll to current day element
+        function scrollToCurrentDay() {
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    const todayElement = document.querySelector('.today');
+                    if (!todayElement) return;
+
+                    const stickyHeader = document.querySelector('.sticky-top');
+                    const headerOffset = stickyHeader ? stickyHeader.offsetHeight : 0;
+
+                    const supportsNativeSmoothScroll = 
+                        'scrollBehavior' in document.documentElement.style;
+
+                    if (supportsNativeSmoothScroll) {
+                        const elementTop = todayElement.getBoundingClientRect().top + window.scrollY;
+                        const offsetPosition = elementTop - headerOffset - 20;
+                        
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    } else {
+                        const elementTop = todayElement.getBoundingClientRect().top + window.scrollY;
+                        window.scrollTo(0, elementTop - headerOffset - 20);
+                    }
+                }, 300);
+            });
+        }
 
         function setSelectedDate(date) {
             if(date.day() === 0){
