@@ -280,6 +280,24 @@ func calendarEntryApiHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Validate start and end times if both are provided
+		startStr, hasStart := entry["start"].(string)
+		endStr, hasEnd := entry["end"].(string)
+		if hasStart && hasEnd {
+			start, startErr := time.Parse(time.RFC3339, startStr)
+			end, endErr := time.Parse(time.RFC3339, endStr)
+			if startErr != nil || endErr != nil {
+				requestLogger.Errorln("Start- oder Endzeit ungültig!")
+				http.Error(w, "Start- oder Endzeit ungültig!", http.StatusBadRequest)
+				return
+			}
+			if !end.After(start) {
+				requestLogger.Errorln("Endzeit muss nach Startzeit liegen!")
+				http.Error(w, "Endzeit muss nach Startzeit liegen!", http.StatusBadRequest)
+				return
+			}
+		}
+
 		rule := datastore.Rule{
 			Filters: []map[string]string{
 				{
