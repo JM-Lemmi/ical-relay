@@ -10,9 +10,12 @@
     <h1 class="mb-3">
       {{ if .Event.GetProperty "SUMMARY" }}{{.Event.GetSummary }}{{ end }} bearbeiten
     </h1>
-    <div class="alert alert-danger" id="edit-error" style="display: none">
-      Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
-    </div>
+    <div 
+        class="alert alert-danger"
+        id="edit-error"
+        style="display: none; white-space: pre-wrap"
+        role="alert"
+    ></div>
     <form id="edit-form">
       <div class="row mb-3">
         <label for="summary" class="col-sm-1 col-form-label">Titel</label>
@@ -106,11 +109,12 @@
             event.location = document.getElementById("location").value;
         }
         let start = dayjs(document.getElementById("start").value);
-        if (!start.isSame(originalStart)) {
-            event.start = start.format("YYYY-MM-DDTHH:mm:ssZ");
-        }
         let end = dayjs(document.getElementById("end").value);
-        if (!end.isSame(originalEnd)) {
+        let startChanged = !start.isSame(originalStart);
+        let endChanged = !end.isSame(originalEnd);
+        // Always send both start and end if either has changed, so the server can validate the pair
+        if (startChanged || endChanged) {
+            event.start = start.format("YYYY-MM-DDTHH:mm:ssZ");
             event.end = end.format("YYYY-MM-DDTHH:mm:ssZ");
         }
         if (document.getElementById("description").value !== originalDescription) {
@@ -129,13 +133,15 @@
                 "Authorization": localStorage.getItem("token")
             },
             body: JSON.stringify(event)
-        }).then(response => {
+        }).then(async (response) => {
             if (response.ok) {
                 // redirect to GET parameter next, if next is at the same origin
                 return_to_prev();
             } else {
-                console.log(response);
-                document.getElementById("edit-error").style.display = "block";
+                const msg = await response.text();
+                const alertEl = document.getElementById("edit-error");
+                alertEl.textContent = msg || "Es ist ein Fehler aufgetreten.";
+                alertEl.style.display = "block";
             }
         });
     }
@@ -158,12 +164,14 @@
             Authorization: localStorage.getItem("token"),
           },
         }
-      ).then((response) => {
+      ).then(async (response) => {
         if (response.ok) {
           return_to_prev();
         } else {
-          console.log(response);
-          document.getElementById("edit-error").style.display = "block";
+          const msg = await response.text();
+          const alertEl = document.getElementById("edit-error");
+          alertEl.textContent = msg || "Es ist ein Fehler aufgetreten.";
+          alertEl.style.display = "block";
         }
       });
     }

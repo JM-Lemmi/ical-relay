@@ -8,9 +8,12 @@
   {{template "nav.html" .}}
   <main class="container">
     <h1 class="mb-3">Neues Event erstellen</h1>
-    <div class="alert alert-danger" id="edit-error" style="display: none">
-      Es ist ein Fehler aufgetreten! Sind Sie eingeloggt?
-    </div>
+    <div 
+        class="alert alert-danger"
+        id="edit-error"
+        style="display: none; white-space: pre-wrap"
+        role="alert"
+    ></div>
     <form id="edit-form">
       <div class="row mb-3">
         <label for="summary" class="col-sm-1 col-form-label">Titel</label>
@@ -107,13 +110,16 @@
                 "Authorization": localStorage.getItem("token")
             },
             body: JSON.stringify(event)
-        }).then(response => {
+        }).then(async (response) => {
             if (response.ok) {
                 // redirect to GET parameter next, if next is at the same origin
                 return_to_prev();
+                return;
             } else {
-                console.log(response);
-                document.getElementById("edit-error").style.display = "block";
+                const msg = await response.text();
+                const alertEl = document.getElementById("edit-error");
+                alertEl.textContent = msg || "Es ist ein Fehler aufgetreten.";
+                alertEl.style.display = "block";
             }
         });
     }
