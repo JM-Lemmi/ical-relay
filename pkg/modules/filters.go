@@ -117,6 +117,7 @@ func FilterId(cal *ics.Calendar, params map[string]string) ([]int, error) {
 // Parameters: either "after" or "before" mandatory
 // Format is RFC3339: "2006-01-02T15:04:05Z"
 // or "now" for current time
+// or "today" for start of the current day (00:00:00 local time)
 // TODO: implement RRULE compatibility from v1.3.1
 func FilterTimeframe(cal *ics.Calendar, params map[string]string) ([]int, error) {
 	var indices []int
@@ -133,6 +134,9 @@ func FilterTimeframe(cal *ics.Calendar, params map[string]string) ([]int, error)
 		after = time.Time{}
 	} else if params["after"] == "now" {
 		after = time.Now()
+	} else if params["after"] == "today" {
+		now := time.Now()
+		after = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	} else {
 		after, err = time.Parse(time.RFC3339, params["after"])
 		if err != nil {
@@ -144,6 +148,9 @@ func FilterTimeframe(cal *ics.Calendar, params map[string]string) ([]int, error)
 		before = time.Unix(1<<63-1-int64((1969*365+1969/4-1969/100+1969/400)*24*60*60), 999999999)
 	} else if params["before"] == "now" {
 		before = time.Now()
+	} else if params["before"] == "today" {
+		now := time.Now()
+		before = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	} else {
 		before, err = time.Parse(time.RFC3339, params["before"])
 		if err != nil {

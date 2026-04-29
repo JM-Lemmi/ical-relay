@@ -231,10 +231,11 @@ func getProfileCalendar(profile datastore.Profile, profileName string) (*ics.Cal
 }
 
 // Delete Helper funtion for immutable past.
-// Will delete events from the calendar either before or after now.
-// timeframes: "before": delete up till now, "after" delete everything after now
+// Will delete events from the calendar either before or after the start of today.
+// This allows events from the current day to remain editable even if they have already passed.
+// timeframes: "before": delete up till start of today, "after" delete everything after start of today
 func ImmutablePastDelete(cal *ics.Calendar, timeframe string) error {
-	indices, err := modules.CallFilter(modules.Filters["timeframe"], cal, map[string]string{timeframe: "now"})
+	indices, err := modules.CallFilter(modules.Filters["timeframe"], cal, map[string]string{timeframe: "today"})
 	if err != nil {
 		return err
 	}
