@@ -15,7 +15,7 @@ This can match multiple events, for example with repeating events.
 
 #### timeframe
 
-* `after`, `before`. At least one is mandatory. Uses max time, if none is given. Can also be set to "now".
+* `after`, `before`. At least one is mandatory. Uses max time, if none is given. Can also be set to "now" (current time) or "today" (start of the current day, 00:00:00 local time). The "today" keyword is used by `immutable_past` to keep events from the current day editable even after they have passed.
 
 #### duplicates
 

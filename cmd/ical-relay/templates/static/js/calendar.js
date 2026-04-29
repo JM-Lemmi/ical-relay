@@ -101,7 +101,7 @@ function getDayVStack(date, events, show_edit = false, immutable_past = true) {
             return dayjs(a.start).diff(dayjs(b.start));
         });
         for (let event of day_events) {
-            let edit_enabled = !immutable_past || dayjs(event.start).isAfter(dayjs());
+            let edit_enabled = !immutable_past || !dayjs(event.start).isBefore(dayjs().startOf('day'));
             let card = getEventCard(event, show_edit, edit_enabled);
             if(currentType === "month" && date.format("MM") != currentMonth){
                 card.style.backgroundColor = "#e1e6ea";
